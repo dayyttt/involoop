@@ -2,20 +2,65 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main style={{ maxWidth: 640, margin: "80px auto", padding: "0 20px", textAlign: "center" }}>
-      <h1 style={{ fontSize: 32, marginBottom: 8 }}>Involoop</h1>
-      <p style={{ color: "#555", fontSize: 16, marginBottom: 32 }}>
-        Kirim tagihan seperti biasa. Setiap tagihan yang klienmu buka membawa
-        kesempatan buat orang lain jadi penggunamu berikutnya.
-      </p>
-      <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-        <Link href="/signup" style={{ padding: "10px 20px", background: "#111", color: "#fff", borderRadius: 8, textDecoration: "none" }}>
-          Daftar gratis
+    <>
+      <nav className="nav">
+        <Link href="/" className="brand">
+          Invo<span className="brand-accent">loop</span>
         </Link>
-        <Link href="/login" style={{ padding: "10px 20px", border: "1px solid #ddd", borderRadius: 8, textDecoration: "none", color: "#111" }}>
+        <Link href="/login" className="btn btn-ghost">
           Masuk
         </Link>
-      </div>
-    </main>
+      </nav>
+
+      <main className="wrap">
+        <section className="hero">
+          <h1>
+            Setiap tagihan yang kamu kirim
+            <br />
+            jadi distributor-mu.
+          </h1>
+          <p className="sub">
+            Involoop mengubah invoice biasa jadi jalur referral yang hidup.
+            Klien yang membuka tagihanmu diajak menagih lewat Involoop — kamu
+            dapat kredit, mereka dapat bonus.
+          </p>
+          <div className="ctas">
+            <Link href="/signup" className="btn btn-primary btn-lg">
+              Daftar gratis
+            </Link>
+            <Link href="/dashboard" className="btn btn-ghost btn-lg">
+              Masuk dashboard
+            </Link>
+          </div>
+        </section>
+
+        <section className="steps">
+          <div className="step">
+            <div className="num">01</div>
+            <h3>Tagih pakai satu kalimat</h3>
+            <p>
+              Ketik &ldquo;tagih Rina 2 juta buat desain logo&rdquo; — AI
+              menyusun invoice sekaligus menulis baris ajakan yang kontekstual.
+            </p>
+          </div>
+          <div className="step">
+            <div className="num">02</div>
+            <h3>Klien bayar di halaman invoice</h3>
+            <p>
+              Kirim link lewat channel apa pun. Di bawah tombol bayar ada CTA
+              singkat yang relevan dengan jenis jasamu.
+            </p>
+          </div>
+          <div className="step">
+            <div className="num">03</div>
+            <h3>Loop menutup sendiri</h3>
+            <p>
+              Klien yang daftar lewat invoicemu memberi kredit tambahan ke kamu
+              dan bonus untuk mereka. Nggak perlu promosi terpisah.
+            </p>
+          </div>
+        </section>
+      </main>
+    </>
   );
 }

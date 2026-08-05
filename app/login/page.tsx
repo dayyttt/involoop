@@ -35,44 +35,47 @@ export default function Login() {
   }
 
   return (
-    <main style={{ maxWidth: 400, margin: "60px auto", padding: "0 20px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 8 }}>Masuk Involoop</h1>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={inputStyle}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={inputStyle}
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ padding: 12, background: "#111", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}
+    <main className="auth-shell">
+      <div className="card">
+        <h1>Masuk Involoop</h1>
+        <p className="sub">Lanjut dari mana kamu berhenti.</p>
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
-          {loading ? "Masuk..." : "Masuk"}
-        </button>
-      </form>
-      {error && <p style={{ color: "#c0362c", marginTop: 12 }}>{error}</p>}
-      <p style={{ fontSize: 14, color: "#666", marginTop: 16 }}>
-        Belum punya akun? <Link href="/signup">Daftar dulu</Link>.
-      </p>
+          <div className="field">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              className="input"
+              type="email"
+              placeholder="kamu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              className="input"
+              type="password"
+              placeholder="Password kamu"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "Masuk..." : "Masuk"}
+          </button>
+        </form>
+        {error && <p className="error">{error}</p>}
+        <p className="hint" style={{ marginTop: 16 }}>
+          Belum punya akun? <Link href="/signup">Daftar dulu</Link>.
+        </p>
+      </div>
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: 12,
-  borderRadius: 8,
-  border: "1px solid #ddd",
-  fontSize: 15,
-};

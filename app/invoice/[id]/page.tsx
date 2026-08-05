@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 
 interface InvoiceData {
   public_id: string;
@@ -20,6 +21,7 @@ export default function PublicInvoice() {
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -35,6 +37,7 @@ export default function PublicInvoice() {
 
   async function handlePay() {
     setPaying(true);
+    setPayError(null);
     const res = await fetch("/api/invoices/pay", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -42,57 +45,88 @@ export default function PublicInvoice() {
     });
     if (res.ok) {
       setInvoice((prev) => (prev ? { ...prev, status: "paid" } : prev));
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setPayError(data.error ?? "Terjadi kesalahan saat membayar. Coba lagi.");
     }
     setPaying(false);
   }
 
-  if (loading) return <main style={{ padding: 40 }}>Memuat...</main>;
-  if (!invoice) return <main style={{ padding: 40 }}>Invoice tidak ditemukan.</main>;
+  if (loading)
+    return (
+      <>
+        <nav className="nav">
+          <Link href="/" className="brand">
+            Invo<span className="brand-accent">loop</span>
+          </Link>
+        </nav>
+        <main className="centered">Memuat...</main>
+      </>
+    );
+  if (!invoice)
+    return (
+      <>
+        <nav className="nav">
+          <Link href="/" className="brand">
+            Invo<span className="brand-accent">loop</span>
+          </Link>
+        </nav>
+        <main className="centered">Invoice tidak ditemukan.</main>
+      </>
+    );
 
   const signupUrl = `/signup?ref_invoice=${invoice.public_id}`;
 
   return (
-    <main style={{ maxWidth: 480, margin: "60px auto", padding: "0 20px" }}>
-      <div style={{ border: "1px solid #eee", borderRadius: 14, padding: 24 }}>
-        <p style={{ fontSize: 13, color: "#888", marginBottom: 4 }}>Tagihan untuk</p>
-        <h1 style={{ fontSize: 22, marginBottom: 16 }}>{invoice.client_name}</h1>
+    <>
+      <nav className="nav">
+        <Link href="/" className="brand">
+          Invo<span className="brand-accent">loop</span>
+        </Link>
+      </nav>
 
-        <p style={{ color: "#444", marginBottom: 16 }}>{invoice.description}</p>
+      <main className="invoice-card">
+        <div className="card">
+          <p className="invoice-label">Tagihan untuk</p>
+          <h1 className="invoice-title">{invoice.client_name}</h1>
 
-        <div style={{ fontSize: 28, fontWeight: 600, marginBottom: 4 }}>
-          Rp {invoice.amount.toLocaleString("id-ID")}
+          <p className="invoice-desc">{invoice.description}</p>
+
+          <div className="invoice-amount">
+            Rp {invoice.amount.toLocaleString("id-ID")}
+          </div>
+          {invoice.due_date && (
+            <p className="hint" style={{ margin: "2px 0 20px" }}>
+              Jatuh tempo: {new Date(invoice.due_date).toLocaleDateString("id-ID")}
+            </p>
+          )}
+
+          {invoice.status === "paid" ? (
+            <div className="paid-banner">Sudah dibayar</div>
+          ) : (
+            <button
+              onClick={handlePay}
+              disabled={paying}
+              className="btn btn-primary"
+              style={{ width: "100%", padding: 14, fontSize: 16 }}
+            >
+              {paying ? "Memproses..." : "Bayar sekarang"}
+            </button>
+          )}
+          {payError && <p className="error">{payError}</p>}
+
+          {/* Distribution mechanism: this line only exists because the client
+              was already here to pay. It's not a separate promotion. */}
+          {invoice.cta_message && (
+            <div className="referral-box">
+              <p>{invoice.cta_message}</p>
+              <a href={signupUrl} className="referral-link">
+                Coba gratis →
+              </a>
+            </div>
+          )}
         </div>
-        {invoice.due_date && (
-          <p style={{ fontSize: 13, color: "#888", marginBottom: 20 }}>
-            Jatuh tempo: {new Date(invoice.due_date).toLocaleDateString("id-ID")}
-          </p>
-        )}
-
-        {invoice.status === "paid" ? (
-          <div style={{ padding: 12, background: "#f2fbf3", borderRadius: 8, color: "#1a7f37", textAlign: "center" }}>
-            Sudah dibayar
-          </div>
-        ) : (
-          <button
-            onClick={handlePay}
-            disabled={paying}
-            style={{ width: "100%", padding: 14, background: "#111", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, cursor: "pointer" }}
-          >
-            {paying ? "Memproses..." : "Bayar sekarang"}
-          </button>
-        )}
-
-        {/* Distribution mechanism: this line only exists because the client
-            was already here to pay. It's not a separate promotion. */}
-        {invoice.cta_message && (
-          <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #f0f0f0", textAlign: "center" }}>
-            <p style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>{invoice.cta_message}</p>
-            <a href={signupUrl} style={{ fontSize: 13, color: "#111", fontWeight: 600, textDecoration: "underline" }}>
-              Coba gratis →
-            </a>
-          </div>
-        )}
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

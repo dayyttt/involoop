@@ -84,92 +84,85 @@ export default function Dashboard() {
     router.push("/");
   }
 
-  if (loading) return <main style={{ padding: 40 }}>Memuat...</main>;
+  if (loading) return <main className="centered">Memuat...</main>;
   if (!profile)
     return (
-      <main style={{ padding: 40 }}>
+      <main className="centered">
         Belum login. <Link href="/signup">Daftar / masuk dulu</Link>.
       </main>
     );
 
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", padding: "0 20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-        <h1 style={{ fontSize: 24 }}>Halo, {profile.full_name ?? "freelancer"}</h1>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Link
-            href="/dashboard/new-invoice"
-            style={{ padding: "10px 18px", background: "#111", color: "#fff", borderRadius: 8, textDecoration: "none" }}
-          >
+    <>
+      <nav className="nav">
+        <Link href="/" className="brand">
+          Invo<span className="brand-accent">loop</span>
+        </Link>
+        <button onClick={handleLogout} className="btn btn-ghost">
+          Keluar
+        </button>
+      </nav>
+
+      <main className="page-shell">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <h1 className="page-title" style={{ margin: 0 }}>
+            Halo, {profile.full_name ?? "freelancer"}
+          </h1>
+          <Link href="/dashboard/new-invoice" className="btn btn-primary">
             + Buat invoice
           </Link>
-          <button
-            onClick={handleLogout}
-            style={{ padding: "10px 14px", border: "1px solid #ddd", borderRadius: 8, background: "#fff", cursor: "pointer" }}
-          >
-            Keluar
-          </button>
         </div>
-      </div>
 
-      <div style={{ display: "flex", gap: 12, marginBottom: 32 }}>
-        <StatCard label="Kredit invoice tersisa" value={profile.free_invoice_credits.toString()} />
-        <StatCard label="Referral berhasil" value={referralCount.toString()} />
-      </div>
+        <div className="stat-grid">
+          <div className="stat">
+            <div className="stat-label">Kredit invoice tersisa</div>
+            <div className="stat-value">{profile.free_invoice_credits}</div>
+          </div>
+          <div className="stat">
+            <div className="stat-label">Referral berhasil</div>
+            <div className="stat-value">{referralCount}</div>
+          </div>
+        </div>
 
-      <h2 style={{ fontSize: 18, marginBottom: 12 }}>Referral</h2>
-      {referrals.length === 0 ? (
-        <p style={{ color: "#777", marginBottom: 24 }}>Belum ada referral. CTA di tiap invoice yang mengajak klienmu daftar.</p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
-          {referrals.map((ref) => (
-            <div
-              key={ref.id}
-              style={{ display: "flex", justifyContent: "space-between", padding: 14, border: "1px solid #eee", borderRadius: 10 }}
-            >
-              <span>{ref.referred?.full_name || ref.referred?.email || "Pengguna baru"}</span>
-              <span style={{ color: "#666", fontSize: 13 }}>
-                {new Date(ref.created_at).toLocaleDateString("id-ID")} · +{ref.reward_credits} kredit
+        <h2 className="section-title">Referral</h2>
+        {referrals.length === 0 ? (
+          <p className="empty">
+            Belum ada referral. CTA di tiap invoice yang mengajak klienmu daftar.
+          </p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
+            {referrals.map((ref) => (
+              <div key={ref.id} className="list-item">
+                <span>{ref.referred?.full_name || ref.referred?.email || "Pengguna baru"}</span>
+                <span className="side">
+                  <span className="badge badge-paid">+{ref.reward_credits} kredit</span>
+                  <span className="hint">
+                    {new Date(ref.created_at).toLocaleDateString("id-ID")}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <h2 className="section-title">Invoice terkirim</h2>
+        {invoices.length === 0 && (
+          <p className="empty">Belum ada invoice. Buat yang pertama.</p>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {invoices.map((inv) => (
+            <Link key={inv.id} href={`/invoice/${inv.public_id}`} className="list-item">
+              <span>{inv.client_name}</span>
+              <span className="side">
+                <span>Rp {inv.amount.toLocaleString("id-ID")}</span>
+                <span className={`badge ${inv.status === "paid" ? "badge-paid" : "badge-unpaid"}`}>
+                  {inv.status === "paid" ? "Lunas" : "Belum bayar"}
+                </span>
               </span>
-            </div>
+            </Link>
           ))}
         </div>
-      )}
-
-      <h2 style={{ fontSize: 18, marginBottom: 12 }}>Invoice terkirim</h2>
-      {invoices.length === 0 && <p style={{ color: "#777" }}>Belum ada invoice. Buat yang pertama.</p>}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {invoices.map((inv) => (
-          <Link
-            key={inv.id}
-            href={`/invoice/${inv.public_id}`}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              padding: 14,
-              border: "1px solid #eee",
-              borderRadius: 10,
-              textDecoration: "none",
-              color: "#111",
-            }}
-          >
-            <span>{inv.client_name}</span>
-            <span>Rp {inv.amount.toLocaleString("id-ID")}</span>
-            <span style={{ color: inv.status === "paid" ? "#1a7f37" : "#a15c00" }}>
-              {inv.status === "paid" ? "Lunas" : "Belum bayar"}
-            </span>
-          </Link>
-        ))}
-      </div>
-    </main>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ flex: 1, padding: 16, border: "1px solid #eee", borderRadius: 10 }}>
-      <div style={{ fontSize: 12, color: "#777" }}>{label}</div>
-      <div style={{ fontSize: 24, fontWeight: 600 }}>{value}</div>
-    </div>
+      </main>
+    </>
   );
 }

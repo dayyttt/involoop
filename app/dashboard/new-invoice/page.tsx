@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 
 export default function NewInvoice() {
@@ -45,47 +46,58 @@ export default function NewInvoice() {
   }
 
   return (
-    <main style={{ maxWidth: 560, margin: "40px auto", padding: "0 20px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 8 }}>Buat invoice</h1>
-      <p style={{ color: "#666", marginBottom: 20 }}>
-        Tulis dalam satu kalimat, biar AI yang susun invoicenya.
-      </p>
+    <>
+      <nav className="nav">
+        <Link href="/" className="brand">
+          Invo<span className="brand-accent">loop</span>
+        </Link>
+        <Link href="/dashboard" className="btn btn-ghost">
+          ← Dashboard
+        </Link>
+      </nav>
 
-      <form onSubmit={handleSubmit}>
-        <textarea
-          value={rawText}
-          onChange={(e) => setRawText(e.target.value)}
-          placeholder="contoh: tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu"
-          rows={3}
-          style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid #ddd", fontSize: 15, boxSizing: "border-box" }}
-        />
-        <button
-          type="submit"
-          disabled={loading || !rawText}
-          style={{ marginTop: 12, padding: "10px 20px", background: "#111", color: "#fff", borderRadius: 8, border: "none", cursor: "pointer" }}
-        >
-          {loading ? "Menyusun invoice..." : "Buat invoice dengan AI"}
-        </button>
-      </form>
+      <main className="page-shell" style={{ maxWidth: 560 }}>
+        <h1 className="page-title">Buat invoice</h1>
+        <p className="muted" style={{ marginTop: -8, marginBottom: 20 }}>
+          Tulis dalam satu kalimat, biar AI yang menyusun invoicenya.
+        </p>
 
-      {error && <p style={{ color: "#c0362c", marginTop: 16 }}>{error}</p>}
-
-      {result && (
-        <div style={{ marginTop: 24, padding: 16, border: "1px solid #d7f0da", background: "#f2fbf3", borderRadius: 10 }}>
-          <p style={{ marginBottom: 8 }}>Invoice siap. Kirim link ini ke klienmu:</p>
-          <code style={{ display: "block", padding: 8, background: "#fff", borderRadius: 6, wordBreak: "break-all" }}>
-            {result.share_url}
-          </code>
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent("Halo, ini tagihan untuk kamu: " + result.share_url)}`}
-            target="_blank"
-            rel="noreferrer"
-            style={{ display: "inline-block", marginTop: 12, color: "#1a7f37" }}
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column" }}>
+          <textarea
+            className="input"
+            value={rawText}
+            onChange={(e) => setRawText(e.target.value)}
+            placeholder="contoh: tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu"
+            rows={3}
+          />
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading || !rawText}
+            style={{ marginTop: 12, alignSelf: "flex-start" }}
           >
-            Kirim via WhatsApp →
-          </a>
-        </div>
-      )}
-    </main>
+            {loading ? "Menyusun invoice..." : "Buat invoice dengan AI"}
+          </button>
+        </form>
+
+        {error && <p className="error">{error}</p>}
+
+        {result && (
+          <div className="success-panel">
+            <p>Invoice siap. Kirim link ini ke klienmu:</p>
+            <code className="code">{result.share_url}</code>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent("Halo, ini tagihan untuk kamu: " + result.share_url)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-success"
+              style={{ marginTop: 12 }}
+            >
+              Kirim via WhatsApp →
+            </a>
+          </div>
+        )}
+      </main>
+    </>
   );
 }

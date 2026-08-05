@@ -2,11 +2,12 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 
 export default function Signup() {
   return (
-    <Suspense fallback={<main style={{ padding: 40 }}>Memuat...</main>}>
+    <Suspense fallback={<main className="centered">Memuat...</main>}>
       <SignupForm />
     </Suspense>
   );
@@ -54,52 +55,66 @@ function SignupForm() {
   }
 
   return (
-    <main style={{ maxWidth: 400, margin: "60px auto", padding: "0 20px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 8 }}>Daftar Involoop</h1>
-      {refInvoice && (
-        <p style={{ fontSize: 13, color: "#1a7f37", marginBottom: 16 }}>
-          Kamu diundang lewat invoice temanmu — dia dapat kredit, dan kamu dapat bonus kredit begitu daftar.
-        </p>
-      )}
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <input
-          placeholder="Nama lengkap"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          style={inputStyle}
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={inputStyle}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={inputStyle}
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          style={{ padding: 12, background: "#111", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}
+    <main className="auth-shell">
+      <div className="card">
+        <h1>Daftar Involoop</h1>
+        <p className="sub">3 kredit invoice gratis, tambah lagi dari referral.</p>
+        {refInvoice && (
+          <p
+            className="pill"
+            style={{ marginBottom: 16 }}
+          >
+            Kamu diundang lewat invoice temanmu — dia dapat kredit, dan kamu
+            dapat bonus kredit begitu daftar.
+          </p>
+        )}
+        <form
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
-          {loading ? "Mendaftar..." : "Daftar"}
-        </button>
-      </form>
-      {error && <p style={{ color: "#c0362c", marginTop: 12 }}>{error}</p>}
+          <div className="field">
+            <label htmlFor="fullName">Nama lengkap</label>
+            <input
+              id="fullName"
+              className="input"
+              placeholder="Mis. Budi Santoso"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              className="input"
+              type="email"
+              placeholder="kamu@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              className="input"
+              type="password"
+              placeholder="Minimal 6 karakter"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? "Mendaftar..." : "Daftar"}
+          </button>
+        </form>
+        {error && <p className="error">{error}</p>}
+        <p className="hint" style={{ marginTop: 16 }}>
+          Sudah punya akun? <Link href="/login">Masuk</Link>.
+        </p>
+      </div>
     </main>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: 12,
-  borderRadius: 8,
-  border: "1px solid #ddd",
-  fontSize: 15,
-};
