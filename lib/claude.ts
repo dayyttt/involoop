@@ -1,0 +1,58 @@
+import Anthropic from "@anthropic-ai/sdk";
+
+const anthropic = new Anthropic({
+  apiKey: process.env.AI_API_KEY!,
+  ...(process.env.AI_BASE_URL ? { baseURL: process.env.AI_BASE_URL } : {}),
+});
+
+export interface ParsedInvoice {
+  client_name: string;
+  description: string;
+  amount: number;
+  due_date: string | null; // ISO date, or null if not mentioned
+  cta_message: string;
+}
+
+const SYSTEM_PROMPT = `You turn one freelancer sentence into a structured invoice, in Indonesian context.
+You also write ONE short, warm, context-aware referral line (max 20 words, Indonesian) that will be
+shown to the CLIENT on the payment page, inviting them to try Involoop themselves IF their business
+also needs to bill customers. Tailor the line to the type of work described - a logo designer's
+client gets a different line than a tax consultant's client. Never sound like generic ad copy.
+
+Respond ONLY with valid JSON, no markdown fences, matching this shape:
+{
+  "client_name": string,
+  "description": string,
+  "amount": number,
+  "due_date": string | null,
+  "cta_message": string
+}`;
+
+export async function parseInvoiceFromText(input: string): Promise<ParsedInvoice> {
+  const message = await anthropic.messages.create({
+    model: process.env.AI_MODEL ?? "claude-sonnet-5",
+    max_tokens: 500,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: input }],
+  });
+
+  const block = message.content.find((b) => b.type === "text");
+  if (!block || block.type !== "text") {
+    throw new Error("Claude did not return a text block");
+  }
+
+  const cleaned = block.text.replace(/```json|```/g, "").trim();
+
+  let parsed: ParsedInvoice;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error("Failed to parse Claude response as JSON: " + cleaned);
+  }
+
+  if (!parsed.client_name || !parsed.description || typeof parsed.amount !== "number") {
+    throw new Error("Claude response missing required invoice fields");
+  }
+
+  return parsed;
+}
