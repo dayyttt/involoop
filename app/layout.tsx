@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
-import { Sora } from "next/font/google";
+import { Manrope, Syne } from "next/font/google";
 import "./globals.css";
 
-const sora = Sora({
-  subsets: ["latin"],
-  variable: "--font-sora",
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
+const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope", display: "swap" });
+const syne = Syne({ subsets: ["latin"], variable: "--font-syne", display: "swap" });
+const fonts = `${manrope.variable} ${syne.variable}`;
 
 export const metadata: Metadata = {
   title: "Involoop — Invoicing yang menyebar sendiri",
@@ -18,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className={sora.variable}>
+    <html lang="id" className={fonts}>
       <body>{children}</body>
     </html>
   );

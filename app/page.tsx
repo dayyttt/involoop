@@ -1,117 +1,174 @@
 import Link from "next/link";
 import LoopScene from "@/components/LoopScene";
 
+const features = [
+  ["01", "Invoice dari satu kalimat", "AI memecah kalimat tagihan jadi nama klien, nominal, deskripsi, tenggat, dan CTA referral."],
+  ["02", "Link publik siap kirim", "Bagikan invoice lewat WhatsApp, email, atau channel yang sudah kamu pakai tanpa setup pengiriman baru."],
+  ["03", "Pembayaran tanpa friksi", "Klien membuka halaman yang fokus, membaca detail, lalu menyelesaikan pembayaran dari satu layar."],
+  ["04", "CTA yang relevan", "AI menulis ajakan sesuai jasa yang ditagih, bukan iklan generik yang terasa dipaksakan."],
+  ["05", "Reward dua arah", "Freelancer mendapat 3 kredit, sementara klien yang mendaftar mendapat bonus 2 kredit."],
+  ["06", "Loop terlihat jelas", "Referral, kredit, dan invoice langsung muncul di dashboard agar pertumbuhan bisa didemokan end-to-end."],
+];
+
+const process = [
+  ["01", "Tulis", "Tulis tagihan natural seperti berbicara ke asisten."],
+  ["02", "Susun", "AI mengubahnya menjadi invoice terstruktur dan CTA kontekstual."],
+  ["03", "Kirim", "Bagikan link publik lewat channel pilihanmu."],
+  ["04", "Bayar", "Klien menyelesaikan tagihan dari halaman yang bersih."],
+  ["05", "Tumbuh", "Klien mendaftar, kedua pihak mendapat kredit, loop dimulai lagi."],
+];
+
 export default function Home() {
   return (
-    <>
-      <nav className="nav">
-        <Link href="/" className="brand">
-          Invo<span className="brand-accent">loop</span>
-        </Link>
-        <Link href="/login" className="btn btn-ghost">
-          Masuk
-        </Link>
-      </nav>
+    <main className="landing">
+      <header className="site-header">
+        <div className="site-shell header-inner">
+          <Link href="#home" className="brand">
+            Invo<span className="brand-accent">loop</span>
+          </Link>
+          <nav className="site-nav" aria-label="Navigasi utama">
+            <a href="#why">Kenapa</a>
+            <a href="#features">Fitur</a>
+            <a href="#process">Cara kerja</a>
+            <a href="#reward">Reward</a>
+          </nav>
+          <Link href="/signup" className="btn btn-primary">
+            Mulai gratis
+          </Link>
+        </div>
+      </header>
 
-      <main className="wrap">
-        <section className="hero">
-          <div className="hero-grid">
-            <div className="hero-copy">
-              <span className="pill">Distribution-first</span>
-              <h1>
-                Setiap tagihan yang kamu kirim jadi{" "}
-                <span className="gradient-text">distributor</span>-mu.
-              </h1>
-              <p className="sub">
-                Involoop mengubah invoice biasa jadi jalur referral yang hidup.
-                Klien yang membuka tagihanmu diajak menagih lewat Involoop —
-                kamu dapat kredit, mereka dapat bonus.
-              </p>
-              <div className="ctas">
-                <Link href="/signup" className="btn btn-primary btn-lg">
-                  Daftar gratis
-                </Link>
-                <Link href="/login" className="btn btn-ghost btn-lg">
-                  Masuk
-                </Link>
-              </div>
-              <div className="hero-points">
-                <span>
-                  <b>3</b> kredit gratis
-                </span>
-                <span>
-                  <b>+3</b> kredit per referral
-                </span>
-                <span>
-                  <b>+2</b> bonus untuk klien
-                </span>
-              </div>
-            </div>
-
-            <div className="hero-visual">
-              <LoopScene />
+      <section id="home" className="agency-hero">
+        <img src="/involoop-hero.jpg" alt="" className="hero-image" />
+        <div className="hero-shade" />
+        <div className="site-shell agency-hero-inner">
+          <div className="agency-hero-copy">
+            <span className="section-eyebrow">Distribution-first invoicing</span>
+            <h1>
+              Invoice yang ikut <span className="gradient-text">mencari pengguna</span> baru.
+            </h1>
+            <p>
+              Buat invoice dari satu kalimat. Kirim seperti biasa. Saat klien membayar,
+              Involoop membuka jalur referral yang memberi reward ke kedua pihak.
+            </p>
+            <div className="hero-actions">
+              <Link href="/signup" className="btn btn-primary btn-lg">
+                Buat invoice pertama →
+              </Link>
+              <Link href="/login" className="btn btn-ghost btn-lg">
+                Masuk dashboard
+              </Link>
             </div>
           </div>
-        </section>
-
-        <section className="how">
-          <div className="section-head">
-            <span className="eyebrow">Cara kerjanya</span>
-            <h2>Invoice biasa, loop yang jalan sendiri.</h2>
+          <div className="hero-webgl">
+            <LoopScene />
           </div>
-
-          <div className="steps">
-            <div className="step">
-              <div className="num">01</div>
-              <h3>Tagih pakai satu kalimat</h3>
-              <p>
-                Ketik &ldquo;tagih Rina 2 juta buat desain logo&rdquo; — AI
-                menyusun invoice sekaligus menulis baris ajakan yang kontekstual.
-              </p>
-            </div>
-            <div className="step">
-              <div className="num">02</div>
-              <h3>Klien bayar di halaman invoice</h3>
-              <p>
-                Kirim link lewat channel apa pun. Di bawah tombol bayar ada CTA
-                singkat yang relevan dengan jenis jasamu.
-              </p>
-            </div>
-            <div className="step">
-              <div className="num">03</div>
-              <h3>Loop menutup sendiri</h3>
-              <p>
-                Klien yang daftar lewat invoicemu memberi kredit tambahan ke kamu
-                dan bonus untuk mereka. Nggak perlu promosi terpisah.
-              </p>
-            </div>
+        </div>
+        <div className="trust-strip">
+          <div className="site-shell trust-items">
+            <span>DESAINER</span><span>DEVELOPER</span><span>KONSULTAN</span>
+            <span>VIDEO EDITOR</span><span>FREELANCER SOLO</span><span>CREATOR B2B</span>
           </div>
+        </div>
+      </section>
 
-          <div className="loop-band">
-            <div className="loop-col">
-              <span className="loop-num">A</span>
-              <h3>Freelancer</h3>
-              <p>
-                +3 kredit invoice setiap klien yang daftar lewat invoicemu.
-              </p>
-            </div>
-            <div className="loop-arrow">→</div>
-            <div className="loop-col">
-              <span className="loop-num">B</span>
-              <h3>Klien</h3>
-              <p>
-                Bonus 2 kredit begitu daftar dari CTA di bawah tombol bayar.
-              </p>
-            </div>
+      <section id="why" className="site-shell section-space split-section">
+        <img src="/involoop-about.jpg" alt="Freelancer mengelola pekerjaan" className="section-image" />
+        <div>
+          <p className="section-eyebrow">KENAPA INVOLOOP</p>
+          <h2>Tagihanmu sudah punya distribusi. Kami membuatnya bekerja.</h2>
+          <div className="value-list">
+            <span>◆ Tanpa promosi tambahan</span>
+            <span>◆ Tanpa form panjang</span>
+            <span>◆ Reward dua arah</span>
           </div>
+          <p className="body-copy">
+            Freelancer sudah rutin mengirim invoice ke pemilik bisnis dan profesional lain.
+            Itu audiens yang relevan, hadir di momen bernilai tinggi, dan selama ini belum
+            dipakai sebagai jalur pertumbuhan.
+          </p>
+          <p className="body-copy">
+            Involoop menaruh CTA referral tepat setelah detail pembayaran. Bukan pop-up,
+            bukan kampanye marketing terpisah — hanya langkah berikutnya yang masuk akal.
+          </p>
+          <div className="metric-row">
+            <div><strong>3</strong><span>Kredit awal</span></div>
+            <div><strong>+3</strong><span>Untuk referrer</span></div>
+            <div><strong>+2</strong><span>Untuk klien</span></div>
+          </div>
+          <Link href="/signup" className="btn btn-primary">Coba sekarang →</Link>
+        </div>
+      </section>
 
-          <div className="cta-row">
-            <Link href="/signup" className="btn btn-primary btn-lg">
-              Buat invoice pertama gratis
-            </Link>
+      <section id="features" className="section-space muted-band">
+        <div className="site-shell">
+          <div className="section-top">
+            <div>
+              <p className="section-eyebrow">FITUR INTI</p>
+              <h2>Satu alur untuk menagih dan tumbuh.</h2>
+            </div>
+            <Link href="/signup" className="btn btn-ghost">Mulai gratis</Link>
           </div>
-        </section>
-      </main>
-    </>
+          <div className="feature-grid">
+            {features.map(([number, title, text], index) => (
+              <article className={`feature-card${index === 1 ? " feature-card-active" : ""}`} key={number}>
+                <span className="feature-icon">{number}</span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+                <Link href="/signup">Coba fitur →</Link>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="process" className="site-shell section-space">
+        <p className="section-eyebrow">ALUR PRODUK</p>
+        <h2>Lima langkah. Satu loop lengkap.</h2>
+        <img src="/involoop-process.jpg" alt="Proses kerja freelancer" className="process-image" />
+        <div className="process-stack">
+          {process.map(([number, title, text]) => (
+            <article className="process-row" key={number}>
+              <div><strong>{number}</strong><h3>{title}</h3></div>
+              <p>{text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="reward" className="reward-band section-space">
+        <div className="site-shell reward-inner">
+          <p className="section-eyebrow">REWARD DUA ARAH</p>
+          <h2>Kedua pihak menang. Loop lanjut sendiri.</h2>
+          <p className="reward-lead">
+            Freelancer tidak perlu mengubah cara kerja. Klien tidak dipaksa ikut.
+            Reward muncul hanya ketika referral benar-benar selesai mendaftar.
+          </p>
+          <div className="reward-grid">
+            <article><span>A</span><h3>Freelancer</h3><strong>+3 kredit</strong><p>Setiap referral berhasil dari invoice.</p></article>
+            <div className="reward-arrow">→</div>
+            <article><span>B</span><h3>Klien</h3><strong>+2 kredit</strong><p>Bonus di atas 3 kredit signup biasa.</p></article>
+          </div>
+          <Link href="/signup" className="btn btn-primary btn-lg">Mulai loop pertamamu</Link>
+        </div>
+      </section>
+
+      <section className="site-shell section-space final-cta">
+        <div>
+          <p className="section-eyebrow">SIAP MENAGIH?</p>
+          <h2>Buat satu invoice. Biarkan produkmu ikut menyebar.</h2>
+          <p>Gratis 3 kredit. Tanpa kartu kredit. Link publik siap dikirim.</p>
+        </div>
+        <Link href="/signup" className="btn btn-primary btn-lg">Daftar gratis →</Link>
+      </section>
+
+      <footer className="site-footer">
+        <div className="site-shell footer-inner">
+          <Link href="#home" className="brand">Invo<span className="brand-accent">loop</span></Link>
+          <nav><a href="#why">Kenapa</a><span>◆</span><a href="#features">Fitur</a><span>◆</span><a href="#process">Cara kerja</a><span>◆</span><Link href="/login">Masuk</Link></nav>
+          <div className="footer-bottom"><span>Copyright © 2026 Involoop.</span><span>Invoice yang menyebar sendiri.</span></div>
+        </div>
+      </footer>
+    </main>
   );
 }
