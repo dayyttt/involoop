@@ -44,6 +44,8 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .btn-ghost:hover { border-color: var(--primary); background: rgba(241,74,148,.08); }
 .btn-lg { min-height: 48px; padding: 13px 22px; font-size: 14px; }
 .btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Landing ported from creative-agency-website */
 .landing { min-height: 100vh; overflow: hidden; background: var(--bg); }

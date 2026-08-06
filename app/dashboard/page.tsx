@@ -63,6 +63,8 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   async function load() {
     setError(null);
@@ -101,7 +103,9 @@ export default function Dashboard() {
 
   async function handleConnectStripe() {
     setError(null);
+    setConnecting(true);
     const res = await fetch("/api/payments/connect", { method: "POST" });
+    setConnecting(false);
     if (res.ok) {
       load();
     } else {
@@ -113,7 +117,9 @@ export default function Dashboard() {
   async function handleResetDemo() {
     if (!window.confirm("Reset seluruh data akun demo ini?")) return;
     setError(null);
+    setResetting(true);
     const res = await fetch("/api/demo/reset", { method: "POST" });
+    setResetting(false);
     if (res.ok) {
       load();
     } else {
@@ -192,7 +198,9 @@ export default function Dashboard() {
               <h2 className="section-title">Demo workspace</h2>
               <p className="hint">Reset invoices, payments, referrals, ledger, and credits for a clean presentation.</p>
             </div>
-            <button className="btn btn-ghost" onClick={handleResetDemo}>Reset Demo Workspace</button>
+            <button className="btn btn-ghost" onClick={handleResetDemo} disabled={resetting}>
+              {resetting ? "Resetting…" : "Reset Demo Workspace"}
+            </button>
           </div>
         )}
 
@@ -230,8 +238,9 @@ export default function Dashboard() {
               className="btn btn-primary"
               style={{ marginTop: 14 }}
               onClick={handleConnectStripe}
+              disabled={connecting}
             >
-              Connect Stripe
+              {connecting ? <><Spinner /> Connecting…</> : "Connect Stripe"}
             </button>
           )}
         </div>
@@ -332,8 +341,11 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  if (status === "paid") return <span className="badge badge-paid">Paid</span>;
+function Spinner() {
+  return <span className="spinner" aria-hidden />;
+}
+
+function StatusBadge({ status }: { status: string }) {  if (status === "paid") return <span className="badge badge-paid">Paid</span>;
   if (status === "awaiting_verification")
     return <span className="badge badge-warn">Awaiting verification</span>;
   if (status === "payment_pending")
