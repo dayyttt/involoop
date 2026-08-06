@@ -5,6 +5,17 @@ alter table invoices
   add column if not exists number text,
   add column if not exists views int not null default 0;
 
+alter table invoices
+  add column if not exists amount_minor bigint not null default 0;
+alter table invoices
+  add column if not exists currency text not null default 'IDR';
+
+update invoices set amount_minor = round(amount) where amount_minor = 0;
+update invoices set currency = 'IDR' where currency not in ('USD','EUR','GBP','SGD','IDR');
+alter table invoices drop constraint if exists invoices_currency_check;
+alter table invoices add constraint invoices_currency_check
+  check (currency in ('USD','EUR','GBP','SGD','IDR'));
+
 update invoices
 set number = 'INV-' || to_char(created_at, 'YYYY') || '-' || upper(substr(id::text, 1, 4))
 where number is null;
@@ -144,17 +155,21 @@ as $$
 declare
   v_credits int;
   v_number text;
+  v_minor bigint;
   v_invoice invoices%rowtype;
 begin
   select free_invoice_credits into v_credits from profiles where id = p_owner_id;
   if v_credits is null then raise exception 'PROFILE_NOT_FOUND'; end if;
   if v_credits <= 0 then raise exception 'NO_CREDITS'; end if;
+  if p_currency not in ('USD','EUR','GBP','SGD','IDR') then raise exception 'UNSUPPORTED_CURRENCY'; end if;
+
+  v_minor := round(p_amount * power(10, case p_currency when 'IDR' then 0 else 2 end))::bigint;
 
   v_number := 'INV-' || to_char(now(), 'YYYY') || '-' ||
               lpad(nextval('invoice_number_seq')::text, 3, '0');
 
-  insert into invoices (owner_id, client_name, description, amount, currency, due_date, cta_message, number)
-  values (p_owner_id, p_client_name, p_description, p_amount, p_currency, p_due_date, p_cta_message, v_number)
+  insert into invoices (owner_id, client_name, description, amount, currency, amount_minor, due_date, cta_message, number)
+  values (p_owner_id, p_client_name, p_description, p_amount, p_currency, v_minor, p_due_date, p_cta_message, v_number)
   returning * into v_invoice;
 
   update profiles set free_invoice_credits = free_invoice_credits - 1 where id = p_owner_id;

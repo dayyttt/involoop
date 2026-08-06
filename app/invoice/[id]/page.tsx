@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { formatMoney, formatDate } from "@/lib/money";
 
 interface InvoiceData {
   public_id: string;
@@ -123,7 +124,7 @@ export default function PublicInvoice() {
             <div className="invoice-meta">
               <p className="invoice-label">NO. {invoice.number}</p>
               <span className="hint">
-                Dibuat {new Date(invoice.created_at).toLocaleDateString("id-ID")}
+                {formatDate(invoice.created_at)}
               </span>
             </div>
           </div>
@@ -134,12 +135,11 @@ export default function PublicInvoice() {
           <p className="invoice-desc">{invoice.description}</p>
 
           <div className="invoice-amount">
-            {invoice.currency === "IDR" ? "Rp " : ""}
-            {invoice.amount.toLocaleString("id-ID")}
+            {formatMoney(invoice.amount, invoice.currency)}
           </div>
           {invoice.due_date && (
             <p className="hint" style={{ margin: "2px 0 20px" }}>
-              Jatuh tempo: {new Date(invoice.due_date).toLocaleDateString("id-ID")}
+              {formatDate(invoice.due_date)}
             </p>
           )}
 

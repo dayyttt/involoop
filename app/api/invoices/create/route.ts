@@ -8,7 +8,7 @@ import { parseInvoiceFromText } from "@/lib/claude";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { raw_text, manual, client_name, description, amount, due_date, cta_message } = body;
+    const { raw_text, manual, client_name, description, amount, due_date, cta_message, currency } = body;
 
     let parsed;
 
@@ -24,10 +24,18 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+      const cur = typeof currency === "string" ? currency.toUpperCase() : "USD";
+      if (!["USD", "EUR", "GBP", "SGD", "IDR"].includes(cur)) {
+        return NextResponse.json(
+          { error: "Currency tidak didukung." },
+          { status: 400 }
+        );
+      }
       parsed = {
         client_name: String(client_name),
         description: String(description),
         amount,
+        currency: cur,
         due_date: due_date || null,
         cta_message: typeof cta_message === "string" ? cta_message : null,
       };
@@ -75,7 +83,7 @@ export async function POST(req: NextRequest) {
       p_client_name: parsed.client_name,
       p_description: parsed.description,
       p_amount: parsed.amount,
-      p_currency: "IDR",
+      p_currency: parsed.currency ?? "IDR",
       p_due_date: parsed.due_date,
       p_cta_message: parsed.cta_message,
     });

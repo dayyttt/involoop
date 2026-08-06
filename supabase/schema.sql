@@ -21,7 +21,8 @@ create table invoices (
   client_name text not null,
   description text not null,
   amount numeric(12,2) not null,
-  currency text not null default 'IDR',
+  currency text not null default 'IDR' check (currency in ('USD','EUR','GBP','SGD','IDR')),
+  amount_minor bigint not null default 0,
   due_date date,
   cta_message text, -- AI-generated, context-aware referral line
   status text not null default 'unpaid' check (status in ('unpaid','awaiting_verification','paid')),
@@ -164,6 +165,7 @@ as $$
 declare
   v_credits int;
   v_number text;
+  v_minor bigint;
   v_invoice invoices%rowtype;
 begin
   select free_invoice_credits into v_credits from profiles where id = p_owner_id;
@@ -173,12 +175,17 @@ begin
   if v_credits <= 0 then
     raise exception 'NO_CREDITS';
   end if;
+  if p_currency not in ('USD','EUR','GBP','SGD','IDR') then
+    raise exception 'UNSUPPORTED_CURRENCY';
+  end if;
+
+  v_minor := round(p_amount * power(10, case p_currency when 'IDR' then 0 else 2 end))::bigint;
 
   v_number := 'INV-' || to_char(now(), 'YYYY') || '-' ||
               lpad(nextval('invoice_number_seq')::text, 3, '0');
 
-  insert into invoices (owner_id, client_name, description, amount, currency, due_date, cta_message, number)
-  values (p_owner_id, p_client_name, p_description, p_amount, p_currency, p_due_date, p_cta_message, v_number)
+  insert into invoices (owner_id, client_name, description, amount, currency, amount_minor, due_date, cta_message, number)
+  values (p_owner_id, p_client_name, p_description, p_amount, p_currency, v_minor, p_due_date, p_cta_message, v_number)
   returning * into v_invoice;
 
   update profiles set free_invoice_credits = free_invoice_credits - 1

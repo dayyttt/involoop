@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
+import { formatMoney } from "@/lib/money";
 
 interface Invoice {
   public_id: string;
   number: string;
   client_name: string;
   amount: number;
+  currency: string;
   status: string;
   views: number;
   created_at: string;
@@ -203,7 +205,7 @@ export default function Dashboard() {
                   <strong>{inv.client_name}</strong> · {inv.number}
                 </Link>
                 <span className="hint">
-                  Rp {inv.amount.toLocaleString("id-ID")} · {inv.views} tampilan
+                  {formatMoney(inv.amount, inv.currency)} · {inv.views} tampilan
                 </span>
               </div>
               <div className="side">

@@ -28,7 +28,7 @@ export async function GET() {
 
   const { data: invoices } = await admin
     .from("invoices")
-    .select("public_id, number, client_name, amount, status, views, created_at")
+    .select("public_id, number, client_name, amount, currency, status, views, created_at")
     .eq("owner_id", uid)
     .order("created_at", { ascending: false });
 

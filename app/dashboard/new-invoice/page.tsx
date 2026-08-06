@@ -18,6 +18,7 @@ export default function NewInvoice() {
     client_name: "",
     description: "",
     amount: "",
+    currency: "USD",
     due_date: "",
   });
 
@@ -59,7 +60,7 @@ export default function NewInvoice() {
     setLoading(true);
     setError(null);
 
-    const amount = Number(manual.amount.replace(/[^0-9]/g, ""));
+    const amount = Number(manual.amount.replace(/[^0-9.]/g, ""));
     const res = await fetch("/api/invoices/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -68,6 +69,7 @@ export default function NewInvoice() {
         client_name: manual.client_name,
         description: manual.description,
         amount,
+        currency: manual.currency,
         due_date: manual.due_date || null,
       }),
     });
@@ -166,14 +168,28 @@ export default function NewInvoice() {
               />
             </div>
             <div className="field">
-              <label>Nominal (IDR)</label>
+              <label>Nominal</label>
               <input
                 className="input"
                 value={manual.amount}
                 onChange={(e) => setManual({ ...manual, amount: e.target.value })}
-                placeholder="2000000"
+                placeholder="50"
                 required
               />
+            </div>
+            <div className="field">
+              <label>Currency</label>
+              <select
+                className="input"
+                value={manual.currency}
+                onChange={(e) => setManual({ ...manual, currency: e.target.value })}
+              >
+                <option value="USD">USD — US Dollar</option>
+                <option value="EUR">EUR — Euro</option>
+                <option value="GBP">GBP — British Pound</option>
+                <option value="SGD">SGD — Singapore Dollar</option>
+                <option value="IDR">IDR — Indonesian Rupiah</option>
+              </select>
             </div>
             <div className="field">
               <label>Jatuh tempo</label>

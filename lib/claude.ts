@@ -9,21 +9,25 @@ export interface ParsedInvoice {
   client_name: string;
   description: string;
   amount: number;
+  currency: string; // ISO code: USD, EUR, GBP, SGD, IDR
   due_date: string | null; // ISO date, or null if not mentioned
   cta_message: string;
 }
 
-const SYSTEM_PROMPT = `You turn one freelancer sentence into a structured invoice, in Indonesian context.
-You also write ONE short, warm, context-aware referral line (max 20 words, Indonesian) that will be
-shown to the CLIENT on the payment page, inviting them to try Involoop themselves IF their business
-also needs to bill customers. Tailor the line to the type of work described - a logo designer's
-client gets a different line than a tax consultant's client. Never sound like generic ad copy.
+const SYSTEM_PROMPT = `You turn one freelancer sentence into a structured invoice, in Indonesian or English context.
+You also write ONE short, warm, context-aware referral line (max 20 words, in the SAME language as the input)
+that will be shown to the CLIENT on the payment page, inviting them to try Involoop themselves IF their business
+also needs to bill customers. Tailor the line to the type of work described. Never sound like generic ad copy.
+
+Detect the currency from the amount given. "$" means USD, "€" EUR, "£" GBP, "S$" SGD, "Rp"/"IDR"/"juta" means IDR.
+Default to IDR when no currency symbol is present.
 
 Respond ONLY with valid JSON, no markdown fences, matching this shape:
 {
   "client_name": string,
   "description": string,
   "amount": number,
+  "currency": "USD" | "EUR" | "GBP" | "SGD" | "IDR",
   "due_date": string | null,
   "cta_message": string
 }`;
@@ -52,6 +56,11 @@ export async function parseInvoiceFromText(input: string): Promise<ParsedInvoice
 
   if (!parsed.client_name || !parsed.description || typeof parsed.amount !== "number") {
     throw new Error("Claude response missing required invoice fields");
+  }
+
+  const CURRENCIES = ["USD", "EUR", "GBP", "SGD", "IDR"];
+  if (!parsed.currency || !CURRENCIES.includes(parsed.currency)) {
+    parsed.currency = "IDR";
   }
 
   return parsed;

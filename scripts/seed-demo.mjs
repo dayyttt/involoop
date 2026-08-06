@@ -53,12 +53,12 @@ async function main() {
   console.log("publishing invoice for demo-owner");
   const { data: inv, error: pubErr } = await admin.rpc("publish_invoice", {
     p_owner_id: owner.id,
-    p_client_name: "PT Kreatif Digital",
-    p_description: "Pengembangan landing page 5 halaman + integrasi WhatsApp",
-    p_amount: 2500000,
-    p_currency: "IDR",
-    p_due_date: "2026-08-20",
-    p_cta_message: "Kalau PT Kreatif Digital juga menagih klien, cobain Involoop buat invoice dengan satu kalimat.",
+    p_client_name: "Acme Studio",
+    p_description: "Landing page design (5 pages + copy)",
+    p_amount: 50,
+    p_currency: "USD",
+    p_due_date: "2026-08-12",
+    p_cta_message: "If Acme Studio bills its own clients too, try Involoop — create an invoice from one sentence.",
   });
   if (pubErr) throw pubErr;
 
