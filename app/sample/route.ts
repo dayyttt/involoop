@@ -9,12 +9,18 @@ export async function GET() {
   const base = process.env.NEXT_PUBLIC_BASE_URL || "https://involoop.vercel.app";
   const admin = createAdminClient();
 
+  const redirect = (url: string) => {
+    const res = NextResponse.redirect(url);
+    res.headers.set("Cache-Control", "no-store, max-age=0");
+    return res;
+  };
+
   const { data: owner } = await admin
     .from("profiles")
     .select("id")
     .eq("email", "demo-owner@involoop.app")
     .maybeSingle();
-  if (!owner) return NextResponse.redirect(base);
+  if (!owner) return redirect(base);
 
   const { data: invoice } = await admin
     .from("invoices")
@@ -23,7 +29,7 @@ export async function GET() {
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (!invoice) return NextResponse.redirect(base);
+  if (!invoice) return redirect(base);
 
-  return NextResponse.redirect(`${base}/invoice/${invoice.public_id}`);
+  return redirect(`${base}/invoice/${invoice.public_id}`);
 }
