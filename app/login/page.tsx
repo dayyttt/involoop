@@ -48,8 +48,8 @@ export default function Login() {
   return (
     <main className="auth-shell">
       <div className="card">
-        <h1>Masuk Involoop</h1>
-        <p className="sub">Lanjut dari mana kamu berhenti.</p>
+        <h1>Sign in to Involoop</h1>
+        <p className="sub">Welcome back.</p>
         <div className="oauth-row">
           <button type="button" className="btn btn-ghost" onClick={() => handleOAuth("google")}>
             <GoogleIcon /> Continue with Google
@@ -66,7 +66,7 @@ export default function Login() {
               id="email"
               className="input"
               type="email"
-              placeholder="kamu@email.com"
+              placeholder="you@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -78,19 +78,19 @@ export default function Login() {
               id="password"
               className="input"
               type="password"
-              placeholder="Password kamu"
+              placeholder="Your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? "Masuk..." : "Masuk"}
+            {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
         {error && <p className="error">{error}</p>}
         <p className="hint" style={{ marginTop: 16 }}>
-          Belum punya akun? <Link href="/signup">Daftar dulu</Link>.
+          No account? <Link href="/signup">Create one</Link>.
         </p>
       </div>
     </main>

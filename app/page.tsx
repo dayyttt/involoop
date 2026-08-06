@@ -60,8 +60,8 @@ export default function Home() {
               <Link href="/signup" className="btn btn-primary btn-lg">
                 {t("hero.cta1")}
               </Link>
-              <Link href="/login" className="btn btn-ghost btn-lg">
-                {t("hero.cta2")}
+              <Link href="/sample" className="btn btn-ghost btn-lg">
+                {t("hero.cta3")}
               </Link>
             </div>
             <div className="hero-points">
@@ -89,7 +89,31 @@ export default function Home() {
       </section>
 
       <section id="why" className="site-shell section-space split-section">
-        <img src="/involoop-about.jpg" alt="Freelancer at work" className="section-image" />
+        <div className="section-image invoice-mock">
+          <div className="mock-head">
+            <span className="mono">INV-2026-009</span>
+            <span className="mock-status">UNPAID</span>
+          </div>
+          <div className="mock-block">
+            <span className="mock-label">FROM</span>
+            <strong>Budi Santoso</strong>
+          </div>
+          <div className="mock-block">
+            <span className="mock-label">TO</span>
+            <strong>Acme Studio</strong>
+          </div>
+          <div className="mock-line">
+            <span>Landing page design</span>
+            <b className="money">$50.00</b>
+          </div>
+          <div className="mock-pay">
+            <span className="btn btn-primary mock-btn">Pay securely</span>
+            <span className="mock-test">Stripe Test Mode</span>
+          </div>
+          <div className="mock-cta">
+            <span>Create an invoice like this — free →</span>
+          </div>
+        </div>
         <div>
           <p className="section-eyebrow">{t("why.eyebrow")}</p>
           <h2>{t("why.title")}</h2>
@@ -230,6 +254,17 @@ export default function Home() {
             <a href="#process">{t("nav.process")}</a><span>◆</span>
             <Link href="/login">{t("footer.login")}</Link>
           </nav>
+          <nav className="footer-legal">
+            <a href="#privacy">{t("footer.privacy")}</a><span>◆</span>
+            <a href="#terms">{t("footer.terms")}</a><span>◆</span>
+            <a href="#payments">{t("footer.payments")}</a><span>◆</span>
+            <a href="https://github.com/dayyttt/involoop" target="_blank" rel="noreferrer">{t("footer.github")}</a><span>◆</span>
+            <a href="mailto:hello@involoop.vercel.app">{t("footer.contact")}</a>
+          </nav>
+          <p className="footer-disclaimer" id="payments">
+            Payments are processed by third-party providers. Involoop does not
+            store full payment card details.
+          </p>
           <div className="footer-bottom">
             <span>© 2026 Involoop.</span>
             <span>{t("footer.tag")}</span>

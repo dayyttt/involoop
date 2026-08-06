@@ -28,6 +28,7 @@ export const landing = {
     ] as Pair,
     cta1: ["Create your first invoice →", "Buat invoice pertama →"] as Pair,
     cta2: ["Sign in", "Masuk"] as Pair,
+    cta3: ["View live sample", "Lihat contoh invoice"] as Pair,
     p1: ["1 credit = 1 public invoice", "1 kredit = 1 invoice publik"] as Pair,
     p2: ["+3 reward per referral", "+3 reward per referral"] as Pair,
     p3: ["+2 bonus for the client", "+2 bonus untuk klien"] as Pair,
@@ -107,7 +108,7 @@ export const landing = {
     sub: ["Free credits. No credit card. A shareable link in seconds.", "Gratis kredit. Tanpa kartu kredit. Link publik siap dikirim."] as Pair,
     cta: ["Start free →", "Daftar gratis →"] as Pair,
   },
-  footer: { tag: ["Invoices that bring your next user.", "Invoice yang menyebar sendiri."] as Pair, login: ["Sign in", "Masuk"] as Pair },
+  footer: { tag: ["Invoices that bring your next user.", "Invoice yang menyebar sendiri."] as Pair, login: ["Sign in", "Masuk"] as Pair, privacy: ["Privacy Policy", "Kebijakan Privasi"] as Pair, terms: ["Terms of Service", "Ketentuan Layanan"] as Pair, payments: ["Payment Disclaimer", "Disclaimer Pembayaran"] as Pair, github: ["GitHub Repository", "Repositori GitHub"] as Pair, contact: ["Contact", "Kontak"] as Pair },
 } as const;
 
 export function landingText(lang: Lang, key: string): string {

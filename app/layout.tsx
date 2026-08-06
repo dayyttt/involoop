@@ -11,9 +11,16 @@ const jakarta = Plus_Jakarta_Sans({
 const fonts = jakarta.variable;
 
 export const metadata: Metadata = {
-  title: "Involoop — Invoicing yang menyebar sendiri",
+  title: "Involoop — Invoices That Bring Your Next User",
   description:
-    "Setiap tagihan yang kamu kirim membawa jalur referral. Klien yang membuka invoice ikut menagih lewat Involoop.",
+    "Create public invoices, accept payments, and earn publishing credits when another B2B professional joins through your invoice.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "https://involoop.vercel.app"),
+  openGraph: {
+    title: "Involoop — Invoices That Bring Your Next User",
+    description:
+      "Turn one sentence into a shareable invoice, accept payment, and earn credits when another professional joins.",
+    type: "website",
+  },
   icons: { icon: "/icon.svg" },
 };
 

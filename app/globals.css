@@ -143,6 +143,28 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .footer-inner nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; color: var(--muted); font-size: 12px; }
 .footer-inner nav a { text-decoration: none; }
 .footer-bottom { display: flex; justify-content: space-between; gap: 20px; margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+.footer-legal { margin-top: 8px; }
+.footer-legal a:hover { color: var(--primary); }
+.footer-disclaimer { max-width: 520px; margin: 22px auto 0; color: var(--muted); font-size: 11px; }
+
+/* Money + mono */
+.money, .stat-value, .invoice-amount, .plan-price, .metric-row strong { font-variant-numeric: tabular-nums lining-nums; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
+
+/* Product mock (replaces stock photo) */
+.invoice-mock { display: flex; flex-direction: column; gap: 14px; padding: 26px; background: linear-gradient(160deg, rgba(241,74,148,.08), rgba(33,26,37,.95)); }
+.mock-head { display: flex; justify-content: space-between; align-items: center; }
+.mock-status { padding: 3px 10px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+.mock-block { display: flex; flex-direction: column; gap: 2px; }
+.mock-label { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .08em; }
+.mock-block strong { color: #fff; font-size: 15px; }
+.mock-line { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.mock-line span { color: var(--text-2); font-size: 13px; }
+.mock-line b { color: #fff; font-size: 18px; }
+.mock-pay { display: flex; align-items: center; gap: 12px; }
+.mock-btn { min-height: 38px; padding: 9px 18px; font-size: 13px; }
+.mock-test { color: var(--warn); font-size: 10px; font-weight: 700; }
+.mock-cta { text-align: center; color: var(--primary); font-size: 12px; font-weight: 800; padding-top: 12px; border-top: 1px solid var(--line); }
 
 /* Shared app pages */
 .nav { position: fixed; inset: 0 0 auto; z-index: 50; height: 76px; display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(16px,5vw,48px); background: rgba(16,13,18,.88); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
