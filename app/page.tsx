@@ -60,7 +60,7 @@ export default function Home() {
               <Link href="/signup" className="btn btn-primary btn-lg">
                 {t("hero.cta1")}
               </Link>
-              <Link href="/sample" className="btn btn-ghost btn-lg">
+              <Link href="/invoice/484a9577f2" className="btn btn-ghost btn-lg">
                 {t("hero.cta3")}
               </Link>
             </div>
