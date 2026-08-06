@@ -14,10 +14,11 @@ export default function Home() {
 
       <main className="wrap">
         <section className="hero">
+          <span className="pill">Distribution-first</span>
           <h1>
             Setiap tagihan yang kamu kirim
             <br />
-            jadi distributor-mu.
+            jadi <span className="gradient-text">distributor</span>-mu.
           </h1>
           <p className="sub">
             Involoop mengubah invoice biasa jadi jalur referral yang hidup.

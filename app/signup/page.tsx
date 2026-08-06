@@ -60,10 +60,7 @@ function SignupForm() {
         <h1>Daftar Involoop</h1>
         <p className="sub">3 kredit invoice gratis, tambah lagi dari referral.</p>
         {refInvoice && (
-          <p
-            className="pill"
-            style={{ marginBottom: 16 }}
-          >
+          <p className="note-box">
             Kamu diundang lewat invoice temanmu — dia dapat kredit, dan kamu
             dapat bonus kredit begitu daftar.
           </p>
