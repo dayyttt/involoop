@@ -2,16 +2,20 @@
 -- Run in Supabase SQL editor.
 --
 -- SECURITY: Supabase grants EXECUTE on new functions to anon + authenticated
--- by default, so anyone with the public anon key (embedded in the client
--- bundle) could call these security-definer functions directly via PostgREST
--- and forge invoices / burn credits / inject referral rewards.
--- Only the app's server (service_role) needs them, so revoke the rest.
--- Idempotent.
+-- by default, and PostgreSQL grants it to PUBLIC by default. Anyone with the
+-- public anon key (embedded in the client bundle) could call these
+-- security-definer functions directly via PostgREST and forge invoices / burn
+-- credits / inject referral rewards. Only the app's server (service_role)
+-- needs them, so revoke from everyone else. Idempotent.
+--
+-- NOTE: revoking from PUBLIC is the part that actually closes the hole —
+-- anon/authenticated are members of PUBLIC, so `from public` alone covers
+-- them; the explicit role revokes stay for clarity.
 
-revoke execute on function public.publish_invoice from anon, authenticated;
-revoke execute on function public.finalize_signup from anon, authenticated;
-revoke execute on function public.bump_views from anon, authenticated;
-revoke execute on function public.bump_referral_clicks from anon, authenticated;
+revoke execute on function public.publish_invoice from public, anon, authenticated;
+revoke execute on function public.finalize_signup from public, anon, authenticated;
+revoke execute on function public.bump_views from public, anon, authenticated;
+revoke execute on function public.bump_referral_clicks from public, anon, authenticated;
 
 -- PERFORMANCE: /api/dashboard used to make 4 sequential round trips (profile,
 -- invoices, ledger, referrals) which on cross-region Vercel -> Supabase links
@@ -75,4 +79,4 @@ begin
 end;
 $$;
 
-revoke execute on function public.dashboard_payload from anon, authenticated;
+revoke execute on function public.dashboard_payload from public, anon, authenticated;
