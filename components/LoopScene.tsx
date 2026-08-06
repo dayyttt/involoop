@@ -46,13 +46,15 @@ export default function LoopScene() {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
 
+    let baseScale = 1;
     const resize = () => {
       const w = el.clientWidth || 1;
       const h = el.clientHeight || 1;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      torus.position.set(w >= 900 ? 1.9 : 0, w >= 900 ? 0.1 : -1.1, 0);
+      baseScale = w < 600 ? 0.72 : 1;
+      torus.scale.setScalar(baseScale);
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -67,7 +69,7 @@ export default function LoopScene() {
       const depth = Math.min(scroll / (window.innerHeight || 1), 1.2);
       torus.rotation.z = THREE.MathUtils.lerp(torus.rotation.z, depth * 0.9, 0.06);
       torus.position.y += -scroll * 0.0035 - torus.position.y * 0.06;
-      torus.scale.setScalar(1 + Math.min(scroll * 0.001, 0.8));
+      torus.scale.setScalar(baseScale * (1 + Math.min(scroll * 0.001, 0.8)));
       material.color.copy(pink).lerp(orange, Math.min(scroll * 0.0012, 1));
       material.emissive.copy(material.color);
 
