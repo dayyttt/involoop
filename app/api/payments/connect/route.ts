@@ -31,6 +31,15 @@ export async function POST() {
     const stripe = getStripe()!;
 
     let accountId = profile?.stripe_account_id ?? null;
+    let chargesEnabled = false;
+    if (accountId) {
+      try {
+        const existing = await stripe.accounts.retrieve(accountId);
+        chargesEnabled = !!existing.charges_enabled;
+      } catch {
+        accountId = null;
+      }
+    }
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: "custom",
@@ -59,6 +68,7 @@ export async function POST() {
         },
       });
       accountId = account.id;
+      chargesEnabled = !!account.charges_enabled;
 
       await admin
         .from("profiles")
@@ -66,7 +76,20 @@ export async function POST() {
         .eq("id", user.id);
     }
 
-    return NextResponse.json({ connected: true, status: "connected" });
+    // Only claim "connected" when the account can actually charge; otherwise
+    // mark pending so checkout stays honest instead of failing mid-payment.
+    const status = chargesEnabled ? "connected" : "pending";
+    if (status !== "connected") {
+      await admin
+        .from("profiles")
+        .update({ stripe_status: status })
+        .eq("id", user.id);
+    }
+
+    return NextResponse.json({
+      connected: status === "connected",
+      status,
+    });
   } catch (err: any) {
     console.error("stripe connect error", err);
     return NextResponse.json(

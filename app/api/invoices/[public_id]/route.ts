@@ -19,7 +19,7 @@ export async function GET(
   const { data: invoice, error } = await supabase
     .from("invoices")
     .select(
-      "public_id, number, client_name, description, amount, currency, amount_minor, status, due_date, cta_message, views, created_at, owner:profiles(full_name, referral_code, stripe_status)"
+      "public_id, number, client_name, description, amount, currency, amount_minor, status, due_date, cta_message, views, created_at, owner:profiles(full_name)"
     )
     .eq("public_id", params.public_id)
     .single();
