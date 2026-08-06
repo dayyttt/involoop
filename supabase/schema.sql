@@ -12,20 +12,6 @@ create table profiles (
   created_at timestamptz not null default now()
 );
 
--- Credit ledger: authoritative record of every credit movement. The balance on
--- profiles.free_invoice_credits is a denormalized sum of this table, kept so
--- judges can audit where every credit came from.
-create table credit_ledger (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references profiles(id) on delete cascade,
-  amount int not null,
-  type text not null check (type in ('signup','referral_bonus','referral','invoice_published')),
-  reference text,
-  referral_id uuid references referrals(id) on delete set null,
-  idempotency_key text unique not null,
-  created_at timestamptz not null default now()
-);
-
 -- Invoices: the core object. public_id is what appears in the shareable URL.
 create table invoices (
   id uuid primary key default gen_random_uuid(),
@@ -55,6 +41,18 @@ create table referrals (
   reward_credits int not null default 3,
   created_at timestamptz not null default now(),
   converted_at timestamptz
+);
+
+-- Credit ledger: authoritative record of every credit movement.
+create table credit_ledger (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  amount int not null,
+  type text not null check (type in ('signup','referral_bonus','referral','invoice_published')),
+  reference text,
+  referral_id uuid references referrals(id) on delete set null,
+  idempotency_key text unique not null,
+  created_at timestamptz not null default now()
 );
 
 -- Row Level Security

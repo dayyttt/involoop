@@ -85,7 +85,8 @@ Buka `http://localhost:3000`.
 ## Setup Supabase
 
 1. Buat project di supabase.com, buka SQL Editor.
-2. Jalankan isi `supabase/schema.sql`.
+2. Project baru: jalankan `supabase/schema.sql`. Project lama: jalankan
+   `supabase/migration-p0.sql` sekali.
 3. Salin Project URL, anon key, service_role key ke `.env.local`.
 4. Authentication → Providers → pastikan Email/Password aktif.
 
