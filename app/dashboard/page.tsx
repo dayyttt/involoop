@@ -295,8 +295,12 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === "paid") return <span className="badge badge-paid">Lunas</span>;
+  if (status === "paid") return <span className="badge badge-paid">Paid</span>;
   if (status === "awaiting_verification")
-    return <span className="badge badge-warn">Menunggu verifikasi</span>;
-  return <span className="badge badge-unpaid">Belum bayar</span>;
+    return <span className="badge badge-warn">Awaiting verification</span>;
+  if (status === "payment_pending")
+    return <span className="badge badge-warn">Payment in progress</span>;
+  if (status === "failed" || status === "refunded")
+    return <span className="badge badge-unpaid">Failed</span>;
+  return <span className="badge badge-unpaid">Unpaid</span>;
 }

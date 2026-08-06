@@ -87,6 +87,26 @@ export async function POST(req: NextRequest) {
           .eq("provider_payment_id", pi.id);
         break;
       }
+      case "checkout.session.expired": {
+        const session = event.data.object as any;
+        await admin
+          .from("payments")
+          .update({ status: "cancelled" })
+          .eq("provider_session_id", session.id);
+        const { data: pay } = await admin
+          .from("payments")
+          .select("invoice_id")
+          .eq("provider_session_id", session.id)
+          .maybeSingle();
+        if (pay) {
+          await admin
+            .from("invoices")
+            .update({ status: "unpaid" })
+            .eq("id", pay.invoice_id)
+            .eq("status", "payment_pending");
+        }
+        break;
+      }
       case "payment_intent.payment_failed": {
         const pi = event.data.object as any;
         await admin
