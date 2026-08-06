@@ -81,9 +81,32 @@ export async function POST(req: NextRequest) {
       }
       case "payment_intent.succeeded": {
         const pi = event.data.object as any;
+        // Capture the real charge + fee server-side so local records match Stripe.
+        let chargeFields: Record<string, unknown> = {
+          status: "succeeded",
+          paid_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        try {
+          const fullPi = await stripe.paymentIntents.retrieve(pi.id, {
+            expand: ["latest_charge"],
+          });
+          const ch = fullPi.latest_charge;
+          if (typeof ch !== "string" && ch?.id) {
+            const fee = Number(ch.application_fee_amount ?? 0);
+            chargeFields = {
+              ...chargeFields,
+              provider_charge_id: ch.id,
+              platform_fee_minor: fee,
+              net_amount_minor: Number(ch.amount) - fee,
+            };
+          }
+        } catch (err: any) {
+          console.error("charge capture failed", err.message);
+        }
         await admin
           .from("payments")
-          .update({ status: "succeeded", paid_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+          .update(chargeFields)
           .eq("provider_payment_id", pi.id);
         break;
       }
@@ -144,8 +167,7 @@ export async function POST(req: NextRequest) {
             refunded_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
-          .eq("provider_charge_id", charge.id)
-          .or(`provider_payment_id.eq.${piId}`);
+          .or(`provider_payment_id.eq.${piId},provider_charge_id.eq.${charge.id}`);
         break;
       }
       default:
