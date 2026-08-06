@@ -17,19 +17,19 @@ export default function NeonLandscape() {
     renderer.setClearColor(0x0c080e);
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0c080e, 0.055);
+    scene.fog = new THREE.FogExp2(0x0c080e, 0.026);
 
     const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 120);
-    camera.position.set(0, 10, 18);
-    camera.lookAt(0, 0, -2);
+    camera.position.set(0, 9.5, 15);
+    camera.lookAt(0, 0, -3);
 
-    const SIZE = 44;
-    const SEG = 110;
+    const SIZE = 40;
+    const SEG = 140;
     const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
     geo.rotateX(-Math.PI / 2);
 
-    const pink = new THREE.Color(0xf14a94);
-    const orange = new THREE.Color(0xf39a3f);
+    const pink = new THREE.Color(0xff2f7a);
+    const orange = new THREE.Color(0xff8a2b);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     const colors = new Float32Array(pos.count * 3);
     for (let i = 0; i < pos.count; i++) {
@@ -71,8 +71,8 @@ export default function NeonLandscape() {
         const x = p.getX(i);
         const z = p.getZ(i);
         const y =
-          Math.sin(x * 0.35 + t * 0.6) * Math.cos(z * 0.4 + t * 0.5) * 1.1 +
-          Math.sin((x + z) * 0.25 + t * 0.4) * 0.55;
+          Math.sin(x * 0.35 + t * 0.6) * Math.cos(z * 0.4 + t * 0.5) * 1.7 +
+          Math.sin((x + z) * 0.25 + t * 0.4) * 0.8;
         p.setY(i, y);
       }
       p.needsUpdate = true;
