@@ -256,10 +256,33 @@ textarea.input {
 
 /* ---- Landing ---- */
 .hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 170px 0 48px;
+  padding: 140px 0 56px;
   background: radial-gradient(circle at 80% 20%, rgba(255, 77, 148, 0.18) 0%, transparent 42%),
     radial-gradient(circle at 15% 85%, rgba(255, 153, 51, 0.12) 0%, transparent 50%);
+}
+
+.hero > *:not(.loop-scene) {
+  position: relative;
+  z-index: 1;
+}
+
+.loop-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.loop-scene canvas {
+  display: block;
 }
 
 .hero h1 {

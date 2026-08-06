@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LoopScene from "@/components/LoopScene";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
 
       <main className="wrap">
         <section className="hero">
+          <LoopScene />
           <span className="pill">Distribution-first</span>
           <h1>
             Setiap tagihan yang kamu kirim
