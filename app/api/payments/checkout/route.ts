@@ -39,15 +39,16 @@ export async function POST(req: NextRequest) {
       .select("stripe_account_id, stripe_status")
       .eq("id", invoice.owner_id)
       .single();
-    if (!owner?.stripe_account_id || owner.stripe_status !== "connected") {
-      return NextResponse.json(
-        { error: "Penerima invoice belum menghubungkan Stripe." },
-        { status: 402 }
-      );
-    }
 
     const stripe = getStripe()!;
     const base = process.env.NEXT_PUBLIC_BASE_URL || "https://involoop.vercel.app";
+
+    // Sandbox mode: charge the platform account unless the owner is connected
+    // (Stripe Connect). Test-mode checkout works either way.
+    const connected =
+      owner?.stripe_account_id && owner.stripe_status === "connected"
+        ? owner.stripe_account_id
+        : null;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -61,9 +62,9 @@ export async function POST(req: NextRequest) {
           quantity: 1,
         },
       ],
-      payment_intent_data: {
-        transfer_data: { destination: owner.stripe_account_id },
-      },
+      payment_intent_data: connected
+        ? { transfer_data: { destination: connected } }
+        : {},
       metadata: {
         invoice_id: invoice.id,
         public_id: invoice.public_id,
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest) {
       invoice_id: invoice.id,
       provider: "stripe",
       provider_session_id: session.id,
-      connected_account_id: owner.stripe_account_id,
+      connected_account_id: connected,
       amount_minor: Number(invoice.amount_minor),
       currency: invoice.currency,
       status: "created",

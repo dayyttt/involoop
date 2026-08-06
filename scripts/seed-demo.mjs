@@ -65,28 +65,33 @@ async function main() {
   if (e.STRIPE_SECRET_KEY) {
     const Stripe = (await import("stripe")).default;
     const stripe = new Stripe(e.STRIPE_SECRET_KEY);
-    console.log("connecting Stripe test account for demo-owner");
-    const account = await stripe.accounts.create({
-      type: "custom",
-      email: "demo-owner@involoop.app",
-      business_type: "individual",
-      individual: { first_name: "Budi", last_name: "Santoso" },
-      tos_acceptance: { date: Math.floor(Date.now() / 1000), ip: "0.0.0.0", user_agent: "Involoop seed" },
-      business_profile: { mcc: "7311", url: "https://involoop.vercel.app" },
-      capabilities: { transfers: { requested: true }, card_payments: { requested: true } },
-      external_account: {
-        object: "bank_account",
-        country: "US",
-        currency: "usd",
-        routing_number: "110000000",
-        account_number: "000123456789",
-      },
-    });
-    await admin
-      .from("profiles")
-      .update({ stripe_account_id: account.id, stripe_status: "connected" })
-      .eq("id", owner.id);
-    console.log("stripe connected:", account.id);
+    try {
+      console.log("connecting Stripe test account for demo-owner");
+      const account = await stripe.accounts.create({
+        type: "custom",
+        email: "demo-owner@involoop.app",
+        business_type: "individual",
+        individual: { first_name: "Budi", last_name: "Santoso" },
+        tos_acceptance: { date: Math.floor(Date.now() / 1000), ip: "0.0.0.0", user_agent: "Involoop seed" },
+        business_profile: { mcc: "7311", url: "https://involoop.vercel.app" },
+        capabilities: { transfers: { requested: true }, card_payments: { requested: true } },
+        external_account: {
+          object: "bank_account",
+          country: "US",
+          currency: "usd",
+          routing_number: "110000000",
+          account_number: "000123456789",
+        },
+      });
+      await admin
+        .from("profiles")
+        .update({ stripe_account_id: account.id, stripe_status: "connected" })
+        .eq("id", owner.id);
+      console.log("stripe connected:", account.id);
+    } catch (e2) {
+      // Sandbox without Connect enabled: platform-checkout still works.
+      console.log("Connect not available (" + e2.message + ") — using sandbox platform checkout");
+    }
   } else {
     console.log("STRIPE_SECRET_KEY not set — skipping Stripe connect (Pay button will be hidden)");
   }

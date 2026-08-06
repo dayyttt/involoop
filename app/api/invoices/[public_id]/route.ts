@@ -34,7 +34,8 @@ export async function GET(
     invoice: {
       ...invoice,
       sender_name: owner?.full_name ?? "Freelancer",
-      stripe_enabled: owner?.stripe_status === "connected",
+      // Sandbox checkout works with or without a connected account.
+      stripe_enabled: !!process.env.STRIPE_SECRET_KEY,
     },
   });
   res.headers.set("Cache-Control", "no-store, max-age=0");
