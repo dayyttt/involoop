@@ -34,11 +34,31 @@ export default function Login() {
     router.push("/dashboard");
   }
 
+  async function handleOAuth(provider: "google" | "github") {
+    setError(null);
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (oauthError) {
+      setError("Gagal memulai login. Coba lagi.");
+    }
+  }
+
   return (
     <main className="auth-shell">
       <div className="card">
         <h1>Masuk Involoop</h1>
         <p className="sub">Lanjut dari mana kamu berhenti.</p>
+        <div className="oauth-row">
+          <button type="button" className="btn btn-ghost" onClick={() => handleOAuth("google")}>
+            Continue with Google
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={() => handleOAuth("github")}>
+            Continue with GitHub
+          </button>
+        </div>
+        <div className="divider"><span>or sign in with email</span></div>
         <form
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: 14 }}

@@ -160,6 +160,10 @@ textarea.input { resize: vertical; }
 .error { color: var(--danger); font-size: 14px; margin-top: 12px; }
 .hint { color: var(--muted); font-size: 12px; }
 .note-box { margin-bottom: 16px; padding: 12px 14px; border: 1px solid rgba(241,74,148,.25); border-radius: 6px; background: rgba(241,74,148,.08); color: var(--text-2); font-size: 13px; }
+.oauth-row { display: grid; gap: 8px; margin-bottom: 14px; }
+.oauth-row .btn { width: 100%; }
+.divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 11px; margin-bottom: 14px; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .page-shell { max-width: 860px; margin: 0 auto; padding: 120px 20px 72px; }
 .page-title { margin-bottom: 20px; font-size: 28px; }
 .stat-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; margin-bottom: 32px; }

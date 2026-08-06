@@ -89,6 +89,21 @@ function SignupForm() {
     router.push("/dashboard");
   }
 
+  async function handleOAuth(provider: "google" | "github") {
+    setError(null);
+    const ref = refInvoice ?? getRefFromCookie();
+    if (ref) {
+      document.cookie = `${REF_COOKIE}=${ref}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+    }
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (oauthError) {
+      setError("Gagal memulai login. Coba lagi.");
+    }
+  }
+
   return (
     <main className="auth-shell">
       <div className="card">
@@ -100,6 +115,15 @@ function SignupForm() {
             dapat bonus kredit begitu daftar.
           </p>
         )}
+        <div className="oauth-row">
+          <button type="button" className="btn btn-ghost" onClick={() => handleOAuth("google")}>
+            Continue with Google
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={() => handleOAuth("github")}>
+            Continue with GitHub
+          </button>
+        </div>
+        <div className="divider"><span>or sign up with email</span></div>
         <form
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
