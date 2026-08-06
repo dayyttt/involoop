@@ -65,6 +65,13 @@ create policy "payments_owner" on payments for select using (auth.uid() in (sele
 create index if not exists idx_payments_invoice on payments(invoice_id);
 create index if not exists idx_webhook_event on webhook_events(provider_event_id);
 
+alter table payments add column if not exists provider_charge_id text;
+alter table payments add column if not exists platform_fee_minor bigint not null default 0;
+alter table payments add column if not exists net_amount_minor bigint not null default 0;
+alter table payments add column if not exists refunded_at timestamptz;
+alter table payments add column if not exists updated_at timestamptz default now();
+create unique index if not exists payments_provider_charge_key on payments(provider_charge_id) where provider_charge_id is not null;
+
 -- Rename old referral field if it exists.
 do $$
 begin

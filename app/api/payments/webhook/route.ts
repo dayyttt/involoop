@@ -83,15 +83,33 @@ export async function POST(req: NextRequest) {
         const pi = event.data.object as any;
         await admin
           .from("payments")
-          .update({ status: "succeeded", paid_at: new Date().toISOString() })
+          .update({ status: "succeeded", paid_at: new Date().toISOString(), updated_at: new Date().toISOString() })
           .eq("provider_payment_id", pi.id);
+        break;
+      }
+      case "charge.succeeded": {
+        const charge = event.data.object as any;
+        const piId =
+          typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+        const fee = Number(charge.application_fee_amount ?? 0);
+        await admin
+          .from("payments")
+          .update({
+            provider_charge_id: charge.id,
+            platform_fee_minor: fee,
+            net_amount_minor: Number(charge.amount) - fee,
+            status: "succeeded",
+            paid_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("provider_payment_id", piId);
         break;
       }
       case "checkout.session.expired": {
         const session = event.data.object as any;
         await admin
           .from("payments")
-          .update({ status: "cancelled" })
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
           .eq("provider_session_id", session.id);
         const { data: pay } = await admin
           .from("payments")
@@ -111,18 +129,23 @@ export async function POST(req: NextRequest) {
         const pi = event.data.object as any;
         await admin
           .from("payments")
-          .update({ status: "failed" })
+          .update({ status: "failed", updated_at: new Date().toISOString() })
           .eq("provider_payment_id", pi.id);
         break;
       }
       case "charge.refunded": {
         const charge = event.data.object as any;
-        const paymentIntentId =
+        const piId =
           typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
         await admin
           .from("payments")
-          .update({ status: "refunded" })
-          .eq("provider_payment_id", paymentIntentId);
+          .update({
+            status: "refunded",
+            refunded_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("provider_charge_id", charge.id)
+          .or(`provider_payment_id.eq.${piId}`);
         break;
       }
       default:

@@ -54,12 +54,17 @@ create table payments (
   provider text not null default 'stripe',
   provider_session_id text unique,
   provider_payment_id text unique,
+  provider_charge_id text unique,
   connected_account_id text,
   amount_minor bigint not null,
+  platform_fee_minor bigint not null default 0,
+  net_amount_minor bigint not null default 0,
   currency text not null,
   status text not null default 'created' check (status in ('created','processing','succeeded','failed','cancelled','refunded')),
   paid_at timestamptz,
-  created_at timestamptz not null default now()
+  refunded_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 -- Deduplicated webhook log: UNIQUE(provider_event_id) makes replays harmless.

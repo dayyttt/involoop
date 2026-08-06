@@ -50,6 +50,12 @@ export async function POST(req: NextRequest) {
         ? owner.stripe_account_id
         : null;
 
+    // Application fee is computed server-side from configured basis points.
+    const FEE_BPS = Number(process.env.STRIPE_APPLICATION_FEE_BASIS_POINTS || 0);
+    const amountMinor = Number(invoice.amount_minor);
+    const feeMinor = Math.floor((amountMinor * FEE_BPS) / 10000);
+    const netMinor = amountMinor - feeMinor;
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [
@@ -57,13 +63,16 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: invoice.currency.toLowerCase(),
             product_data: { name: `${invoice.number} — ${invoice.client_name}` },
-            unit_amount: Number(invoice.amount_minor),
+            unit_amount: amountMinor,
           },
           quantity: 1,
         },
       ],
       payment_intent_data: connected
-        ? { transfer_data: { destination: connected } }
+        ? {
+            transfer_data: { destination: connected },
+            application_fee_amount: feeMinor > 0 ? feeMinor : undefined,
+          }
         : {},
       metadata: {
         invoice_id: invoice.id,
@@ -78,7 +87,9 @@ export async function POST(req: NextRequest) {
       provider: "stripe",
       provider_session_id: session.id,
       connected_account_id: connected,
-      amount_minor: Number(invoice.amount_minor),
+      amount_minor: amountMinor,
+      platform_fee_minor: feeMinor,
+      net_amount_minor: netMinor,
       currency: invoice.currency,
       status: "created",
     });
