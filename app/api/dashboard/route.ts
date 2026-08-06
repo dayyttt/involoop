@@ -44,7 +44,7 @@ export async function GET() {
         .limit(50),
       admin
         .from("referrals")
-        .select("id, created_at, reward_credits, referred:profiles!referrals_referred_user_id_fkey(full_name, email)")
+        .select("id, created_at, reward_credits, referred:profiles!referrals_referred_id_fkey(full_name, email)")
         .eq("referrer_id", user.id)
         .eq("status", "rewarded")
         .order("created_at", { ascending: false }),
