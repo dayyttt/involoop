@@ -33,11 +33,33 @@ export default function PublicInvoice() {
       if (res.ok) {
         const data = await res.json();
         setInvoice(data.invoice);
+        trackView();
       }
       setLoading(false);
     }
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [publicId]);
+
+  async function trackView() {
+    try {
+      if (typeof window === "undefined") return;
+      const key = `involoop_viewed_${publicId}`;
+      if (localStorage.getItem(key)) return;
+      const res = await fetch("/api/invoices/view", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ public_id: publicId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem(key, "1");
+        setInvoice((prev) => (prev ? { ...prev, views: data.views } : prev));
+      }
+    } catch {
+      // silent — counting a view is best-effort, never blocks the page
+    }
+  }
 
   async function handleConfirmTransfer() {
     setSubmitting(true);
