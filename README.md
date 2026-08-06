@@ -54,7 +54,7 @@ idempotent ledger, not only as a balance.
 - Next.js 14 App Router + TypeScript
 - Supabase Postgres, Auth, RLS, transactional RPCs
 - Stripe sandbox Checkout + webhook
-- Claude API / Anthropic SDK
+- AI gateway (Anthropic-compatible, streaming-safe fetch)
 - three.js hero visualization
 - Vercel
 
@@ -82,7 +82,7 @@ lib/
   claude.ts                      AI parser + currency detection
   money.ts                       Minor units + locale formatting
   stripe.ts                      Server-only Stripe client
-  i18n.ts                        EN|ID landing dictionary
+  i18n.ts                        EN|ID dictionaries (landing + app)
 supabase/
   schema.sql                     Fresh database schema
   migration-p0.sql               Safe production upgrade
