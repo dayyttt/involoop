@@ -22,7 +22,7 @@ export async function GET() {
 
   const { data: profile } = await admin
     .from("profiles")
-    .select("full_name, free_invoice_credits, referral_code")
+    .select("full_name, free_invoice_credits, referral_code, stripe_account_id, stripe_status")
     .eq("id", uid)
     .single();
 

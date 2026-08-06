@@ -1,0 +1,77 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase-admin";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getStripe, stripeConfigured } from "@/lib/stripe";
+
+// Connect a Stripe account (test mode) to the signed-in owner. The account is
+// created as a Custom account pre-enabled with a test bank + capabilities, so
+// the demo never needs a real onboarding interview.
+export async function POST() {
+  try {
+    if (!stripeConfigured()) {
+      return NextResponse.json(
+        { error: "Stripe belum dikonfigurasi. Tambahkan STRIPE_SECRET_KEY." },
+        { status: 503 }
+      );
+    }
+
+    const supabase = createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Kamu belum login." }, { status: 401 });
+
+    const admin = createAdminClient();
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("email, full_name, stripe_account_id, stripe_status")
+      .eq("id", user.id)
+      .single();
+
+    const stripe = getStripe()!;
+
+    let accountId = profile?.stripe_account_id ?? null;
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: "custom",
+        email: user.email ?? undefined,
+        business_type: "individual",
+        individual: {
+          first_name: profile?.full_name?.split(" ")[0] || "Demo",
+          last_name: profile?.full_name?.split(" ").slice(1).join(" ") || "Owner",
+        },
+        tos_acceptance: {
+          date: Math.floor(Date.now() / 1000),
+          ip: "0.0.0.0",
+          user_agent: "Involoop demo",
+        },
+        business_profile: {
+          mcc: "7311",
+          url: process.env.NEXT_PUBLIC_BASE_URL || "https://involoop.vercel.app",
+        },
+        capabilities: { transfers: { requested: true }, card_payments: { requested: true } },
+        external_account: {
+          object: "bank_account",
+          country: "US",
+          currency: "usd",
+          routing_number: "110000000",
+          account_number: "000123456789",
+        },
+      });
+      accountId = account.id;
+
+      await admin
+        .from("profiles")
+        .update({ stripe_account_id: account.id, stripe_status: "connected" })
+        .eq("id", user.id);
+    }
+
+    return NextResponse.json({ connected: true, status: "connected" });
+  } catch (err: any) {
+    console.error("stripe connect error", err);
+    return NextResponse.json(
+      { error: "Gagal menghubungkan Stripe. Coba lagi." },
+      { status: 500 }
+    );
+  }
+}

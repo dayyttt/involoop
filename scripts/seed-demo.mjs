@@ -62,6 +62,35 @@ async function main() {
   });
   if (pubErr) throw pubErr;
 
+  if (e.STRIPE_SECRET_KEY) {
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe(e.STRIPE_SECRET_KEY);
+    console.log("connecting Stripe test account for demo-owner");
+    const account = await stripe.accounts.create({
+      type: "custom",
+      email: "demo-owner@involoop.app",
+      business_type: "individual",
+      individual: { first_name: "Budi", last_name: "Santoso" },
+      tos_acceptance: { date: Math.floor(Date.now() / 1000), ip: "0.0.0.0", user_agent: "Involoop seed" },
+      business_profile: { mcc: "7311", url: "https://involoop.vercel.app" },
+      capabilities: { transfers: { requested: true }, card_payments: { requested: true } },
+      external_account: {
+        object: "bank_account",
+        country: "US",
+        currency: "usd",
+        routing_number: "110000000",
+        account_number: "000123456789",
+      },
+    });
+    await admin
+      .from("profiles")
+      .update({ stripe_account_id: account.id, stripe_status: "connected" })
+      .eq("id", owner.id);
+    console.log("stripe connected:", account.id);
+  } else {
+    console.log("STRIPE_SECRET_KEY not set — skipping Stripe connect (Pay button will be hidden)");
+  }
+
   console.log("creating demo-client@involoop.app via referral");
   const client = await signupUser("demo-client@involoop.app", "Rina Wijaya (Klien)", inv.public_id);
   console.log("  client credits:", client.credits, "rewarded:", client.rewarded_referrer);

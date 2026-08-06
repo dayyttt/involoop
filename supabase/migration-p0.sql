@@ -25,7 +25,43 @@ create unique index if not exists invoices_number_key on invoices(number);
 
 alter table invoices drop constraint if exists invoices_status_check;
 alter table invoices add constraint invoices_status_check
-  check (status in ('unpaid','awaiting_verification','paid'));
+  check (status in ('unpaid','awaiting_verification','payment_pending','paid','failed','refunded'));
+
+alter table profiles
+  add column if not exists stripe_account_id text,
+  add column if not exists stripe_status text not null default 'disconnected';
+
+create table if not exists payments (
+  id uuid primary key default gen_random_uuid(),
+  invoice_id uuid not null references invoices(id) on delete cascade,
+  provider text not null default 'stripe',
+  provider_session_id text unique,
+  provider_payment_id text unique,
+  connected_account_id text,
+  amount_minor bigint not null,
+  currency text not null,
+  status text not null default 'created' check (status in ('created','processing','succeeded','failed','cancelled','refunded')),
+  paid_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists webhook_events (
+  id uuid primary key default gen_random_uuid(),
+  provider text not null default 'stripe',
+  provider_event_id text unique not null,
+  event_type text not null,
+  payload_hash text,
+  status text not null default 'received' check (status in ('received','processed','failed')),
+  processed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table payments enable row level security;
+alter table webhook_events enable row level security;
+drop policy if exists "payments_owner" on payments;
+create policy "payments_owner" on payments for select using (auth.uid() in (select owner_id from invoices where id = payments.invoice_id));
+create index if not exists idx_payments_invoice on payments(invoice_id);
+create index if not exists idx_webhook_event on webhook_events(provider_event_id);
 
 -- Rename old referral field if it exists.
 do $$

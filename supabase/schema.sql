@@ -9,6 +9,8 @@ create table profiles (
   referral_code text unique not null default substr(md5(random()::text), 1, 8),
   referred_by uuid references profiles(id),
   free_invoice_credits int not null default 3,
+  stripe_account_id text,
+  stripe_status text not null default 'disconnected' check (stripe_status in ('disconnected','pending','connected')),
   created_at timestamptz not null default now()
 );
 
@@ -25,7 +27,7 @@ create table invoices (
   amount_minor bigint not null default 0,
   due_date date,
   cta_message text, -- AI-generated, context-aware referral line
-  status text not null default 'unpaid' check (status in ('unpaid','awaiting_verification','paid')),
+  status text not null default 'unpaid' check (status in ('unpaid','awaiting_verification','payment_pending','paid','failed','refunded')),
   views int not null default 0,
   created_at timestamptz not null default now(),
   paid_at timestamptz
@@ -44,6 +46,33 @@ create table referrals (
   converted_at timestamptz
 );
 
+-- Stripe payments (Connect: funds settle to the owner's connected account).
+create table payments (
+  id uuid primary key default gen_random_uuid(),
+  invoice_id uuid not null references invoices(id) on delete cascade,
+  provider text not null default 'stripe',
+  provider_session_id text unique,
+  provider_payment_id text unique,
+  connected_account_id text,
+  amount_minor bigint not null,
+  currency text not null,
+  status text not null default 'created' check (status in ('created','processing','succeeded','failed','cancelled','refunded')),
+  paid_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+-- Deduplicated webhook log: UNIQUE(provider_event_id) makes replays harmless.
+create table webhook_events (
+  id uuid primary key default gen_random_uuid(),
+  provider text not null default 'stripe',
+  provider_event_id text unique not null,
+  event_type text not null,
+  payload_hash text,
+  status text not null default 'received' check (status in ('received','processed','failed')),
+  processed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
 -- Credit ledger: authoritative record of every credit movement.
 create table credit_ledger (
   id uuid primary key default gen_random_uuid(),
@@ -55,21 +84,26 @@ create table credit_ledger (
   idempotency_key text unique not null,
   created_at timestamptz not null default now()
 );
-
 -- Row Level Security
 alter table profiles enable row level security;
 alter table credit_ledger enable row level security;
 alter table invoices enable row level security;
 alter table referrals enable row level security;
+alter table payments enable row level security;
+alter table webhook_events enable row level security;
+
 create policy "profiles_self" on profiles for select using (auth.uid() = id);
 create policy "profiles_self_update" on profiles for update using (auth.uid() = id);
 create policy "ledger_self" on credit_ledger for select using (auth.uid() = user_id);
 create policy "invoices_owner" on invoices for all using (auth.uid() = owner_id);
 create policy "referrals_referrer" on referrals for select using (auth.uid() = referrer_id);
+create policy "payments_owner" on payments for select using (auth.uid() in (select owner_id from invoices where id = payments.invoice_id));
 
 create index idx_invoices_public_id on invoices(public_id);
 create index idx_referrals_referrer on referrals(referrer_id);
 create index idx_ledger_user on credit_ledger(user_id);
+create index idx_payments_invoice on payments(invoice_id);
+create index idx_webhook_event on webhook_events(provider_event_id);
 
 -- Signup: create profile, award base + referral bonus credits, log ledger
 -- entries, and reward the referrer — all in one transaction so a partial

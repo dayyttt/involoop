@@ -32,7 +32,13 @@ interface Referral {
 }
 
 interface DashboardData {
-  profile: { full_name: string | null; free_invoice_credits: number; referral_code: string };
+  profile: {
+    full_name: string | null;
+    free_invoice_credits: number;
+    referral_code: string;
+    stripe_account_id: string | null;
+    stripe_status: string;
+  };
   invoices: Invoice[];
   ledger: LedgerEntry[];
   referrals: Referral[];
@@ -89,6 +95,17 @@ export default function Dashboard() {
     }
   }
 
+  async function handleConnectStripe() {
+    setError(null);
+    const res = await fetch("/api/payments/connect", { method: "POST" });
+    if (res.ok) {
+      load();
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error ?? "Gagal menghubungkan Stripe.");
+    }
+  }
+
   if (loading) return <main className="centered">Memuat...</main>;
   if (!data)
     return (
@@ -140,6 +157,46 @@ export default function Dashboard() {
         </div>
 
         {error && <p className="error">{error}</p>}
+
+        <div className="card-panel">
+          <h2 className="section-title">Payment Settings</h2>
+          <div className="settings-rows">
+            <div className="settings-row">
+              <span>Payment provider</span>
+              <strong>Stripe Connect</strong>
+            </div>
+            <div className="settings-row">
+              <span>Connection status</span>
+              <strong className={profile.stripe_status === "connected" ? "text-ok" : ""}>
+                {profile.stripe_status === "connected" ? "Connected" : "Not connected"}
+              </strong>
+            </div>
+            <div className="settings-row">
+              <span>Payment capability</span>
+              <strong>Enabled</strong>
+            </div>
+            <div className="settings-row">
+              <span>Mode</span>
+              <strong>Test Mode</strong>
+            </div>
+            <div className="settings-row">
+              <span>Default settlement currency</span>
+              <strong>USD</strong>
+            </div>
+          </div>
+          <p className="test-badge" style={{ marginTop: 14 }}>
+            Stripe Test Mode — no real money will be charged
+          </p>
+          {profile.stripe_status !== "connected" && (
+            <button
+              className="btn btn-primary"
+              style={{ marginTop: 14 }}
+              onClick={handleConnectStripe}
+            >
+              Connect Stripe
+            </button>
+          )}
+        </div>
 
         <div className="card-panel">
           <h2 className="section-title">Riwayat kredit</h2>

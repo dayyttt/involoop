@@ -19,7 +19,7 @@ export async function GET(
   const { data: invoice, error } = await supabase
     .from("invoices")
     .select(
-      "public_id, number, client_name, description, amount, currency, status, due_date, cta_message, views, created_at, owner:profiles(full_name, referral_code)"
+      "public_id, number, client_name, description, amount, currency, amount_minor, status, due_date, cta_message, views, created_at, owner:profiles(full_name, referral_code, stripe_status)"
     )
     .eq("public_id", params.public_id)
     .single();
@@ -28,12 +28,13 @@ export async function GET(
     return NextResponse.json({ error: "Invoice tidak ditemukan." }, { status: 404 });
   }
 
+  const owner = Array.isArray(invoice.owner) ? invoice.owner[0] : invoice.owner;
+
   const res = NextResponse.json({
     invoice: {
       ...invoice,
-      sender_name:
-        (Array.isArray(invoice.owner) ? invoice.owner[0] : invoice.owner)?.full_name ??
-        "Freelancer",
+      sender_name: owner?.full_name ?? "Freelancer",
+      stripe_enabled: owner?.stripe_status === "connected",
     },
   });
   res.headers.set("Cache-Control", "no-store, max-age=0");

@@ -173,6 +173,10 @@ textarea.input { resize: vertical; }
 .ledger-minus { color: var(--danger); font-weight: 800; }
 .ledger-ref { color: var(--text-2); font-size: 13px; }
 .badge-warn { background: rgba(241,74,148,.14); color: var(--primary); }
+.settings-rows { display: grid; gap: 10px; }
+.settings-row { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.settings-row span { color: var(--text-2); }
+.text-ok { color: var(--success); }
 .list-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--container); color: var(--text); text-decoration: none; transition: transform .18s ease, border-color .18s ease; }
 a.list-item:hover { transform: translateY(-2px); border-color: var(--primary); }
 .list-item .side { display: flex; align-items: center; gap: 12px; }
@@ -200,6 +204,7 @@ a.list-item:hover { transform: translateY(-2px); border-color: var(--primary); }
 .referral-heading { margin-bottom: 8px; font-size: 17px; color: #fff; }
 .referral-box p { color: var(--text-2); font-size: 13px; margin: 0 0 10px; }
 .referral-link { color: var(--primary); font-size: 13px; font-weight: 800; text-underline-offset: 3px; }
+.test-badge { margin: 10px auto 0; display: inline-block; padding: 4px 10px; border: 1px solid rgba(244,189,85,.4); border-radius: 999px; background: rgba(244,189,85,.1); color: var(--warn); font-size: 11px; font-weight: 700; text-align: center; }
 .centered { padding: 140px 20px 40px; text-align: center; }
 
 @media (max-width: 900px) {
