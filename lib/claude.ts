@@ -1,11 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
-
-const baseURL = process.env.AI_BASE_URL?.replace(/\/v1\/?$/, "");
-const anthropic = new Anthropic({
-  apiKey: process.env.AI_API_KEY!,
-  ...(baseURL ? { baseURL } : {}),
-  defaultHeaders: { "user-agent": "involoop/1.0" },
-});
+const baseURL = (process.env.AI_BASE_URL ?? "").replace(/\/+$/, "");
 
 export interface ParsedInvoice {
   client_name: string;
@@ -35,20 +28,54 @@ Respond ONLY with valid JSON, no markdown fences, matching this shape:
 }`;
 
 export async function parseInvoiceFromText(input: string): Promise<ParsedInvoice> {
-  const message = await anthropic.messages.create({
-    model: process.env.AI_MODEL ?? "claude-sonnet-5",
-    max_tokens: 2000,
-    stream: false,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: input }],
-  });
-
-  const block = message.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") {
-    throw new Error("Claude did not return a text block");
+  const apiKey = process.env.AI_API_KEY;
+  const model = process.env.AI_MODEL ?? "broday";
+  if (!apiKey || !baseURL) {
+    throw new Error("AI not configured");
   }
 
-  const cleaned = block.text
+  const res = await fetch(`${baseURL}/messages`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      "content-type": "application/json",
+      "anthropic-version": "2023-06-01",
+      "user-agent": "involoop/1.0",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 2000,
+      stream: false,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: input }],
+    }),
+    signal: AbortSignal.timeout(50000),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`AI HTTP ${res.status}: ${text.slice(0, 200)}`);
+  }
+
+  let json: any;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`AI non-JSON response: ${text.slice(0, 200)}`);
+  }
+
+  let raw: string | null = null;
+  if (Array.isArray(json?.content)) {
+    const block = json.content.find((b: any) => b?.type === "text");
+    raw = block?.text ?? null;
+  } else if (Array.isArray(json?.choices) && json.choices[0]?.message) {
+    raw = json.choices[0].message.content ?? null;
+  }
+  if (!raw || typeof raw !== "string") {
+    throw new Error(`AI response missing text: ${text.slice(0, 200)}`);
+  }
+
+  const cleaned = raw
     .replace(/<think>[\s\S]*?<\/think>/g, "")
     .replace(/```json|```/g, "")
     .trim();
