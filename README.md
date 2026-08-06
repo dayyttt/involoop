@@ -194,10 +194,10 @@ Paid plan billing is intentionally not enabled during the marathon demo.
 ## First 100 users
 
 The first 100 users are Indonesian freelance developers, designers, consultants,
-video editors, and micro-agencies that invoice other service businesses. Initial
-acquisition runs through the specific WhatsApp and Discord groups the founder
-already participates in — Indonesian freelancer communities where members share
-client work and referrals daily — plus direct outreach to micro-agencies still
-sending manual PDFs, and ten pilot users who each send at least three real public
-invoices. Each recipient is another B2B professional likely to send invoices,
-making acquisition repeatable.
+video editors, and micro-agencies that invoice other service businesses. The
+acquisition plan is concrete: direct outreach to 40 active service providers on
+Projects.co.id, 30 Indonesian freelance designers and developers found through
+LinkedIn role search, 20 service providers listed on Sribulancer, and 10 pilot
+users from the founder's existing WhatsApp/Discord freelancer network. Each pilot
+sends at least three real public invoices. Every recipient is another B2B
+professional likely to send invoices, making the referral loop repeatable.
