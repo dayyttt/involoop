@@ -38,6 +38,7 @@ export async function parseInvoiceFromText(input: string): Promise<ParsedInvoice
   const message = await anthropic.messages.create({
     model: process.env.AI_MODEL ?? "claude-sonnet-5",
     max_tokens: 2000,
+    stream: false,
     system: SYSTEM_PROMPT,
     messages: [{ role: "user", content: input }],
   });
