@@ -98,7 +98,7 @@ begin
   if v_referrer is not null then
     insert into referrals (referrer_id, referred_user_id, source_invoice_id, status, reward_credits, converted_at)
     values (v_referrer, p_user_id, v_invoice, 'rewarded', 3, now())
-    on conflict (referred_user_id) do nothing
+    on conflict do nothing
     returning id into v_reward;
 
     if v_reward is not null then
