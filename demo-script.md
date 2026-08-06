@@ -21,11 +21,11 @@ Dashboard A → "Buat invoice". Ketik satu kalimat:
 AI parse → invoice + CTA referral kontekstual (tunjuk hasil). Salin link,
 tempel di Window B. Titik: "satu kalimat, bukan form."
 
-## 1:50 — User B = klien (80 detik)
-Window B: halaman invoice profesional (nomor, pengirim, tanggal, jatuh tempo,
-detail, nominal). Baca. Tunjuk instruksi pembayaran → klik "Saya sudah transfer"
-→ status "Menunggu verifikasi pengirim". Di bawah, CTA referral. Baca CTA AI.
-Klik "Dapatkan 5 kredit saat bergabung melalui invoice ini →".
+## 1:50 — User B = client, pays (80 detik)
+Window B: public invoice (nomor, sender, dates, detail, $50 USD). Click **Pay securely** →
+Stripe test Checkout → card `4242 4242 4242 4242` → **Payment successful $50.00** with
+transaction ID (webhook-verified). Show the **Stripe Test Mode** badge. Then the CTA:
+"Create your own invoice — get free credits". Click it (referral click recorded).
 
 ## 3:10 — B daftar via referral (60 detik)
 URL signup bawa `ref_invoice`. Isi nama, email, password → daftar → langsung
