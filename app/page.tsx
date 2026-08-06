@@ -1,4 +1,5 @@
 import Link from "next/link";
+import NeonLandscape from "@/components/NeonLandscape";
 
 const features = [
   ["01", "Invoice dari satu kalimat", "AI memecah kalimat tagihan jadi nama klien, nominal, deskripsi, tenggat, dan CTA referral."],
@@ -38,7 +39,7 @@ export default function Home() {
       </header>
 
       <section id="home" className="agency-hero">
-        <img src="/involoop-hero.jpg" alt="" className="hero-image" />
+        <NeonLandscape />
         <div className="hero-shade" />
         <div className="site-shell agency-hero-inner">
           <div className="agency-hero-copy">
