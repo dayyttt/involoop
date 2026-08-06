@@ -5,6 +5,8 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 // Single dashboard source: profile, invoices, credit ledger, referrals, and
 // derived distribution stats. Session-protected, service-role reads so joined
 // profiles (names of referred users) are visible to the owner.
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const supabase = createServerSupabaseClient();
   const {

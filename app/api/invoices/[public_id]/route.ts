@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 
+// A view counter must never be cached.
+export const dynamic = "force-dynamic";
+
 // Public read for the shared invoice page. Uses the service-role client on
 // purpose: RLS blocks anon reads of invoices, and the page is open to clients
 // who are not logged in. Server-side lookup via public_id only.
