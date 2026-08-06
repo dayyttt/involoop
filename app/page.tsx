@@ -18,6 +18,15 @@ const process = [
   ["05", "Tumbuh", "Klien mendaftar, kedua pihak mendapat kredit, loop dimulai lagi."],
 ];
 
+const personas = [
+  "DESAINER",
+  "DEVELOPER",
+  "KONSULTAN",
+  "VIDEO EDITOR",
+  "FREELANCER SOLO",
+  "CREATOR B2B",
+];
+
 export default function Home() {
   return (
     <main className="landing">
@@ -62,9 +71,12 @@ export default function Home() {
           </div>
         </div>
         <div className="trust-strip">
-          <div className="site-shell trust-items">
-            <span>DESAINER</span><span>DEVELOPER</span><span>KONSULTAN</span>
-            <span>VIDEO EDITOR</span><span>FREELANCER SOLO</span><span>CREATOR B2B</span>
+          <div className="marquee">
+            <div className="marquee-track">
+              {[...personas, ...personas].map((item, i) => (
+                <span key={i}>{item}</span>
+              ))}
+            </div>
           </div>
         </div>
       </section>
