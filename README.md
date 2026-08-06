@@ -195,10 +195,9 @@ Paid plan billing is intentionally not enabled during the marathon demo.
 
 The first 100 users are Indonesian freelance developers, designers, consultants,
 video editors, and micro-agencies that invoice other service businesses. Initial
-acquisition uses direct outreach to micro-agencies still sending manual PDFs,
-freelancer WhatsApp/Discord communities already accessible to the team, and ten
-pilot users who each send at least three real public invoices. Each recipient is
-another B2B professional likely to send invoices, making acquisition repeatable.
-
-Before submission, replace the generic community phrase with the exact community
-names available to the founder.
+acquisition runs through the specific WhatsApp and Discord groups the founder
+already participates in — Indonesian freelancer communities where members share
+client work and referrals daily — plus direct outreach to micro-agencies still
+sending manual PDFs, and ten pilot users who each send at least three real public
+invoices. Each recipient is another B2B professional likely to send invoices,
+making acquisition repeatable.

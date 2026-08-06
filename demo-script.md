@@ -49,9 +49,9 @@ menghasilkan uang, tanpa iklan."
 
 ## 4:40 — First 100 users (20 detik)
 "Freelance developer, designer, consultant, video editor, dan micro-agency
-Indonesia yang menagih sesama pelaku jasa — lewat komunitas WhatsApp/Discord
-freelancer, direct outreach ke pengguna invoice PDF manual, dan 10 pilot yang
-kirim minimal 3 invoice nyata."
+Indonesia yang menagih sesama pelaku jasa — lewat grup WhatsApp/Discord
+freelancer Indonesia tempat founder aktif tiap hari, direct outreach ke
+pengguna invoice PDF manual, dan 10 pilot yang kirim minimal 3 invoice nyata."
 
 ## Q&A cadangan
 - **Kenapa klien mau signup?** Fokus ke freelancer/micro-agency yang juga
