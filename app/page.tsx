@@ -132,13 +132,19 @@ export default function Home() {
       </section>
 
       <section id="process" className="site-shell section-space">
-        <p className="section-eyebrow">ALUR PRODUK</p>
-        <h2>Lima langkah. Satu loop lengkap.</h2>
-        <img src="/involoop-process.jpg" alt="Proses kerja freelancer" className="process-image" />
-        <div className="process-stack">
+        <div className="process-head">
+          <p className="section-eyebrow">ALUR PRODUK</p>
+          <h2>Lima langkah. Satu loop lengkap.</h2>
+          <p className="body-copy">
+            Dari satu kalimat tagihan sampai referral yang kembali ke dashboard-mu —
+            semuanya mengalir dalam satu alur.
+          </p>
+        </div>
+        <div className="process-grid">
           {process.map(([number, title, text]) => (
-            <article className="process-row" key={number}>
-              <div><strong>{number}</strong><h3>{title}</h3></div>
+            <article className="p-step" key={number}>
+              <span className="p-node">{number}</span>
+              <h3>{title}</h3>
               <p>{text}</p>
             </article>
           ))}
