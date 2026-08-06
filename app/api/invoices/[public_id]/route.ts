@@ -33,13 +33,10 @@ export async function GET(
 
   let views = invoice.views;
   if (!alreadyViewed) {
-    const { data: updated } = await supabase
-      .from("invoices")
-      .update({ views: (invoice.views ?? 0) + 1 })
-      .eq("public_id", params.public_id)
-      .select("views")
-      .single();
-    views = updated?.views ?? invoice.views;
+    const { data: bumped } = await supabase.rpc("bump_views", {
+      p_public_id: params.public_id,
+    });
+    views = bumped ?? invoice.views;
   }
 
   const res = NextResponse.json({
@@ -49,6 +46,7 @@ export async function GET(
       sender_name: (Array.isArray(invoice.owner) ? invoice.owner[0] : invoice.owner)?.full_name ?? "Freelancer",
     },
   });
+  res.headers.set("Cache-Control", "no-store, max-age=0");
 
   if (!alreadyViewed) {
     res.cookies.set(cookieName, "1", {

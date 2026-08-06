@@ -65,6 +65,15 @@ select setval('invoice_number_seq',
     where number ~ '^INV-[0-9]+-[0-9]+$'), 0),
   true);
 
+create or replace function bump_views(p_public_id text) returns int
+language sql
+security definer
+as $$
+  update invoices set views = views + 1
+  where public_id = p_public_id
+  returning views;
+$$;
+
 create or replace function finalize_signup(
   p_user_id uuid,
   p_email text,

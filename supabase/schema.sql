@@ -137,6 +137,16 @@ $$;
 
 create sequence if not exists invoice_number_seq;
 
+-- Atomic view counter: never read-then-write, so replicas cannot stall it.
+create or replace function bump_views(p_public_id text) returns int
+language sql
+security definer
+as $$
+  update invoices set views = views + 1
+  where public_id = p_public_id
+  returning views;
+$$;
+
 -- Publish an invoice: deduct one credit and log it atomically. Raises an
 -- exception the API maps to a friendly message.
 create or replace function publish_invoice(
