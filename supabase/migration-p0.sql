@@ -10,7 +10,8 @@ alter table invoices
 alter table invoices
   add column if not exists currency text not null default 'IDR';
 
-update invoices set amount_minor = round(amount) where amount_minor = 0;
+update invoices set amount_minor = round(amount) where amount_minor = 0 and currency = 'IDR';
+update invoices set amount_minor = round(amount * 100) where amount_minor = 0 and currency <> 'IDR';
 update invoices set currency = 'IDR' where currency not in ('USD','EUR','GBP','SGD','IDR');
 alter table invoices drop constraint if exists invoices_currency_check;
 alter table invoices add constraint invoices_currency_check
