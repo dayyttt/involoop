@@ -14,6 +14,7 @@ interface Invoice {
   currency: string;
   status: string;
   views: number;
+  referral_clicks?: number;
   created_at: string;
 }
 
@@ -33,6 +34,7 @@ interface Referral {
 
 interface DashboardData {
   profile: {
+    email: string;
     full_name: string | null;
     free_invoice_credits: number;
     referral_code: string;
@@ -48,8 +50,10 @@ interface DashboardData {
     unpaid: number;
     awaiting: number;
     total_views: number;
+    total_clicks: number;
     signups: number;
     conversion: number;
+    credits_earned: number;
   };
 }
 
@@ -106,6 +110,18 @@ export default function Dashboard() {
     }
   }
 
+  async function handleResetDemo() {
+    if (!window.confirm("Reset seluruh data akun demo ini?")) return;
+    setError(null);
+    const res = await fetch("/api/demo/reset", { method: "POST" });
+    if (res.ok) {
+      load();
+    } else {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error ?? "Gagal reset.");
+    }
+  }
+
   if (loading) return <main className="centered">Memuat...</main>;
   if (!data)
     return (
@@ -147,16 +163,38 @@ export default function Dashboard() {
         <h1 className="page-title">Halo, {profile.full_name ?? "freelancer"}</h1>
 
         <div className="stat-grid">
-          <Stat label="Saldo kredit" value={profile.free_invoice_credits.toString()} />
-          <Stat label="Referral berhasil" value={stats.signups.toString()} />
-          <Stat label="Tampilan invoice" value={stats.total_views.toString()} />
+          <Stat label="Credit balance" value={profile.free_invoice_credits.toString()} />
+          <Stat label="Successful referrals" value={stats.signups.toString()} />
+          <Stat label="Invoice views" value={stats.total_views.toString()} />
+          <Stat label="Referral CTA clicks" value={stats.total_clicks.toString()} />
           <Stat
-            label="Konversi"
+            label="Conversion"
             value={stats.total_views > 0 ? `${stats.conversion}%` : "—"}
           />
+          <Stat label="Credits earned" value={stats.credits_earned.toString()} />
+        </div>
+
+        <h2 className="section-title">Distribution loop</h2>
+        <div className="dist-panel">
+          <div><span>Views</span><strong>{stats.total_views}</strong></div>
+          <div><span>Referral clicks</span><strong>{stats.total_clicks}</strong></div>
+          <div><span>Signups</span><strong>{stats.signups}</strong></div>
+          <div><span>Conversion</span><strong>{stats.total_views > 0 ? `${stats.conversion}%` : "—"}</strong></div>
+          <div><span>Paid invoices</span><strong>{stats.paid}</strong></div>
+          <div><span>Credits earned</span><strong>{stats.credits_earned}</strong></div>
         </div>
 
         {error && <p className="error">{error}</p>}
+
+        {profile.email.endsWith("@involoop.app") && (
+          <div className="card-panel demo-reset">
+            <div>
+              <h2 className="section-title">Demo workspace</h2>
+              <p className="hint">Reset invoices, payments, referrals, ledger, and credits for a clean presentation.</p>
+            </div>
+            <button className="btn btn-ghost" onClick={handleResetDemo}>Reset Demo Workspace</button>
+          </div>
+        )}
 
         <div className="card-panel">
           <h2 className="section-title">Payment Settings</h2>

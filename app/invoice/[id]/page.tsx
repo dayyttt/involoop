@@ -122,6 +122,19 @@ export default function PublicInvoice() {
       </>
     );
 
+  async function trackClick() {
+    try {
+      await fetch("/api/referrals/click", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ public_id: publicId }),
+      });
+    } catch {
+      // best-effort
+    }
+    window.location.href = `/signup?ref_invoice=${publicId}`;
+  }
+
   const signupUrl = `/signup?ref_invoice=${invoice.public_id}`;
 
   return (
@@ -207,9 +220,9 @@ export default function PublicInvoice() {
             <div className="referral-box">
               <h3 className="referral-heading">Create an invoice like this — free</h3>
               <p>{invoice.cta_message}</p>
-              <a href={signupUrl} className="referral-link">
+              <button onClick={trackClick} className="referral-link link-btn">
                 Get 5 free credits when you join through this invoice →
-              </a>
+              </button>
             </div>
           )}
         </div>

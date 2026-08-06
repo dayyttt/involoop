@@ -1,122 +1,204 @@
 # Involoop
 
-Invoicing untuk freelancer solo dan micro-agency. Setiap invoice yang dikirim
-membawa jalur referral yang aktif saat klien membuka halaman itu untuk
-membayar — bukan fitur promosi terpisah.
+**Distribution-first invoicing for freelancers and micro-agencies.** Turn one
+sentence into a shareable invoice, accept payment, and earn publishing credits
+when another B2B professional joins through that invoice.
 
 **Live:** https://involoop.vercel.app
 
-## Masalah yang diselesaikan
+## Problem
 
-Freelancer sudah rutin mengirim invoice kepada profesional dan bisnis lain,
-tetapi setiap invoice berhenti sebagai transaksi dan tidak pernah menjadi
-jalur distribusi. Padahal penerima invoice adalah audiens yang relevan, hadir
-di momen bernilai tinggi, dan sering menjalankan bisnis jasa sendiri.
+Freelancers already invoice other professionals and businesses every week, but
+an invoice ends as a transaction. It never becomes a distribution channel.
+Involoop embeds its growth loop inside that existing high-intent workflow.
 
-## Distribution loop (theme requirement)
+## Target users
+
+Freelancers, independent consultants, designers, developers, video editors,
+creators serving businesses, micro-agencies, and B2B service professionals who
+both buy and sell professional services.
+
+## Distribution mechanism
 
 ```text
-A buat invoice (1 kalimat, AI parse) → link publik
-B buka invoice → lihat detail → konfirmasi pembayaran
-B klik CTA referral → /signup?ref_invoice=<public_id>
-Sistem mencatat referral + kredit kedua pihak
-A lihat bukti di dashboard (views, signup, ledger)
+Owner writes one sentence
+→ AI publishes a public invoice
+→ Client opens it (view recorded)
+→ Client pays securely via Stripe test Checkout or confirms a transfer
+→ Stripe webhook marks the invoice paid
+→ Client clicks the contextual referral CTA (click recorded)
+→ Client signs up (5 credits: 3 initial + 2 bonus)
+→ Owner earns 3 credits
+→ Dashboard proves views, clicks, signup, payment, and ledger entries
 ```
 
-Reward: A mendapat **+3 kredit** per referral, B mendapat **3 kredit awal + 2 bonus**.
-1 kredit = 1 invoice publik.
+`1 credit = 1 public invoice.` Every credit movement is recorded in an
+idempotent ledger, not only as a balance.
 
-## AI di dalam produk
+## Main features
 
-Pembuatan invoice pakai satu kalimat natural. Claude API mem-parse jadi field
-terstruktur DAN menulis satu baris CTA referral yang kontekstual dengan jenis
-jasa. Lihat `lib/claude.ts`. Ada fallback form manual bila AI gagal.
+- Natural-language invoice generation via Claude + manual fallback.
+- Public invoice page; no client login required.
+- Multicurrency: USD, EUR, GBP, SGD, IDR. Money stored as integer minor units.
+- Stripe sandbox Checkout + verified webhook + permanent Vercel endpoint.
+- Manual transfer fallback: client confirms → owner verifies.
+- Referral attribution survives refresh via query + cookie.
+- Two-way reward: owner +3, client +2 on top of 3 initial credits.
+- Dashboard: invoice views, CTA clicks, signups, conversion, paid invoices,
+  credits earned, referral rows, and auditable credit ledger.
+- English default + EN|ID language switcher.
+- Demo-only workspace reset.
 
 ## Tech stack
 
-- Next.js 14 (App Router, server actions via API routes)
-- Supabase (Postgres + Auth + RLS)
-- three.js (hero WebGL neon landscape)
+- Next.js 14 App Router + TypeScript
+- Supabase Postgres, Auth, RLS, transactional RPCs
+- Stripe sandbox Checkout + webhook
 - Claude API / Anthropic SDK
-- Deploy: Vercel
+- three.js hero visualization
+- Vercel
 
-## Arsitektur singkat
+## Architecture
 
 ```text
 app/
-  page.tsx                    Landing
-  signup|login                Auth pages
-  dashboard                   Proof loop: stats, ledger, referral, invoice
-  invoice/[id]                Halaman invoice publik (distribution surface)
-  api/signup                  Buat user + finalize_signup (RPC transaksional)
-  api/invoices/create         AI parse → publish_invoice (RPC, potong kredit)
-  api/invoices/pay            B konfirmasi transfer → awaiting_verification
-  api/invoices/verify         A verifikasi → paid
-  api/invoices/[public_id]    Read publik + tracking view (cookie)
-  api/dashboard               Data dashboard (session + service role)
+  page.tsx                       English/Indonesian landing + pricing
+  signup|login                   Supabase auth + referral persistence
+  dashboard                     Distribution proof + ledger + reset
+  dashboard/new-invoice          AI + manual multicurrency invoice
+  invoice/[id]                   Public invoice / payment / referral surface
+  payment/success                Verified Stripe payment summary + CTA
+  api/signup                     Auth user → finalize_signup RPC
+  api/invoices/create            AI/manual → publish_invoice RPC
+  api/invoices/view              Atomic public view counter
+  api/invoices/pay|verify        Manual payment fallback
+  api/payments/checkout          Stripe Checkout (DB amount only)
+  api/payments/webhook           Signature verification + idempotent events
+  api/payments/session           Payment success read model
+  api/referrals/click            CTA click attribution
+  api/dashboard                  Session-protected dashboard aggregate
+  api/demo/reset                 Demo-account-only reset
 lib/
-  claude.ts                   AI parse
-  supabase-*.ts               Client admin / server / browser
-supabase/schema.sql           Tabel, RLS, RPC (transaksional, anti-duplikasi)
+  claude.ts                      AI parser + currency detection
+  money.ts                       Minor units + locale formatting
+  stripe.ts                      Server-only Stripe client
+  i18n.ts                        EN|ID landing dictionary
+supabase/
+  schema.sql                     Fresh database schema
+  migration-p0.sql               Safe production upgrade
+scripts/seed-demo.mjs             Demo owner, USD invoice, client referral
 ```
 
-Keamanan: semua mutasi mengambil `owner_id` dari session cookie, tidak pernah
-dari body. Reward dilindungi constraint `UNIQUE(referred_user_id)` dan ledger
-`UNIQUE(idempotency_key)`. Self-referral ditolak. Email dinormalisasi
-lowercase. Publish + reward dikerjakan dalam fungsi Postgres transaksional.
+## Data integrity and security
 
-## Cara menjalankan lokal
+- Owner identity comes from signed Supabase session cookies, never request body.
+- Service role only exists in server routes.
+- Emails normalized lowercase.
+- Self-referrals rejected.
+- `UNIQUE(referred_user_id)` prevents multiple conversion rewards.
+- `UNIQUE(idempotency_key)` prevents duplicate credit ledger entries.
+- Stripe webhook signature verified using `STRIPE_WEBHOOK_SECRET`.
+- `UNIQUE(provider_event_id)` makes webhook replays harmless.
+- `UNIQUE(provider_payment_id)` prevents duplicate payments.
+- Payment and referral are separate events: payment marks invoice paid; signup
+  triggers referral reward.
+- Stripe amount and currency are read from Postgres, never trusted from client.
+- No secrets, `.env`, credentials, node_modules, or build output tracked in git.
+
+## Local setup
 
 ```bash
 npm install
-cp .env.example .env.local   # isi sesuai bagian bawah
+cp .env.example .env.local
 npm run dev
 ```
 
-Buka `http://localhost:3000`.
+Open http://localhost:3000.
 
 ## Environment variables
 
-- `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (server only, jangan expose ke client)
-- `AI_API_KEY` (opsional `AI_BASE_URL` dan `AI_MODEL`)
-- `NEXT_PUBLIC_BASE_URL` — `http://localhost:3000` lokal, atau URL deploy
+```text
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+AI_API_KEY=
+AI_BASE_URL=                 # optional
+AI_MODEL=                    # optional
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+```
 
-## Setup Supabase
+`SUPABASE_SERVICE_ROLE_KEY`, `AI_API_KEY`, `STRIPE_SECRET_KEY`, and
+`STRIPE_WEBHOOK_SECRET` are server-only.
 
-1. Buat project di supabase.com, buka SQL Editor.
-2. Project baru: jalankan `supabase/schema.sql`. Project lama: jalankan
-   `supabase/migration-p0.sql` sekali.
-3. Salin Project URL, anon key, service_role key ke `.env.local`.
-4. Authentication → Providers → pastikan Email/Password aktif.
+## Database migration and seed
 
-## Demo account
+1. New project: run `supabase/schema.sql` in Supabase SQL Editor.
+2. Existing project: run `supabase/migration-p0.sql` once (safe to rerun).
+3. Seed demo data:
 
-Dibuat otomatis saat setup demo live:
+```bash
+node scripts/seed-demo.mjs
+```
+
+## Stripe sandbox setup
+
+1. Use a Stripe test/sandbox account.
+2. Add a permanent webhook endpoint:
+   `https://involoop.vercel.app/api/payments/webhook`
+3. Scope: **Your account**, payload style: **Snapshot**.
+4. Events:
+   - `checkout.session.completed`
+   - `checkout.session.expired`
+   - `payment_intent.succeeded`
+   - `payment_intent.payment_failed`
+   - `charge.refunded`
+5. Copy the destination signing secret into `STRIPE_WEBHOOK_SECRET`.
+6. Test card: `4242 4242 4242 4242`, any future expiry, any CVC.
+
+The UI labels this clearly: **Stripe Test Mode — no real money will be charged.**
+The demo currently uses platform sandbox Checkout. Stripe Connect is supported
+by the architecture when a connected account is available; production country
+availability determines the final settlement model.
+
+## Demo accounts
 
 ```text
-User A (freelancer):  demo-owner@involoop.app  /  involoop-demo-2026
-User B (klien):       demo-client@involoop.app /  involoop-demo-2026
+Owner:  demo-owner@involoop.app
+Client: demo-client@involoop.app
+Password (both): involoop-demo-2026
 ```
+
+These credentials are demo-only. Dashboard shows **Reset Demo Workspace** only
+for demo accounts.
+
+## Pricing
+
+- Free: $0, 3 public invoices, referral credits.
+- Starter: $3 one-time, 10 public invoices, Stripe payment, basic analytics.
+- Pro: $8/month, 50 public invoices, advanced analytics, custom branding.
+
+Paid plan billing is intentionally not enabled during the marathon demo.
 
 ## Known limitations
 
-- Pembayaran disimulasikan secara jujur: B konfirmasi transfer →
-  `awaiting_verification` → A verifikasi → `paid`. Tidak ada gateway sungguhan.
-- Anti-fraud minimal: unik per user + idempotent ledger. Reward berbasis
-  kehadiran akun, bukan pada transaksi berbayar — mitigasi penuh di luar scope.
-- Langganan berbayar (Starter/Pro) hanya informasi harga, belum diaktifkan.
-- View invoice dicatat per browser (cookie), bukan per IP/akun.
+- Stripe uses sandbox/test mode; no real money is charged.
+- Platform sandbox Checkout is the tested fallback while production Connect
+  availability depends on platform and connected-business country.
+- Manual transfer details are agreed off-platform; Involoop tracks confirmation.
+- AI output is validated but not a full accounting/tax engine.
+- View/click dedupe is browser-cookie based, not identity/IP fraud prevention.
+- No subscriptions, tax reporting, recurring invoices, payroll, or team roles.
 
-## Model harga
+## First 100 users
 
-Gratis: 3 invoice publik, +3 kredit per referral, +2 bonus untuk klien.
-Starter Rp29.000: 10 invoice. Pro Rp79.000/bulan: 50 invoice.
+The first 100 users are Indonesian freelance developers, designers, consultants,
+video editors, and micro-agencies that invoice other service businesses. Initial
+acquisition uses direct outreach to micro-agencies still sending manual PDFs,
+freelancer WhatsApp/Discord communities already accessible to the team, and ten
+pilot users who each send at least three real public invoices. Each recipient is
+another B2B professional likely to send invoices, making acquisition repeatable.
 
-## Strategi distribusi
-
-100 pengguna pertama: freelance developer, designer, consultant, video editor,
-dan micro-agency Indonesia yang rutin mengirim invoice ke sesama pelaku jasa
-B2B — dijangkau lewat komunitas WhatsApp/Discord freelancer yang sudah dapat
-diakses, direct outreach ke micro-agency pengguna invoice PDF manual, dan
-sepuluh pengguna pilot yang masing-masing mengirim minimal tiga invoice nyata.
+Before submission, replace the generic community phrase with the exact community
+names available to the founder.

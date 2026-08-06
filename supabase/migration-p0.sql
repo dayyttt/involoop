@@ -3,7 +3,8 @@
 
 alter table invoices
   add column if not exists number text,
-  add column if not exists views int not null default 0;
+  add column if not exists views int not null default 0,
+  add column if not exists referral_clicks int not null default 0;
 
 alter table invoices
   add column if not exists amount_minor bigint not null default 0;
@@ -120,6 +121,15 @@ as $$
   update invoices set views = views + 1
   where public_id = p_public_id
   returning views;
+$$;
+
+create or replace function bump_referral_clicks(p_public_id text) returns int
+language sql
+security definer
+as $$
+  update invoices set referral_clicks = referral_clicks + 1
+  where public_id = p_public_id
+  returning referral_clicks;
 $$;
 
 create or replace function finalize_signup(

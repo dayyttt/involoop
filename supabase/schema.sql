@@ -29,6 +29,7 @@ create table invoices (
   cta_message text, -- AI-generated, context-aware referral line
   status text not null default 'unpaid' check (status in ('unpaid','awaiting_verification','payment_pending','paid','failed','refunded')),
   views int not null default 0,
+  referral_clicks int not null default 0,
   created_at timestamptz not null default now(),
   paid_at timestamptz
 );
@@ -180,6 +181,15 @@ as $$
   update invoices set views = views + 1
   where public_id = p_public_id
   returning views;
+$$;
+
+create or replace function bump_referral_clicks(p_public_id text) returns int
+language sql
+security definer
+as $$
+  update invoices set referral_clicks = referral_clicks + 1
+  where public_id = p_public_id
+  returning referral_clicks;
 $$;
 
 -- Publish an invoice: deduct one credit and log it atomically. Raises an

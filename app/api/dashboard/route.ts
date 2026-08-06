@@ -22,13 +22,13 @@ export async function GET() {
 
   const { data: profile } = await admin
     .from("profiles")
-    .select("full_name, free_invoice_credits, referral_code, stripe_account_id, stripe_status")
+    .select("email, full_name, free_invoice_credits, referral_code, stripe_account_id, stripe_status")
     .eq("id", uid)
     .single();
 
   const { data: invoices } = await admin
     .from("invoices")
-    .select("public_id, number, client_name, amount, currency, status, views, created_at")
+    .select("public_id, number, client_name, amount, currency, status, views, referral_clicks, created_at")
     .eq("owner_id", uid)
     .order("created_at", { ascending: false });
 
@@ -48,7 +48,11 @@ export async function GET() {
 
   const list = invoices ?? [];
   const totalViews = list.reduce((sum, inv) => sum + (inv.views ?? 0), 0);
+  const totalClicks = list.reduce((sum, inv) => sum + (inv.referral_clicks ?? 0), 0);
   const signups = (referrals ?? []).length;
+  const creditsEarned = (ledger ?? [])
+    .filter((l) => l.amount > 0)
+    .reduce((sum, l) => sum + l.amount, 0);
 
   const stats = {
     total: list.length,
@@ -56,8 +60,10 @@ export async function GET() {
     unpaid: list.filter((i) => i.status === "unpaid").length,
     awaiting: list.filter((i) => i.status === "awaiting_verification").length,
     total_views: totalViews,
+    total_clicks: totalClicks,
     signups,
     conversion: totalViews > 0 ? Math.round((signups / totalViews) * 100) : 0,
+    credits_earned: creditsEarned,
   };
 
   return NextResponse.json({ profile, invoices: list, ledger: ledger ?? [], referrals: referrals ?? [], stats });
