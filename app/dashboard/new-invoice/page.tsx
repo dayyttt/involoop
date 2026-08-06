@@ -7,6 +7,12 @@ import { formatMoney } from "@/lib/money";
 
 const SAMPLE = "Tagih PT Kreatif Digital Rp2.500.000 untuk pengembangan landing page, jatuh tempo 12 Agustus 2026.";
 
+const SAMPLES = [
+  SAMPLE,
+  "Kirim tagihan ke Rina sebesar 2 juta buat desain logo.",
+  "Invoice desain kaos ke Toko Santai 3.750.000 IDR, jatuh tempo seminggu.",
+];
+
 interface FormState {
   client_name: string;
   description: string;
@@ -138,6 +144,7 @@ export default function NewInvoice() {
 
   const amountNum = Number(form.amount.replace(/[^0-9.]/g, ""));
   const previewReady = form.client_name && form.description && amountNum > 0;
+  const step = result ? 3 : showForm ? 2 : 1;
 
   return (
     <>
@@ -150,84 +157,99 @@ export default function NewInvoice() {
         </Link>
       </nav>
 
-      <main className="page-shell" style={{ maxWidth: 640 }}>
+      <main className="page-shell" style={{ maxWidth: 780 }}>
         {result ? (
-          <div className="success-panel" style={{ marginTop: 40 }}>
+          <div className="success-panel" style={{ marginTop: 40, padding: "32px 20px", textAlign: "center" }}>
+            <div className="success-hero">✓</div>
             <p className="section-eyebrow" style={{ textAlign: "center" }}>INVOICE DITERBITKAN</p>
-            <h2 className="page-title" style={{ textAlign: "center", marginBottom: 8 }}>
+            <h2 className="page-title" style={{ textAlign: "center", margin: "10px 0 18px", fontSize: 22 }}>
               Invoice siap. Kirim link ini ke klienmu:
             </h2>
-            <code className="code" style={{ display: "block", textAlign: "center" }}>
-              {result.share_url}
-            </code>
-            <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
+            <div className="link-copy-row" style={{ maxWidth: 520, marginInline: "auto" }}>
+              <code className="code">{result.share_url}</code>
               <button onClick={copyLink} className="btn btn-ghost">
-                {copied ? "✓ Tersalin" : "Salin link"}
+                {copied ? "✓ Tersalin" : "Salin"}
               </button>
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 18, flexWrap: "wrap" }}>
               <a
                 href={`https://wa.me/?text=${encodeURIComponent("Halo, ini tagihan untuk kamu: " + result.share_url)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="btn btn-success"
+                className="btn btn-success btn-mobile-full"
               >
                 Kirim via WhatsApp →
               </a>
-              <Link href="/dashboard" className="btn btn-primary">
+              <Link href="/dashboard" className="btn btn-primary btn-mobile-full">
                 Lihat dashboard
               </Link>
             </div>
           </div>
         ) : (
           <>
-            <h1 className="page-title">Buat invoice</h1>
-            <p className="muted" style={{ marginTop: -8, marginBottom: 20 }}>
+            <h1 className="page-title" style={{ marginBottom: 4 }}>Buat invoice</h1>
+            <p className="muted" style={{ marginTop: 0, marginBottom: 20 }}>
               Tulis dalam satu kalimat, biar AI yang menyusun invoicenya.
             </p>
 
-            {!showForm && (
-              <form onSubmit={handleAI} style={{ display: "flex", flexDirection: "column" }}>
-                <textarea
-                  className="input"
-                  value={rawText}
-                  onChange={(e) => setRawText(e.target.value)}
-                  placeholder="contoh: tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu"
-                  rows={3}
-                />
-                <button
-                  type="button"
-                  onClick={() => setRawText(SAMPLE)}
-                  className="btn btn-ghost"
-                  style={{ marginTop: 8, alignSelf: "flex-start", minHeight: 30, padding: "5px 12px", fontSize: 12 }}
-                >
-                  Pakai contoh →
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={loading || !rawText.trim()}
-                  style={{ marginTop: 12, alignSelf: "flex-start" }}
-                >
-                  {loading ? "Menyusun invoice..." : "Buat invoice dengan AI"}
-                </button>
-              </form>
-            )}
+            <Steps current={step as 1 | 2 | 3} />
 
             {!showForm && (
-              <button
-                type="button"
-                onClick={startManual}
-                className="btn btn-ghost"
-                style={{ marginTop: 16, fontSize: 13 }}
-              >
-                Isi manual saja
-              </button>
+              <div className="card-panel">
+                <form onSubmit={handleAI} style={{ display: "flex", flexDirection: "column" }}>
+                  <div className="field">
+                    <label>Kalimat tagihanmu</label>
+                    <textarea
+                      className="input"
+                      value={rawText}
+                      onChange={(e) => setRawText(e.target.value)}
+                      placeholder="contoh: tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="chip-row">
+                    {SAMPLES.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setRawText(s)}
+                        className="chip"
+                      >
+                        Pakai contoh →
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-mobile-full"
+                    disabled={loading || !rawText.trim()}
+                    style={{ marginTop: 16 }}
+                  >
+                    {loading ? (
+                      <>
+                        <Spinner /> Menyusun invoice…
+                      </>
+                    ) : (
+                      "Buat invoice dengan AI"
+                    )}
+                  </button>
+                </form>
+                <button
+                  type="button"
+                  onClick={startManual}
+                  className="btn btn-ghost btn-mobile-full"
+                  style={{ marginTop: 14 }}
+                >
+                  Isi manual saja
+                </button>
+              </div>
             )}
 
             {error && <p className="error" style={{ marginTop: 14 }}>{error}</p>}
 
             {showForm && (
-              <>
-                <div className="card-panel" style={{ marginBottom: 16 }}>
+              <div className="app-grid">
+                <div className="card-panel">
                   {source === "ai" ? (
                     <p className="hint" style={{ marginBottom: 14 }}>
                       ✨ Hasil AI — periksa dan edit dulu sebelum diterbitkan.
@@ -258,7 +280,7 @@ export default function NewInvoice() {
                         required
                       />
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <div className="form-row">
                       <div className="field">
                         <label>Nominal</label>
                         <input
@@ -304,43 +326,80 @@ export default function NewInvoice() {
                     </div>
                     <button
                       type="submit"
-                      className="btn btn-primary"
+                      className="btn btn-primary btn-mobile-full"
                       disabled={loading || !form.client_name || !form.description || !form.amount}
                     >
-                      {loading ? "Menerbitkan..." : "Terbitkan invoice"}
+                      {loading ? "Menerbitkan…" : "Terbitkan invoice"}
                     </button>
                   </form>
                 </div>
 
-                {previewReady && (
-                  <div className="card" style={{ opacity: 0.95 }}>
-                    <p className="section-eyebrow">PRATINJAU</p>
-                    <div className="invoice-head">
-                      <div>
-                        <p className="invoice-label">TO</p>
-                        <h2 className="invoice-client">{form.client_name}</h2>
+                <div className="sticky-col">
+                  {previewReady ? (
+                    <div className="card" style={{ padding: 26, opacity: 1 }}>
+                      <p className="section-eyebrow">PRATINJAU</p>
+                      <div className="invoice-head" style={{ marginTop: 14 }}>
+                        <div>
+                          <p className="invoice-label">TO</p>
+                          <h2 className="invoice-client" style={{ marginBottom: 0 }}>{form.client_name}</h2>
+                        </div>
+                        <div className="invoice-meta">
+                          <span className="badge badge-warn">DRAFT</span>
+                        </div>
                       </div>
-                      <div className="invoice-meta">
-                        <p className="invoice-label">DRAFT</p>
-                        {form.due_date && <span className="hint">Jatuh tempo {form.due_date}</span>}
-                      </div>
+                      <p className="invoice-desc" style={{ margin: "14px 0 18px" }}>{form.description}</p>
+                      <div className="invoice-amount">{formatMoney(amountNum, form.currency)}</div>
+                      {form.due_date && (
+                        <p className="hint" style={{ margin: "6px 0 0" }}>
+                          Jatuh tempo {new Date(form.due_date).toLocaleDateString("id-ID")}
+                        </p>
+                      )}
+                      {form.cta_message && (
+                        <div className="referral-box" style={{ textAlign: "left" }}>
+                          <p className="hint" style={{ margin: 0 }}>{form.cta_message}</p>
+                        </div>
+                      )}
                     </div>
-                    <p className="invoice-desc">{form.description}</p>
-                    <div className="invoice-amount">
-                      {formatMoney(amountNum, form.currency)}
+                  ) : (
+                    <div className="card" style={{ padding: 26, opacity: 0.9 }}>
+                      <p className="section-eyebrow">PRATINJAU</p>
+                      <p className="empty" style={{ marginTop: 14 }}>
+                        Preview invoice muncul di sini setelah kamu melengkapi
+                        nama klien, deskripsi, dan nominal.
+                      </p>
                     </div>
-                    {form.cta_message && (
-                      <div className="referral-box">
-                        <p className="hint" style={{ margin: 0 }}>{form.cta_message}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </>
+                  )}
+                </div>
+              </div>
             )}
           </>
         )}
       </main>
     </>
+  );
+}
+
+function Spinner() {
+  return <span className="spinner" aria-hidden />;
+}
+
+function Steps({ current }: { current: 1 | 2 | 3 }) {
+  const items = ["Tulis kalimat", "Periksa & edit", "Terbitkan & kirim"];
+  return (
+    <div className="steps">
+      {items.map((label, i) => {
+        const n = i + 1;
+        const state = n < current ? "step-done" : n === current ? "step-active" : "";
+        return (
+          <div key={label} style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+            {i > 0 && <span className="step-arrow">→</span>}
+            <span className={`step ${state}`}>
+              <span className="step-dot">{n < current ? "✓" : n}</span>
+              {label}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }

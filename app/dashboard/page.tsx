@@ -66,6 +66,7 @@ export default function Dashboard() {
   const [connecting, setConnecting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedRef, setCopiedRef] = useState(false);
 
   async function load() {
     setError(null);
@@ -146,6 +147,16 @@ export default function Dashboard() {
     return `https://wa.me/?text=${encodeURIComponent("Halo, ini tagihan untuk kamu: " + url)}`;
   }
 
+  async function copyReferralCode() {
+    try {
+      await navigator.clipboard.writeText(profile?.referral_code ?? "");
+      setCopiedRef(true);
+      setTimeout(() => setCopiedRef(false), 2000);
+    } catch {
+      setError("Gagal menyalin kode referral.");
+    }
+  }
+
   if (loading)
     return (
       <main className="centered">
@@ -190,19 +201,24 @@ export default function Dashboard() {
 
       <main className="page-shell">
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <h1 className="page-title">Halo, {profile.full_name ?? "freelancer"}</h1>
+          <div>
+            <h1 className="page-title" style={{ marginBottom: 4 }}>Halo, {profile.full_name ?? "freelancer"}</h1>
+            <p className="hint" style={{ margin: 0 }}>
+              {profile.email} · {profile.free_invoice_credits} kredit gratis tersisa
+            </p>
+          </div>
           <Link href="/dashboard/new-invoice" className="btn btn-primary" style={{ minHeight: 36 }}>
             + Buat invoice
           </Link>
         </div>
 
-        <div className="stat-grid">
-          <Stat label="Credit balance" value={profile.free_invoice_credits.toString()} />
-          <Stat label="Invoice views" value={stats.total_views.toString()} />
-          <Stat label="Referral CTA clicks" value={stats.total_clicks.toString()} />
-          <Stat label="Successful referrals" value={stats.signups.toString()} />
-          <Stat label="Conversion" value={stats.total_views > 0 ? `${stats.conversion}%` : "—"} />
-          <Stat label="Credits earned" value={stats.credits_earned.toString()} />
+        <div className="stat-grid" style={{ marginTop: 20 }}>
+          <Stat label="Kredit kamu" value={profile.free_invoice_credits.toString()} />
+          <Stat label="Tampilan invoice" value={stats.total_views.toString()} />
+          <Stat label="Klik ajakan referral" value={stats.total_clicks.toString()} />
+          <Stat label="Referral berhasil" value={stats.signups.toString()} />
+          <Stat label="Konversi" value={stats.total_views > 0 ? `${stats.conversion}%` : "—"} />
+          <Stat label="Kredit didapat" value={stats.credits_earned.toString()} />
         </div>
 
         {error && <p className="error">{error}</p>}
@@ -211,9 +227,9 @@ export default function Dashboard() {
           <h2 className="section-title" style={{ marginBottom: 0 }}>
             Invoice ({stats.total})
           </h2>
-          <div className="side" style={{ gap: 12 }}>
+          <div className="side" style={{ gap: 8 }}>
             <span className="badge badge-paid">Lunas {stats.paid}</span>
-            <span className="badge badge-warn">Menunggu verifikasi {stats.awaiting}</span>
+            <span className="badge badge-warn">Menunggu {stats.awaiting}</span>
             <span className="badge badge-unpaid">Belum bayar {stats.unpaid}</span>
           </div>
         </div>
@@ -244,12 +260,11 @@ export default function Dashboard() {
                     {new Date(inv.created_at).toLocaleDateString("id-ID")}
                   </span>
                 </div>
-                <div className="side" style={{ gap: 8, flexWrap: "wrap" }}>
+                <div className="inv-actions">
                   <StatusBadge status={inv.status} />
                   {inv.status === "awaiting_verification" && (
                     <button
                       className="btn btn-success"
-                      style={{ minHeight: 34, padding: "6px 14px", fontSize: 12 }}
                       onClick={() => handleVerify(inv.public_id)}
                     >
                       Verifikasi
@@ -260,13 +275,11 @@ export default function Dashboard() {
                     target="_blank"
                     rel="noreferrer"
                     className="btn btn-ghost"
-                    style={{ minHeight: 34, padding: "6px 12px", fontSize: 12 }}
                   >
-                    WA
+                    Kirim WA
                   </a>
                   <button
                     className="btn btn-ghost"
-                    style={{ minHeight: 34, padding: "6px 12px", fontSize: 12 }}
                     onClick={() => copyInvoiceLink(inv.public_id)}
                   >
                     {copiedId === inv.public_id ? "✓ Tersalin" : "Salin link"}
@@ -290,7 +303,21 @@ export default function Dashboard() {
         )}
 
         <div className="card-panel">
-          <h2 className="section-title">Referral</h2>
+          <h2 className="section-title">Program referral</h2>
+          <div className="ref-code">
+            <code>{profile.referral_code}</code>
+            <button
+              className="btn btn-ghost"
+              style={{ minHeight: 32, padding: "5px 12px", fontSize: 12 }}
+              onClick={copyReferralCode}
+            >
+              {copiedRef ? "✓ Tersalin" : "Salin kode"}
+            </button>
+          </div>
+          <p className="hint" style={{ marginTop: 0 }}>
+            Kode ini dipakai saat temanmu mendaftar lewat link invoicemu — setiap
+            referral sukses memberi +5 kredit.
+          </p>
           {referrals.length === 0 ? (
             <p className="empty">
               Belum ada referral. CTA di tiap invoice yang mengajak klienmu daftar.
@@ -335,21 +362,21 @@ export default function Dashboard() {
 
         <details className="card-panel" style={{ padding: 0 }}>
           <summary style={{ cursor: "pointer", padding: "16px 20px", fontWeight: 600, fontSize: 15 }}>
-            Payment Settings
+            Pengaturan pembayaran
             <span className="hint" style={{ marginLeft: 10 }}>
-              {profile.stripe_status === "connected" ? "Connected" : "Not connected"}
+              {profile.stripe_status === "connected" ? "Terhubung" : "Belum terhubung"}
             </span>
           </summary>
           <div style={{ padding: "0 20px 16px" }}>
             <div className="settings-rows">
               <div className="settings-row">
-                <span>Payment provider</span>
+                <span>Penyedia pembayaran</span>
                 <strong>Stripe Connect</strong>
               </div>
               <div className="settings-row">
-                <span>Connection status</span>
+                <span>Status koneksi</span>
                 <strong className={profile.stripe_status === "connected" ? "text-ok" : ""}>
-                  {profile.stripe_status === "connected" ? "Connected" : "Not connected"}
+                  {profile.stripe_status === "connected" ? "Terhubung" : "Belum terhubung"}
                 </strong>
               </div>
               <div className="settings-row">
@@ -357,12 +384,12 @@ export default function Dashboard() {
                 <strong>Test Mode</strong>
               </div>
               <div className="settings-row">
-                <span>Default settlement currency</span>
+                <span>Mata uang default</span>
                 <strong>USD</strong>
               </div>
             </div>
             <p className="test-badge" style={{ marginTop: 14 }}>
-              Stripe Test Mode — no real money will be charged
+              Stripe Test Mode — tidak ada uang asli yang ditarik
             </p>
             {profile.stripe_status !== "connected" && (
               <button
@@ -371,7 +398,7 @@ export default function Dashboard() {
                 onClick={handleConnectStripe}
                 disabled={connecting}
               >
-                {connecting ? <><Spinner /> Connecting…</> : "Connect Stripe"}
+                {connecting ? <><Spinner /> Menghubungkan…</> : "Hubungkan Stripe"}
               </button>
             )}
           </div>
@@ -394,12 +421,13 @@ function Spinner() {
   return <span className="spinner" aria-hidden />;
 }
 
-function StatusBadge({ status }: { status: string }) {  if (status === "paid") return <span className="badge badge-paid">Paid</span>;
+function StatusBadge({ status }: { status: string }) {
+  if (status === "paid") return <span className="badge badge-paid">Lunas</span>;
   if (status === "awaiting_verification")
-    return <span className="badge badge-warn">Awaiting verification</span>;
+    return <span className="badge badge-warn">Menunggu verifikasi</span>;
   if (status === "payment_pending")
-    return <span className="badge badge-warn">Payment in progress</span>;
+    return <span className="badge badge-warn">Pembayaran diproses</span>;
   if (status === "failed" || status === "refunded")
-    return <span className="badge badge-unpaid">Failed</span>;
-  return <span className="badge badge-unpaid">Unpaid</span>;
+    return <span className="badge badge-unpaid">Gagal</span>;
+  return <span className="badge badge-unpaid">Belum dibayar</span>;
 }

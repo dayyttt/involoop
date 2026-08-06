@@ -136,6 +136,7 @@ export default function PublicInvoice() {
   }
 
   const signupUrl = `/signup?ref_invoice=${invoice.public_id}`;
+  const paidStatus = invoice.status === "paid";
 
   return (
     <>
@@ -145,11 +146,11 @@ export default function PublicInvoice() {
         </Link>
       </nav>
 
-      <main className="invoice-card">
+      <main className="pay-layout">
         <div className="card">
           <div className="invoice-head">
             <div>
-              <p className="invoice-label">FROM</p>
+              <p className="invoice-label">DARI</p>
               <h1 className="invoice-title">{invoice.sender_name}</h1>
             </div>
             <div className="invoice-meta">
@@ -158,79 +159,92 @@ export default function PublicInvoice() {
             </div>
           </div>
 
-          <p className="invoice-label" style={{ marginTop: 20 }}>TO</p>
+          <p className="invoice-label" style={{ marginTop: 24 }}>UNTUK</p>
           <h2 className="invoice-client">{invoice.client_name}</h2>
 
           <p className="invoice-desc">{invoice.description}</p>
 
-          <div className="invoice-amount">
+          <div className="invoice-amount" style={{ marginTop: 24 }}>
             {formatMoney(invoice.amount, invoice.currency)}
           </div>
           {invoice.due_date && (
-            <p className="hint" style={{ margin: "2px 0 20px" }}>
-              {formatDate(invoice.due_date)}
+            <p className="hint" style={{ margin: "6px 0 0" }}>
+              Jatuh tempo {formatDate(invoice.due_date)}
             </p>
           )}
+        </div>
 
-          {invoice.status === "paid" ? (
-            <div className="paid-banner">Payment received ✓</div>
-          ) : invoice.status === "awaiting_verification" ? (
-            <div className="paid-banner">Awaiting sender verification</div>
-          ) : invoice.status === "payment_pending" ? (
-            <div className="paid-banner">Payment in progress…</div>
-          ) : (
-            <>
-              {invoice.stripe_enabled && (
-                <>
+        <div className="pay-side" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="pay-panel card">
+            {paidStatus ? (
+              <div className="pay-status pay-status-paid">✓ Pembayaran diterima</div>
+            ) : invoice.status === "awaiting_verification" ? (
+              <div className="pay-status pay-status-warn">Menunggu verifikasi pengirim</div>
+            ) : invoice.status === "payment_pending" ? (
+              <div className="pay-status pay-status-warn">Pembayaran sedang diproses…</div>
+            ) : (
+              <>
+                <div className="pay-status pay-status-open">
+                  <span>Belum dibayar</span>
+                  <span>{formatMoney(invoice.amount, invoice.currency)}</span>
+                </div>
+                <div className="pay-options">
+                  {invoice.stripe_enabled && (
+                    <>
+                      <button
+                        onClick={handlePay}
+                        disabled={submitting}
+                        className="btn btn-primary btn-lg btn-mobile-full"
+                      >
+                        {submitting ? "Mengarahkan ke Stripe…" : "Bayar dengan Stripe"}
+                      </button>
+                      <p className="hint" style={{ textAlign: "center", margin: 0 }}>
+                        Pembayaran diproses aman oleh Stripe. Involoop tidak
+                        menyimpan data kartu.
+                      </p>
+                    </>
+                  )}
+                  {invoice.stripe_enabled && (
+                    <div className="pay-divider">atau transfer manual</div>
+                  )}
+                  <div className="pay-instruction" style={{ marginBottom: 0 }}>
+                    <p>Transfer manual</p>
+                    <span>
+                      Transfer ke rekening yang disepakati dengan {invoice.sender_name},
+                      lalu konfirmasi di bawah.
+                    </span>
+                  </div>
                   <button
-                    onClick={handlePay}
+                    onClick={handleConfirmTransfer}
                     disabled={submitting}
-                    className="btn btn-primary"
-                    style={{ width: "100%", padding: 14, fontSize: 16 }}
+                    className="btn btn-ghost btn-lg btn-mobile-full"
                   >
-                    {submitting ? "Mengarahkan ke Stripe…" : "Pay securely"}
+                    {submitting ? "Mengirim konfirmasi…" : "Saya sudah transfer"}
                   </button>
-                  <p className="hint" style={{ textAlign: "center", margin: "8px 0 0" }}>
-                    Payment is securely processed by Stripe. Involoop does not
-                    store card information.
-                  </p>
-                  <p className="test-badge">Stripe Test Mode — no real money will be charged</p>
-                </>
-              )}
-              <div className="pay-instruction">
-                <p>Manual payment</p>
-                <span>
-                  Transfer to the account you agreed with {invoice.sender_name},
-                  then confirm below.
+                </div>
+                <span className="test-badge" style={{ margin: 0, textAlign: "center" }}>
+                  Stripe Test Mode — tidak ada uang asli yang ditarik
                 </span>
-              </div>
-              <button
-                onClick={handleConfirmTransfer}
-                disabled={submitting}
-                className="btn btn-ghost"
-                style={{ width: "100%", padding: 14, fontSize: 15 }}
-              >
-                {submitting ? "Sending confirmation…" : "I have completed the transfer"}
-              </button>
-            </>
-          )}
-          {error && <p className="error">{error}</p>}
+              </>
+            )}
+            {error && <p className="error" style={{ margin: 0 }}>{error}</p>}
+          </div>
 
           {invoice.cta_message && (
-            <div className="referral-box">
-              <h3 className="referral-heading">Create an invoice like this — free</h3>
-              <p>{invoice.cta_message}</p>
+            <div className="card" style={{ padding: 22, textAlign: "center" }}>
+              <h3 className="referral-heading">Buat invoice seperti ini — gratis</h3>
+              <p className="hint" style={{ margin: "8px 0 12px" }}>{invoice.cta_message}</p>
               <button onClick={trackClick} className="referral-link link-btn">
-                Get 5 free credits when you join through this invoice →
+                Dapatkan 5 kredit gratis saat kamu bergabung lewat invoice ini →
               </button>
             </div>
           )}
         </div>
-
-        <p className="hint" style={{ textAlign: "center", marginTop: 16 }}>
-          Made with <Link href="/">Involoop</Link> · invoices that bring your next user
-        </p>
       </main>
+
+      <p className="hint" style={{ textAlign: "center", marginBottom: 40 }}>
+        Dibuat dengan <Link href="/">Involoop</Link> · invoice yang mendatangkan pengguna berikutnya
+      </p>
     </>
   );
 }
