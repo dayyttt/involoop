@@ -59,6 +59,12 @@ select id, free_invoice_credits, 'signup', 'Saldo sebelum ledger', 'legacy_balan
 from profiles
 on conflict (idempotency_key) do nothing;
 
+create sequence if not exists invoice_number_seq;
+select setval('invoice_number_seq',
+  coalesce((select max(substring(number from '^INV-[0-9]+-([0-9]+)$')::int) from invoices
+    where number ~ '^INV-[0-9]+-[0-9]+$'), 0),
+  true);
+
 create or replace function finalize_signup(
   p_user_id uuid,
   p_email text,
@@ -136,7 +142,7 @@ begin
   if v_credits <= 0 then raise exception 'NO_CREDITS'; end if;
 
   v_number := 'INV-' || to_char(now(), 'YYYY') || '-' ||
-              lpad((select count(*) + 1 from invoices where owner_id = p_owner_id)::text, 3, '0');
+              lpad(nextval('invoice_number_seq')::text, 3, '0');
 
   insert into invoices (owner_id, client_name, description, amount, currency, due_date, cta_message, number)
   values (p_owner_id, p_client_name, p_description, p_amount, p_currency, p_due_date, p_cta_message, v_number)

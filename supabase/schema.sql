@@ -60,7 +60,6 @@ alter table profiles enable row level security;
 alter table credit_ledger enable row level security;
 alter table invoices enable row level security;
 alter table referrals enable row level security;
-
 create policy "profiles_self" on profiles for select using (auth.uid() = id);
 create policy "profiles_self_update" on profiles for update using (auth.uid() = id);
 create policy "ledger_self" on credit_ledger for select using (auth.uid() = user_id);
@@ -136,6 +135,8 @@ begin
 end;
 $$;
 
+create sequence if not exists invoice_number_seq;
+
 -- Publish an invoice: deduct one credit and log it atomically. Raises an
 -- exception the API maps to a friendly message.
 create or replace function publish_invoice(
@@ -164,7 +165,7 @@ begin
   end if;
 
   v_number := 'INV-' || to_char(now(), 'YYYY') || '-' ||
-              lpad((select count(*) + 1 from invoices where owner_id = p_owner_id)::text, 3, '0');
+              lpad(nextval('invoice_number_seq')::text, 3, '0');
 
   insert into invoices (owner_id, client_name, description, amount, currency, due_date, cta_message, number)
   values (p_owner_id, p_client_name, p_description, p_amount, p_currency, p_due_date, p_cta_message, v_number)
