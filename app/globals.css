@@ -73,7 +73,9 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-syne), sans-serif; 
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 .split-section { display: grid; grid-template-columns: 1fr 1.08fr; gap: 72px; align-items: center; }
-.section-image { width: 100%; height: min(480px, 52vw); object-fit: cover; border: 1px solid var(--line); border-radius: var(--radius); }
+.section-image { overflow: hidden; width: 100%; height: min(480px, 52vw); border: 1px solid var(--line); border-radius: var(--radius); background: radial-gradient(ellipse at 50% 100%, rgba(89,41,142,.25), transparent 60%), var(--surface); }
+.webgl-object { width: 100%; height: 100%; }
+.webgl-object canvas { display: block; width: 100% !important; height: 100% !important; }
 .value-list { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 24px 0; color: var(--text-2); font-size: 12px; font-weight: 700; }
 .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 28px 0; padding-top: 24px; border-top: 1px solid var(--line); }
 .metric-row strong { display: block; color: var(--primary); font: 800 30px var(--font-syne), sans-serif; }
@@ -92,7 +94,7 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-syne), sans-serif; 
 .feature-card a { display: inline-block; margin-top: 14px; color: var(--text); font-size: 12px; font-weight: 800; text-decoration: none; }
 .feature-card:hover a { color: var(--primary); }
 
-.process-image { width: 100%; height: 430px; margin-top: 34px; border-radius: var(--radius); object-fit: cover; }
+.process-image { overflow: hidden; width: 100%; height: 430px; margin-top: 34px; border: 1px solid var(--line); border-radius: var(--radius); background: radial-gradient(ellipse at 50% 100%, rgba(89,41,142,.25), transparent 60%), var(--surface); }
 .process-stack { position: relative; z-index: 2; margin: -50px 32px 0; display: grid; gap: 10px; }
 .process-row { display: grid; grid-template-columns: 210px 1fr; align-items: center; gap: 32px; padding: 22px 26px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(33,26,37,.96); }
 .process-row > div { display: flex; align-items: center; gap: 24px; }

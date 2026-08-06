@@ -1,5 +1,6 @@
 import Link from "next/link";
 import NeonLandscape from "@/components/NeonLandscape";
+import WebGLObject from "@/components/WebGLObject";
 
 const features = [
   ["01", "Invoice dari satu kalimat", "AI memecah kalimat tagihan jadi nama klien, nominal, deskripsi, tenggat, dan CTA referral."],
@@ -82,7 +83,9 @@ export default function Home() {
       </section>
 
       <section id="why" className="site-shell section-space split-section">
-        <img src="/involoop-about.jpg" alt="Freelancer mengelola pekerjaan" className="section-image" />
+        <div className="section-image">
+          <WebGLObject variant="knot" />
+        </div>
         <div>
           <p className="section-eyebrow">KENAPA INVOLOOP</p>
           <h2>Tagihanmu sudah punya distribusi. Kami membuatnya bekerja.</h2>
@@ -134,7 +137,9 @@ export default function Home() {
       <section id="process" className="site-shell section-space">
         <p className="section-eyebrow">ALUR PRODUK</p>
         <h2>Lima langkah. Satu loop lengkap.</h2>
-        <img src="/involoop-process.jpg" alt="Proses kerja freelancer" className="process-image" />
+        <div className="process-image">
+          <WebGLObject variant="sphere" />
+        </div>
         <div className="process-stack">
           {process.map(([number, title, text]) => (
             <article className="process-row" key={number}>
