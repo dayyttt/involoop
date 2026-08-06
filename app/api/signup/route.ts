@@ -9,98 +9,70 @@ export async function POST(req: NextRequest) {
   try {
     const { email, password, full_name, ref_invoice_public_id } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "email and password are required" }, { status: 400 });
+    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+    if (!normalizedEmail || !password) {
+      return NextResponse.json(
+        { error: "Email dan password wajib diisi." },
+        { status: 400 }
+      );
+    }
+    if (typeof password !== "string" || password.length < 6) {
+      return NextResponse.json(
+        { error: "Password minimal 6 karakter." },
+        { status: 400 }
+      );
     }
 
     const supabase = createAdminClient();
 
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
+      email: normalizedEmail,
       password,
       email_confirm: true,
     });
 
     if (authError || !authData.user) {
+      const msg = (authError?.message ?? "").toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already been registered")) {
+        return NextResponse.json(
+          { error: "Email ini sudah terdaftar. Coba masuk langsung." },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
-        { error: authError?.message ?? "Gagal mendaftar" },
+        { error: "Pendaftaran gagal. Coba email lain." },
         { status: 400 }
       );
     }
 
     const newUserId = authData.user.id;
 
-    let referrerId: string | null = null;
-    let sourceInvoiceId: string | null = null;
-
-    if (ref_invoice_public_id) {
-      const { data: invoice } = await supabase
-        .from("invoices")
-        .select("id, owner_id")
-        .eq("public_id", ref_invoice_public_id)
-        .single();
-
-      if (invoice) {
-        referrerId = invoice.owner_id;
-        sourceInvoiceId = invoice.id;
-      }
-    }
-
-    // Note: no referral-fraud guard here. A farmer could create burner accounts
-    // with different emails to farm credits. Real mitigation (reward only when
-    // the referee creates/pays an invoice) is out of hackathon scope — the demo
-    // brief only requires the loop to work end to end.
-
-    // Both sides of the loop get rewarded: the referrer earns REWARD_CREDITS,
-    // and the referee who arrives via a referral link starts with extra credits.
-    const DEFAULT_CREDITS = 3;
-    const REFEREE_BONUS = 2;
-
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: newUserId,
-      email,
-      full_name: full_name ?? null,
-      referred_by: referrerId,
-      free_invoice_credits: DEFAULT_CREDITS + (referrerId ? REFEREE_BONUS : 0),
+    const { data: result, error: rpcError } = await supabase.rpc("finalize_signup", {
+      p_user_id: newUserId,
+      p_email: normalizedEmail,
+      p_full_name: typeof full_name === "string" ? full_name : null,
+      p_ref_invoice_public_id: ref_invoice_public_id ?? null,
     });
 
-    if (profileError) {
-      return NextResponse.json({ error: profileError.message }, { status: 500 });
+    if (rpcError || !result) {
+      // Clean up the orphan auth user so retry can work.
+      await supabase.auth.admin.deleteUser(newUserId);
+      return NextResponse.json(
+        { error: "Gagal menyelesaikan pendaftaran. Coba lagi." },
+        { status: 500 }
+      );
     }
 
-    // This is the loop closing: credit the referrer with bonus invoice
-    // credits and log a referrals row judges can point at in the demo.
-    if (referrerId) {
-      const REWARD_CREDITS = 3;
-
-      await supabase.from("referrals").insert({
-        referrer_id: referrerId,
-        referred_id: newUserId,
-        source_invoice_id: sourceInvoiceId,
-        status: "rewarded",
-        reward_credits: REWARD_CREDITS,
-        converted_at: new Date().toISOString(),
-      });
-
-      const { data: referrerProfile } = await supabase
-        .from("profiles")
-        .select("free_invoice_credits")
-        .eq("id", referrerId)
-        .single();
-
-      if (referrerProfile) {
-        await supabase
-          .from("profiles")
-          .update({
-            free_invoice_credits: referrerProfile.free_invoice_credits + REWARD_CREDITS,
-          })
-          .eq("id", referrerId);
-      }
-    }
-
-    return NextResponse.json({ user_id: newUserId, rewarded_referrer: !!referrerId });
+    return NextResponse.json({
+      user_id: newUserId,
+      credits: result.credits,
+      rewarded_referrer: result.rewarded_referrer,
+    });
   } catch (err: any) {
     console.error("signup error", err);
-    return NextResponse.json({ error: "Gagal mendaftar. Coba lagi." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Gagal mendaftar. Coba lagi." },
+      { status: 500 }
+    );
   }
 }

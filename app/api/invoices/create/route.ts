@@ -7,10 +7,55 @@ import { parseInvoiceFromText } from "@/lib/claude";
 // raw_text example: "tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu"
 export async function POST(req: NextRequest) {
   try {
-    const { raw_text } = await req.json();
+    const body = await req.json();
+    const { raw_text, manual, client_name, description, amount, due_date, cta_message } = body;
 
-    if (!raw_text || typeof raw_text !== "string") {
-      return NextResponse.json({ error: "raw_text is required" }, { status: 400 });
+    let parsed;
+
+    if (manual) {
+      if (
+        !client_name ||
+        !description ||
+        typeof amount !== "number" ||
+        !(amount > 0)
+      ) {
+        return NextResponse.json(
+          { error: "Lengkapi nama klien, deskripsi, dan nominal yang valid." },
+          { status: 400 }
+        );
+      }
+      parsed = {
+        client_name: String(client_name),
+        description: String(description),
+        amount,
+        due_date: due_date || null,
+        cta_message: typeof cta_message === "string" ? cta_message : null,
+      };
+    } else if (!raw_text || typeof raw_text !== "string") {
+      return NextResponse.json(
+        { error: "Tulis kalimat tagihan dulu." },
+        { status: 400 }
+      );
+    } else {
+      try {
+        parsed = await parseInvoiceFromText(raw_text);
+      } catch (err: any) {
+        console.error("AI parse error", err);
+        return NextResponse.json(
+          {
+            error:
+              "AI gagal menyusun invoice. Coba lagi, atau gunakan form manual di bawah.",
+          },
+          { status: 502 }
+        );
+      }
+
+      if (!parsed.client_name || !parsed.description || typeof parsed.amount !== "number" || parsed.amount <= 0) {
+        return NextResponse.json(
+          { error: "Hasil AI tidak valid. Coba tulis ulang kalimat tagihan." },
+          { status: 502 }
+        );
+      }
     }
 
     // Derive the owner from the session, never from the request body.
@@ -20,55 +65,38 @@ export async function POST(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Kamu belum login." }, { status: 401 });
     }
 
-    const ownerId = user.id;
     const admin = createAdminClient();
 
-    // Check free credits before spending an AI call
-    const { data: profile, error: profileError } = await admin
-      .from("profiles")
-      .select("free_invoice_credits")
-      .eq("id", ownerId)
-      .single();
+    const { data: invoice, error: rpcError } = await admin.rpc("publish_invoice", {
+      p_owner_id: user.id,
+      p_client_name: parsed.client_name,
+      p_description: parsed.description,
+      p_amount: parsed.amount,
+      p_currency: "IDR",
+      p_due_date: parsed.due_date,
+      p_cta_message: parsed.cta_message,
+    });
 
-    if (profileError || !profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-    if (profile.free_invoice_credits <= 0) {
+    if (rpcError || !invoice) {
+      const msg = (rpcError?.message ?? "").toUpperCase();
+      if (msg.includes("NO_CREDITS")) {
+        return NextResponse.json(
+          {
+            error:
+              "Kredit invoice habis. Ajak klien daftar lewat invoicemu untuk kredit tambahan.",
+          },
+          { status: 402 }
+        );
+      }
+      console.error("publish error", rpcError?.message);
       return NextResponse.json(
-        { error: "Kredit invoice habis. Ajak klien daftar untuk dapat kredit tambahan." },
-        { status: 402 }
-      );
-    }
-
-    const parsed = await parseInvoiceFromText(raw_text);
-
-    const { data: invoice, error: insertError } = await admin
-      .from("invoices")
-      .insert({
-        owner_id: ownerId,
-        client_name: parsed.client_name,
-        description: parsed.description,
-        amount: parsed.amount,
-        due_date: parsed.due_date,
-        cta_message: parsed.cta_message,
-      })
-      .select()
-      .single();
-
-    if (insertError || !invoice) {
-      return NextResponse.json(
-        { error: insertError?.message ?? "Failed to create invoice" },
+        { error: "Gagal menerbitkan invoice. Coba lagi." },
         { status: 500 }
       );
     }
-
-    await admin
-      .from("profiles")
-      .update({ free_invoice_credits: profile.free_invoice_credits - 1 })
-      .eq("id", ownerId);
 
     const shareUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/invoice/${invoice.public_id}`;
 

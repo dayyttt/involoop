@@ -1,120 +1,121 @@
 # Involoop
 
-Invoicing untuk freelancer solo. Setiap invoice yang dikirim membawa jalur
-referral yang aktif saat klien membuka halaman itu untuk membayar —
-bukan fitur promosi terpisah yang harus dipromosikan aktif oleh freelancer.
+Invoicing untuk freelancer solo dan micro-agency. Setiap invoice yang dikirim
+membawa jalur referral yang aktif saat klien membuka halaman itu untuk
+membayar — bukan fitur promosi terpisah.
 
-## Distribution mechanism (theme requirement)
+**Live:** https://involoop.vercel.app
 
-**Referral loop, tertanam di titik transaksi:**
+## Masalah yang diselesaikan
 
-1. Freelancer A membuat invoice lewat satu kalimat natural (AI mem-parse
-   jadi field terstruktur + menulis satu baris CTA yang kontekstual
-   dengan jenis jasa).
-2. A mengirim link invoice ke klien B lewat channel apa pun (WA, email —
-   di luar scope aplikasi ini secara sengaja, lihat bagian "Scope" di bawah).
-3. B membuka halaman invoice untuk membayar. Di bawah tombol bayar, muncul
-   CTA singkat mengajak B coba Involoop untuk bisnisnya sendiri, kalau
-   relevan.
-4. B klik → daftar lewat `/signup?ref_invoice=<public_id>`.
-5. Sistem mencatat baris di tabel `referrals` dan langsung mengkreditkan
-   A dengan kredit invoice tambahan.
+Freelancer sudah rutin mengirim invoice kepada profesional dan bisnis lain,
+tetapi setiap invoice berhenti sebagai transaksi dan tidak pernah menjadi
+jalur distribusi. Padahal penerima invoice adalah audiens yang relevan, hadir
+di momen bernilai tinggi, dan sering menjalankan bisnis jasa sendiri.
 
-Loop ini bisa didemokan penuh dalam < 2 menit: buka dua browser (A dan B),
-tunjukkan A kirim invoice, B buka dan daftar dari CTA, kembali ke dashboard
-A dan tunjukkan kreditnya sudah bertambah otomatis.
+## Distribution loop (theme requirement)
+
+```text
+A buat invoice (1 kalimat, AI parse) → link publik
+B buka invoice → lihat detail → konfirmasi pembayaran
+B klik CTA referral → /signup?ref_invoice=<public_id>
+Sistem mencatat referral + kredit kedua pihak
+A lihat bukti di dashboard (views, signup, ledger)
+```
+
+Reward: A mendapat **+3 kredit** per referral, B mendapat **3 kredit awal + 2 bonus**.
+1 kredit = 1 invoice publik.
 
 ## AI di dalam produk
 
-Pembuatan invoice tidak pakai form manual — freelancer ketik satu kalimat
-("tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu"), Claude API
-mem-parse jadi field invoice terstruktur DAN menulis satu baris CTA
-referral yang disesuaikan dengan jenis jasa yang ditagih. Lihat `lib/claude.ts`.
+Pembuatan invoice pakai satu kalimat natural. Claude API mem-parse jadi field
+terstruktur DAN menulis satu baris CTA referral yang kontekstual dengan jenis
+jasa. Lihat `lib/claude.ts`. Ada fallback form manual bila AI gagal.
 
-## Auth
+## Tech stack
 
-- Daftar di `/signup`, masuk di `/login`, keluar lewat tombol di dashboard.
-- Semua mutasi API (`invoices/create`, `referrals`) mengambil `owner_id` dari
-  session cookie server-side — tidak pernah dari body request. Klien yang
-  belum login ditolak dengan 401.
+- Next.js 14 (App Router, server actions via API routes)
+- Supabase (Postgres + Auth + RLS)
+- three.js (hero WebGL neon landscape)
+- Claude API / Anthropic SDK
+- Deploy: Vercel
 
-## Scope yang sengaja tidak dibangun
+## Arsitektur singkat
 
-- Tidak ada sistem pengiriman invoice sendiri (email/WA API) — freelancer
-  memakai channel yang sudah biasa mereka pakai. Aplikasi hanya
-  menghasilkan link publik.
-- Pembayaran disimulasikan (tombol "Bayar sekarang" langsung menandai
-  lunas) — dipilih supaya demo tidak bergantung pada gateway pembayaran
-  eksternal yang bisa gagal saat presentasi.
-
-## Setup
-
-### 1. Supabase
-
-1. Buat project baru di [supabase.com](https://supabase.com).
-2. Buka SQL Editor, jalankan isi `supabase/schema.sql`.
-3. Di Project Settings → API, salin `Project URL`, `anon public key`, dan
-   `service_role key`.
-4. Di Authentication → Providers, pastikan Email/Password aktif.
-
-### 2. Environment variables
-
-```bash
-cp .env.example .env.local
+```text
+app/
+  page.tsx                    Landing
+  signup|login                Auth pages
+  dashboard                   Proof loop: stats, ledger, referral, invoice
+  invoice/[id]                Halaman invoice publik (distribution surface)
+  api/signup                  Buat user + finalize_signup (RPC transaksional)
+  api/invoices/create         AI parse → publish_invoice (RPC, potong kredit)
+  api/invoices/pay            B konfirmasi transfer → awaiting_verification
+  api/invoices/verify         A verifikasi → paid
+  api/invoices/[public_id]    Read publik + tracking view (cookie)
+  api/dashboard               Data dashboard (session + service role)
+lib/
+  claude.ts                   AI parse
+  supabase-*.ts               Client admin / server / browser
+supabase/schema.sql           Tabel, RLS, RPC (transaksional, anti-duplikasi)
 ```
 
-Isi `.env.local` dengan:
-- `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY` dari Supabase
-- `SUPABASE_SERVICE_ROLE_KEY` dari Supabase (jangan pernah expose ke client)
-- `AI_API_KEY` (opsional `AI_BASE_URL` dan `AI_MODEL`) dari gateway AI-mu
-  (9router, atau [console.anthropic.com](https://console.anthropic.com))
-- `NEXT_PUBLIC_BASE_URL` — `http://localhost:3000` untuk lokal, atau URL
-  deployment untuk production
+Keamanan: semua mutasi mengambil `owner_id` dari session cookie, tidak pernah
+dari body. Reward dilindungi constraint `UNIQUE(referred_user_id)` dan ledger
+`UNIQUE(idempotency_key)`. Self-referral ditolak. Email dinormalisasi
+lowercase. Publish + reward dikerjakan dalam fungsi Postgres transaksional.
 
-### 3. Install & jalankan
+## Cara menjalankan lokal
 
 ```bash
 npm install
+cp .env.example .env.local   # isi sesuai bagian bawah
 npm run dev
 ```
 
 Buka `http://localhost:3000`.
 
-### 4. Deploy (untuk link demo live)
+## Environment variables
 
-Termudah lewat [Vercel](https://vercel.com): import repo ini, isi
-environment variables yang sama seperti `.env.local` di dashboard Vercel,
-deploy.
+- `NEXT_PUBLIC_SUPABASE_URL` dan `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (server only, jangan expose ke client)
+- `AI_API_KEY` (opsional `AI_BASE_URL` dan `AI_MODEL`)
+- `NEXT_PUBLIC_BASE_URL` — `http://localhost:3000` lokal, atau URL deploy
 
-## Alur pakai singkat
+## Setup Supabase
 
-1. Daftar di `/signup` (tanpa `ref_invoice`, jadi user pertama).
-2. Masuk `/dashboard` → klik "Buat invoice".
-3. Ketik kalimat tagihan → dapat link invoice publik.
-4. Buka link itu di browser/incognito lain → coba tombol "Bayar sekarang"
-   → coba klik CTA referral di bawahnya → daftar sebagai user B.
-5. Kembali ke dashboard user A → kredit invoice sudah bertambah otomatis,
-   dan daftar referral (nama + tanggal) muncul di bagian "Referral".
+1. Buat project di supabase.com, buka SQL Editor.
+2. Jalankan isi `supabase/schema.sql`.
+3. Salin Project URL, anon key, service_role key ke `.env.local`.
+4. Authentication → Providers → pastikan Email/Password aktif.
 
-## Target pengguna
+## Demo account
 
-Freelancer/konsultan solo yang menagih klien secara rutin (desainer,
-developer, konsultan, video editor) — bukan agency besar dengan tim
-finance, bukan retail yang jual produk sekali transaksi.
+Dibuat otomatis saat setup demo live:
+
+```text
+User A (freelancer):  demo-owner@involoop.app  /  involoop-demo-2026
+User B (klien):       demo-client@involoop.app /  involoop-demo-2026
+```
+
+## Known limitations
+
+- Pembayaran disimulasikan secara jujur: B konfirmasi transfer →
+  `awaiting_verification` → A verifikasi → `paid`. Tidak ada gateway sungguhan.
+- Anti-fraud minimal: unik per user + idempotent ledger. Reward berbasis
+  kehadiran akun, bukan pada transaksi berbayar — mitigasi penuh di luar scope.
+- Langganan berbayar (Starter/Pro) hanya informasi harga, belum diaktifkan.
+- View invoice dicatat per browser (cookie), bukan per IP/akun.
 
 ## Model harga
 
-Free: 3 kredit invoice awal, tambah 3 kredit setiap referral berhasil. Klien
-yang daftar lewat link referral-mu dapat bonus 2 kredit tambahan — kedua
-pihak di loop dihargai.
-Pro (rencana lanjutan, belum diimplementasi di scope hackathon): biaya
-bulanan tetap untuk kredit invoice unlimited.
+Gratis: 3 invoice publik, +3 kredit per referral, +2 bonus untuk klien.
+Starter Rp29.000: 10 invoice. Pro Rp79.000/bulan: 50 invoice.
 
-## Distribution strategy (satu paragraf, untuk submission)
+## Strategi distribusi
 
-100 pengguna pertama kami adalah freelancer solo aktif di komunitas
-r/freelance, r/digitalnomad, dan komunitas Discord/Skool freelancer
-seperti "Freelance to Founder" — audiens yang budayanya memang berjalan
-dari referral klien, jadi pesannya relevan tanpa perlu penjelasan
-tambahan. Ini hipotesis channel awal, belum tervalidasi lewat data,
-dan disampaikan apa adanya ke juri.
+100 pengguna pertama: freelance developer, designer, consultant, video editor,
+dan micro-agency Indonesia yang rutin mengirim invoice ke sesama pelaku jasa
+B2B — dijangkau lewat komunitas WhatsApp/Discord freelancer yang sudah dapat
+diakses, direct outreach ke micro-agency pengguna invoice PDF manual, dan
+sepuluh pengguna pilot yang masing-masing mengirim minimal tiga invoice nyata.

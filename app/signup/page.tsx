@@ -1,9 +1,11 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
+
+const REF_COOKIE = "ref_invoice";
 
 export default function Signup() {
   return (
@@ -16,7 +18,7 @@ export default function Signup() {
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const refInvoice = searchParams.get("ref_invoice"); // present when arriving from an invoice page
+  const refInvoice = searchParams.get("ref_invoice") ?? null; // present when arriving from an invoice page
   const supabase = createClient();
 
   const [fullName, setFullName] = useState("");
@@ -25,19 +27,41 @@ function SignupForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Persist the referral outside React state so it survives a refresh even if
+  // the URL query is lost.
+  useEffect(() => {
+    if (refInvoice) {
+      document.cookie = `${REF_COOKIE}=${refInvoice}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+    }
+  }, [refInvoice]);
+
+  function getRefFromCookie() {
+    const match = document.cookie.match(/(?:^|;\s*)ref_invoice=([^;]+)/);
+    return match ? match[1] : null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
+    if (password.length < 6) {
+      setError("Password minimal 6 karakter.");
+      setLoading(false);
+      return;
+    }
+
+    const ref = refInvoice ?? getRefFromCookie();
+    const normalizedEmail = email.trim().toLowerCase();
+
     const res = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email,
+        email: normalizedEmail,
         password,
         full_name: fullName,
-        ref_invoice_public_id: refInvoice ?? undefined,
+        ref_invoice_public_id: ref ?? undefined,
       }),
     });
 
@@ -45,12 +69,23 @@ function SignupForm() {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Gagal mendaftar");
+      setError(data.error ?? "Gagal mendaftar. Coba lagi.");
       return;
     }
 
     // Sign in immediately so the new user lands straight in their dashboard.
-    await supabase.auth.signInWithPassword({ email, password });
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+
+    if (signInError) {
+      setError("Akun berhasil dibuat. Silakan masuk lewat halaman login.");
+      router.push("/login");
+      return;
+    }
+
+    document.cookie = `${REF_COOKIE}=; path=/; max-age=0`;
     router.push("/dashboard");
   }
 

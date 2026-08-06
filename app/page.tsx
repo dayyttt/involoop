@@ -4,7 +4,7 @@ import NeonLandscape from "@/components/NeonLandscape";
 const features = [
   ["01", "Invoice dari satu kalimat", "AI memecah kalimat tagihan jadi nama klien, nominal, deskripsi, tenggat, dan CTA referral."],
   ["02", "Link publik siap kirim", "Bagikan invoice lewat WhatsApp, email, atau channel yang sudah kamu pakai tanpa setup pengiriman baru."],
-  ["03", "Pembayaran tanpa friksi", "Klien membuka halaman yang fokus, membaca detail, lalu menyelesaikan pembayaran dari satu layar."],
+  ["03", "Konfirmasi pembayaran", "Klien melihat instruksi pembayaran dan mengonfirmasi transfer langsung dari halaman invoice."],
   ["04", "CTA yang relevan", "AI menulis ajakan sesuai jasa yang ditagih, bukan iklan generik yang terasa dipaksakan."],
   ["05", "Reward dua arah", "Freelancer mendapat 3 kredit, sementara klien yang mendaftar mendapat bonus 2 kredit."],
   ["06", "Loop terlihat jelas", "Referral, kredit, dan invoice langsung muncul di dashboard agar pertumbuhan bisa didemokan end-to-end."],
@@ -40,6 +40,7 @@ export default function Home() {
             <a href="#features">Fitur</a>
             <a href="#process">Cara kerja</a>
             <a href="#reward">Reward</a>
+            <a href="#pricing">Harga</a>
           </nav>
           <Link href="/signup" className="btn btn-primary">
             Mulai gratis
@@ -54,11 +55,14 @@ export default function Home() {
           <div className="agency-hero-copy">
             <span className="section-eyebrow">Distribution-first invoicing</span>
             <h1>
-              Invoice yang ikut <span className="gradient-text">mencari pengguna</span> baru.
+              Buat invoice dalam hitungan detik.
+              <br />
+              Dapatkan invoice berikutnya secara <span className="gradient-text">gratis</span>.
             </h1>
             <p>
-              Buat invoice dari satu kalimat. Kirim seperti biasa. Saat klien membayar,
-              Involoop membuka jalur referral yang memberi reward ke kedua pihak.
+              Tulis tagihan dalam satu kalimat, kirim lewat link, dan dapatkan
+              kredit saat klien bisnismu ikut menggunakan Involoop. Invoice
+              yang ikut mencari pengguna baru.
             </p>
             <div className="hero-actions">
               <Link href="/signup" className="btn btn-primary btn-lg">
@@ -67,6 +71,17 @@ export default function Home() {
               <Link href="/login" className="btn btn-ghost btn-lg">
                 Masuk dashboard
               </Link>
+            </div>
+            <div className="hero-points">
+              <span>
+                <b>1 kredit</b> = 1 invoice publik
+              </span>
+              <span>
+                <b>+3</b> reward per referral
+              </span>
+              <span>
+                <b>+2</b> bonus untuk klien
+              </span>
             </div>
           </div>
         </div>
@@ -91,6 +106,11 @@ export default function Home() {
             <span>◆ Tanpa form panjang</span>
             <span>◆ Reward dua arah</span>
           </div>
+          <p className="body-copy">
+            Involoop dibuat untuk freelancer, micro-agency, dan profesional jasa
+            B2B yang saling membeli dan menjual jasa — bukan invoice untuk
+            konsumen umum.
+          </p>
           <p className="body-copy">
             Freelancer sudah rutin mengirim invoice ke pemilik bisnis dan profesional lain.
             Itu audiens yang relevan, hadir di momen bernilai tinggi, dan selama ini belum
@@ -166,6 +186,63 @@ export default function Home() {
           </div>
           <Link href="/signup" className="btn btn-primary btn-lg">Mulai loop pertamamu</Link>
         </div>
+      </section>
+
+      <section id="pricing" className="site-shell section-space">
+        <div className="process-head">
+          <p className="section-eyebrow">HARGA</p>
+          <h2>Satu kredit, satu invoice publik.</h2>
+          <p className="body-copy">
+            1 kredit = 1 invoice yang kamu publikasikan. Kredit didapat dari
+            referral, sehingga biaya menagih bisa kembali terbayar dari
+            distribusi.
+          </p>
+        </div>
+        <div className="pricing-grid">
+          <div className="plan">
+            <h3 className="plan-name">Gratis</h3>
+            <div className="plan-price">Rp 0</div>
+            <p className="plan-desc">Mulai menagih tanpa biaya.</p>
+            <ul className="plan-features">
+              <li>3 invoice publik</li>
+              <li>+3 kredit per referral</li>
+              <li>Link publik + CTA referral</li>
+            </ul>
+            <Link href="/signup" className="btn btn-ghost" style={{ width: "100%" }}>
+              Daftar gratis
+            </Link>
+          </div>
+          <div className="plan plan-featured">
+            <h3 className="plan-name">Starter</h3>
+            <div className="plan-price">Rp 29.000</div>
+            <p className="plan-desc">Untuk freelancer aktif menagih tiap minggu.</p>
+            <ul className="plan-features">
+              <li>10 invoice publik</li>
+              <li>Semua fitur gratis</li>
+              <li>Riwayat kredit lengkap</li>
+            </ul>
+            <Link href="/signup" className="btn btn-primary" style={{ width: "100%" }}>
+              Mulai
+            </Link>
+          </div>
+          <div className="plan">
+            <h3 className="plan-name">Pro</h3>
+            <div className="plan-price">Rp 79.000<span>/bulan</span></div>
+            <p className="plan-desc">Untuk micro-agency dan volume tinggi.</p>
+            <ul className="plan-features">
+              <li>50 invoice publik</li>
+              <li>Prioritas tanpa batas</li>
+              <li>Loop distribusi maksimal</li>
+            </ul>
+            <Link href="/signup" className="btn btn-ghost" style={{ width: "100%" }}>
+              Hubungi kami
+            </Link>
+          </div>
+        </div>
+        <p className="hint" style={{ textAlign: "center", marginTop: 28 }}>
+          Langganan berbayar belum diaktifkan di hackathon — paket ini menjelaskan
+          bagaimana Involoop menghasilkan uang.
+        </p>
       </section>
 
       <section className="site-shell section-space final-cta">

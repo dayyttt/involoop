@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
 
-// Honest simulated payment flow:
-//   B clicks "Saya sudah transfer" -> status becomes 'awaiting_verification'
-//   A verifies on the dashboard  -> status becomes 'paid'
-// The invoice is never claimed paid by the buyer themselves.
+// Owner marks a buyer's transfer as verified -> invoice becomes 'paid'.
 // Expects: { public_id: string }
 export async function POST(req: NextRequest) {
   try {
@@ -13,26 +11,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "public_id is required" }, { status: 400 });
     }
 
-    const supabase = createAdminClient();
+    const supabase = createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    const { data: invoice, error } = await supabase
+    if (!user) {
+      return NextResponse.json({ error: "Kamu belum login." }, { status: 401 });
+    }
+
+    const admin = createAdminClient();
+
+    const { data: invoice, error } = await admin
       .from("invoices")
-      .update({ status: "awaiting_verification" })
+      .update({ status: "paid", paid_at: new Date().toISOString() })
       .eq("public_id", public_id)
-      .eq("status", "unpaid") // idempotency guard against double-submit
+      .eq("owner_id", user.id)
+      .eq("status", "awaiting_verification")
       .select("public_id, status")
       .single();
 
     if (error || !invoice) {
       return NextResponse.json(
-        { error: "Invoice tidak ditemukan atau sudah diproses." },
+        { error: "Invoice tidak ditemukan atau belum dikonfirmasi klien." },
         { status: 404 }
       );
     }
 
     return NextResponse.json({ invoice });
   } catch (err: any) {
-    console.error("invoice confirm error", err);
+    console.error("invoice verify error", err);
     return NextResponse.json(
       { error: "Terjadi kesalahan. Coba lagi." },
       { status: 500 }

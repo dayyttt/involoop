@@ -6,12 +6,16 @@ import Link from "next/link";
 
 interface InvoiceData {
   public_id: string;
+  number: string;
   client_name: string;
   description: string;
   amount: number;
+  currency: string;
   status: string;
   cta_message: string | null;
   due_date: string | null;
+  created_at: string;
+  sender_name: string;
 }
 
 export default function PublicInvoice() {
@@ -20,8 +24,8 @@ export default function PublicInvoice() {
 
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [paying, setPaying] = useState(false);
-  const [payError, setPayError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -35,21 +39,23 @@ export default function PublicInvoice() {
     load();
   }, [publicId]);
 
-  async function handlePay() {
-    setPaying(true);
-    setPayError(null);
+  async function handleConfirmTransfer() {
+    setSubmitting(true);
+    setError(null);
     const res = await fetch("/api/invoices/pay", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ public_id: publicId }),
     });
     if (res.ok) {
-      setInvoice((prev) => (prev ? { ...prev, status: "paid" } : prev));
+      setInvoice((prev) =>
+        prev ? { ...prev, status: "awaiting_verification" } : prev
+      );
     } else {
       const data = await res.json().catch(() => ({}));
-      setPayError(data.error ?? "Terjadi kesalahan saat membayar. Coba lagi.");
+      setError(data.error ?? "Terjadi kesalahan. Coba lagi.");
     }
-    setPaying(false);
+    setSubmitting(false);
   }
 
   if (loading)
@@ -87,13 +93,27 @@ export default function PublicInvoice() {
 
       <main className="invoice-card">
         <div className="card">
-          <p className="invoice-label">Tagihan untuk</p>
-          <h1 className="invoice-title">{invoice.client_name}</h1>
+          <div className="invoice-head">
+            <div>
+              <p className="invoice-label">DARI</p>
+              <h1 className="invoice-title">{invoice.sender_name}</h1>
+            </div>
+            <div className="invoice-meta">
+              <p className="invoice-label">NO. {invoice.number}</p>
+              <span className="hint">
+                Dibuat {new Date(invoice.created_at).toLocaleDateString("id-ID")}
+              </span>
+            </div>
+          </div>
+
+          <p className="invoice-label" style={{ marginTop: 20 }}>UNTUK</p>
+          <h2 className="invoice-client">{invoice.client_name}</h2>
 
           <p className="invoice-desc">{invoice.description}</p>
 
           <div className="invoice-amount">
-            Rp {invoice.amount.toLocaleString("id-ID")}
+            {invoice.currency === "IDR" ? "Rp " : ""}
+            {invoice.amount.toLocaleString("id-ID")}
           </div>
           {invoice.due_date && (
             <p className="hint" style={{ margin: "2px 0 20px" }}>
@@ -102,30 +122,44 @@ export default function PublicInvoice() {
           )}
 
           {invoice.status === "paid" ? (
-            <div className="paid-banner">Sudah dibayar</div>
+            <div className="paid-banner">Pembayaran diterima ✓</div>
+          ) : invoice.status === "awaiting_verification" ? (
+            <div className="paid-banner">Menunggu verifikasi pengirim</div>
           ) : (
-            <button
-              onClick={handlePay}
-              disabled={paying}
-              className="btn btn-primary"
-              style={{ width: "100%", padding: 14, fontSize: 16 }}
-            >
-              {paying ? "Memproses..." : "Bayar sekarang"}
-            </button>
+            <>
+              <div className="pay-instruction">
+                <p>Instruksi pembayaran</p>
+                <span>
+                  Transfer ke rekening sesuai kesepakatan dengan{" "}
+                  {invoice.sender_name}, lalu konfirmasi di bawah ini.
+                </span>
+              </div>
+              <button
+                onClick={handleConfirmTransfer}
+                disabled={submitting}
+                className="btn btn-primary"
+                style={{ width: "100%", padding: 14, fontSize: 16 }}
+              >
+                {submitting ? "Mengirim konfirmasi..." : "Saya sudah transfer"}
+              </button>
+            </>
           )}
-          {payError && <p className="error">{payError}</p>}
+          {error && <p className="error">{error}</p>}
 
-          {/* Distribution mechanism: this line only exists because the client
-              was already here to pay. It's not a separate promotion. */}
           {invoice.cta_message && (
             <div className="referral-box">
+              <h3 className="referral-heading">Buat invoice seperti ini — gratis</h3>
               <p>{invoice.cta_message}</p>
               <a href={signupUrl} className="referral-link">
-                Coba gratis →
+                Dapatkan 5 kredit saat bergabung melalui invoice ini →
               </a>
             </div>
           )}
         </div>
+
+        <p className="hint" style={{ textAlign: "center", marginTop: 16 }}>
+          Dibuat dengan <Link href="/">Involoop</Link> · invoice yang menyebar sendiri
+        </p>
       </main>
     </>
   );

@@ -1,19 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 
+const SAMPLE = "Tagih PT Kreatif Digital Rp2.500.000 untuk pengembangan landing page, jatuh tempo 12 Agustus 2026.";
+
 export default function NewInvoice() {
   const supabase = createClient();
-  const router = useRouter();
   const [rawText, setRawText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ share_url: string } | null>(null);
+  const [showManual, setShowManual] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const [manual, setManual] = useState({
+    client_name: "",
+    description: "",
+    amount: "",
+    due_date: "",
+  });
+
+  async function handleAI(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -32,6 +40,36 @@ export default function NewInvoice() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ raw_text: rawText }),
+    });
+
+    const data = await res.json();
+    setLoading(false);
+
+    if (!res.ok) {
+      setError(data.error ?? "Gagal membuat invoice");
+      if (res.status === 502) setShowManual(true);
+      return;
+    }
+
+    setResult({ share_url: data.share_url });
+  }
+
+  async function handleManual(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const amount = Number(manual.amount.replace(/[^0-9]/g, ""));
+    const res = await fetch("/api/invoices/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        manual: true,
+        client_name: manual.client_name,
+        description: manual.description,
+        amount,
+        due_date: manual.due_date || null,
+      }),
     });
 
     const data = await res.json();
@@ -62,7 +100,7 @@ export default function NewInvoice() {
           Tulis dalam satu kalimat, biar AI yang menyusun invoicenya.
         </p>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column" }}>
+        <form onSubmit={handleAI} style={{ display: "flex", flexDirection: "column" }}>
           <textarea
             className="input"
             value={rawText}
@@ -70,6 +108,14 @@ export default function NewInvoice() {
             placeholder="contoh: tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu"
             rows={3}
           />
+          <button
+            type="button"
+            onClick={() => setRawText(SAMPLE)}
+            className="btn btn-ghost"
+            style={{ marginTop: 8, alignSelf: "flex-start", minHeight: 30, padding: "5px 12px", fontSize: 12 }}
+          >
+            Pakai contoh →
+          </button>
           <button
             type="submit"
             className="btn btn-primary"
@@ -81,6 +127,72 @@ export default function NewInvoice() {
         </form>
 
         {error && <p className="error">{error}</p>}
+
+        {!showManual && (
+          <button
+            type="button"
+            onClick={() => setShowManual(true)}
+            className="btn btn-ghost"
+            style={{ marginTop: 16, fontSize: 13 }}
+          >
+            Isi manual saja
+          </button>
+        )}
+
+        {showManual && (
+          <form
+            onSubmit={handleManual}
+            style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 12 }}
+          >
+            <p className="section-eyebrow">FORM MANUAL</p>
+            <div className="field">
+              <label>Nama klien</label>
+              <input
+                className="input"
+                value={manual.client_name}
+                onChange={(e) => setManual({ ...manual, client_name: e.target.value })}
+                placeholder="Mis. Rina"
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Deskripsi jasa</label>
+              <input
+                className="input"
+                value={manual.description}
+                onChange={(e) => setManual({ ...manual, description: e.target.value })}
+                placeholder="Mis. Desain logo"
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Nominal (IDR)</label>
+              <input
+                className="input"
+                value={manual.amount}
+                onChange={(e) => setManual({ ...manual, amount: e.target.value })}
+                placeholder="2000000"
+                required
+              />
+            </div>
+            <div className="field">
+              <label>Jatuh tempo</label>
+              <input
+                className="input"
+                type="date"
+                value={manual.due_date}
+                onChange={(e) => setManual({ ...manual, due_date: e.target.value })}
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading || !manual.client_name || !manual.description || !manual.amount}
+            >
+              {loading ? "Menerbitkan..." : "Terbitkan invoice"}
+            </button>
+          </form>
+        )}
 
         {result && (
           <div className="success-panel">

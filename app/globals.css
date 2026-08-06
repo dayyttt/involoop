@@ -117,6 +117,23 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-syne), sans-serif; 
 
 .final-cta { display: flex; align-items: center; justify-content: space-between; gap: 42px; border-top: 1px solid var(--line); }
 .final-cta p:last-child { color: var(--text-2); }
+
+/* ---- Pricing ---- */
+.pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; }
+.plan { display: flex; flex-direction: column; padding: 28px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--container); }
+.plan-featured { border-color: rgba(241,74,148,.6); box-shadow: var(--glow); background: linear-gradient(160deg, rgba(241,74,148,.12), rgba(33,26,37,.9)); }
+.plan-name { font-size: 15px; color: var(--text-2); }
+.plan-price { margin-top: 8px; color: #fff; font: 800 30px var(--font-syne), sans-serif; }
+.plan-price span { color: var(--muted); font-size: 13px; font-family: var(--font-manrope), sans-serif; font-weight: 600; }
+.plan-desc { color: var(--text-2); font-size: 13px; }
+.plan-features { margin: 18px 0 22px; padding: 0; list-style: none; display: grid; gap: 10px; }
+.plan-features li { color: var(--text-2); font-size: 13px; padding-left: 20px; position: relative; }
+.plan-features li::before { content: "✓"; position: absolute; left: 0; color: var(--primary); font-weight: 800; }
+.plan .btn { margin-top: auto; }
+@media (max-width: 640px) {
+  .pricing-grid { grid-template-columns: 1fr; }
+}
+
 .site-footer { padding: 56px 0 34px; border-top: 1px solid var(--line); }
 .footer-inner { text-align: center; }
 .footer-inner .brand { justify-content: center; }
@@ -147,6 +164,15 @@ textarea.input { resize: vertical; }
 .stat-label { color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
 .stat-value { margin-top: 5px; color: #fff; font: 800 32px var(--font-syne), sans-serif; }
 .section-title { margin: 26px 0 12px; font-size: 17px; }
+.card-panel { margin-bottom: 8px; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--container); }
+.card-panel .section-title { margin-top: 0; }
+.ledger-list { display: flex; flex-direction: column; }
+.ledger-row { display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.ledger-row:last-child { border-bottom: 0; }
+.ledger-plus { color: var(--success); font-weight: 800; }
+.ledger-minus { color: var(--danger); font-weight: 800; }
+.ledger-ref { color: var(--text-2); font-size: 13px; }
+.badge-warn { background: rgba(241,74,148,.14); color: var(--primary); }
 .list-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--container); color: var(--text); text-decoration: none; transition: transform .18s ease, border-color .18s ease; }
 a.list-item:hover { transform: translateY(-2px); border-color: var(--primary); }
 .list-item .side { display: flex; align-items: center; gap: 12px; }
@@ -160,12 +186,19 @@ a.list-item:hover { transform: translateY(-2px); border-color: var(--primary); }
 .invoice-card { max-width: 480px; margin: 0 auto 48px; padding: 110px 20px 0; }
 .invoice-card .card { padding: 28px; }
 .invoice-label { margin: 0; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.invoice-title { margin: 5px 0 18px; font-size: 26px; }
+.invoice-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.invoice-meta { text-align: right; }
+.invoice-title { margin: 5px 0 0; font-size: 24px; }
+.invoice-client { margin: 5px 0 16px; font-size: 20px; }
 .invoice-desc { color: var(--text-2); }
 .invoice-amount { color: #fff; font: 800 36px var(--font-syne), sans-serif; }
 .paid-banner { padding: 12px; border-radius: 6px; background: var(--success-soft); color: var(--success); text-align: center; font-weight: 800; }
+.pay-instruction { margin-bottom: 14px; padding: 14px; border: 1px dashed var(--line-2); border-radius: 6px; background: rgba(255,255,255,.02); }
+.pay-instruction p { margin: 0 0 4px; font-weight: 800; font-size: 13px; }
+.pay-instruction span { color: var(--text-2); font-size: 13px; line-height: 1.6; }
 .referral-box { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); text-align: center; }
-.referral-box p { color: var(--text-2); font-size: 13px; }
+.referral-heading { margin-bottom: 8px; font-size: 17px; color: #fff; }
+.referral-box p { color: var(--text-2); font-size: 13px; margin: 0 0 10px; }
 .referral-link { color: var(--primary); font-size: 13px; font-weight: 800; text-underline-offset: 3px; }
 .centered { padding: 140px 20px 40px; text-align: center; }
 

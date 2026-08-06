@@ -6,18 +6,20 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 
 interface Invoice {
-  id: string;
   public_id: string;
+  number: string;
   client_name: string;
   amount: number;
   status: string;
+  views: number;
   created_at: string;
 }
 
-interface Profile {
-  full_name: string | null;
-  free_invoice_credits: number;
-  referral_code: string;
+interface LedgerEntry {
+  amount: number;
+  type: string;
+  reference: string;
+  created_at: string;
 }
 
 interface Referral {
@@ -27,55 +29,43 @@ interface Referral {
   referred: { full_name: string | null; email: string } | null;
 }
 
+interface DashboardData {
+  profile: { full_name: string | null; free_invoice_credits: number; referral_code: string };
+  invoices: Invoice[];
+  ledger: LedgerEntry[];
+  referrals: Referral[];
+  stats: {
+    total: number;
+    paid: number;
+    unpaid: number;
+    awaiting: number;
+    total_views: number;
+    signups: number;
+    conversion: number;
+  };
+}
+
 export default function Dashboard() {
   const supabase = createClient();
   const router = useRouter();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [referralCount, setReferralCount] = useState(0);
-  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    setError(null);
+    const res = await fetch("/api/dashboard");
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error ?? "Gagal memuat dashboard.");
+      setLoading(false);
+      return;
+    }
+    setData(await res.json());
+    setLoading(false);
+  }
 
   useEffect(() => {
-    async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("full_name, free_invoice_credits, referral_code")
-        .eq("id", user.id)
-        .single();
-      setProfile(profileData);
-
-      const { data: invoiceData } = await supabase
-        .from("invoices")
-        .select("id, public_id, client_name, amount, status, created_at")
-        .eq("owner_id", user.id)
-        .order("created_at", { ascending: false });
-      setInvoices(invoiceData ?? []);
-
-      const { count } = await supabase
-        .from("referrals")
-        .select("id", { count: "exact", head: true })
-        .eq("referrer_id", user.id)
-        .eq("status", "rewarded");
-      setReferralCount(count ?? 0);
-
-      const res = await fetch("/api/referrals");
-      if (res.ok) {
-        const data = await res.json();
-        setReferrals(data.referrals ?? []);
-      }
-
-      setLoading(false);
-    }
     load();
   }, []);
 
@@ -84,13 +74,39 @@ export default function Dashboard() {
     router.push("/");
   }
 
+  async function handleVerify(publicId: string) {
+    const res = await fetch("/api/invoices/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ public_id: publicId }),
+    });
+    if (res.ok) load();
+    else {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error ?? "Gagal verifikasi.");
+    }
+  }
+
   if (loading) return <main className="centered">Memuat...</main>;
-  if (!profile)
+  if (!data)
     return (
       <main className="centered">
-        Belum login. <Link href="/signup">Daftar / masuk dulu</Link>.
+        {error ? (
+          <>
+            <p>{error}</p>
+            <button className="btn btn-primary" onClick={load} style={{ marginTop: 16 }}>
+              Coba lagi
+            </button>
+          </>
+        ) : (
+          <>
+            Belum login. <Link href="/signup">Daftar / masuk dulu</Link>.
+          </>
+        )}
       </main>
     );
+
+  const { profile, invoices, ledger, referrals, stats } = data;
 
   return (
     <>
@@ -98,71 +114,130 @@ export default function Dashboard() {
         <Link href="/" className="brand">
           Invo<span className="brand-accent">loop</span>
         </Link>
-        <button onClick={handleLogout} className="btn btn-ghost">
-          Keluar
-        </button>
-      </nav>
-
-      <main className="page-shell">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <h1 className="page-title" style={{ margin: 0 }}>
-            Halo, {profile.full_name ?? "freelancer"}
-          </h1>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Link href="/dashboard/new-invoice" className="btn btn-primary">
             + Buat invoice
           </Link>
+          <button onClick={handleLogout} className="btn btn-ghost">
+            Keluar
+          </button>
         </div>
+      </nav>
+
+      <main className="page-shell">
+        <h1 className="page-title">Halo, {profile.full_name ?? "freelancer"}</h1>
 
         <div className="stat-grid">
-          <div className="stat">
-            <div className="stat-label">Kredit invoice tersisa</div>
-            <div className="stat-value">{profile.free_invoice_credits}</div>
-          </div>
-          <div className="stat">
-            <div className="stat-label">Referral berhasil</div>
-            <div className="stat-value">{referralCount}</div>
-          </div>
+          <Stat label="Saldo kredit" value={profile.free_invoice_credits.toString()} />
+          <Stat label="Referral berhasil" value={stats.signups.toString()} />
+          <Stat label="Tampilan invoice" value={stats.total_views.toString()} />
+          <Stat
+            label="Konversi"
+            value={stats.total_views > 0 ? `${stats.conversion}%` : "—"}
+          />
         </div>
 
-        <h2 className="section-title">Referral</h2>
-        {referrals.length === 0 ? (
-          <p className="empty">
-            Belum ada referral. CTA di tiap invoice yang mengajak klienmu daftar.
-          </p>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-            {referrals.map((ref) => (
-              <div key={ref.id} className="list-item">
-                <span>{ref.referred?.full_name || ref.referred?.email || "Pengguna baru"}</span>
-                <span className="side">
-                  <span className="badge badge-paid">+{ref.reward_credits} kredit</span>
-                  <span className="hint">
-                    {new Date(ref.created_at).toLocaleDateString("id-ID")}
-                  </span>
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        {error && <p className="error">{error}</p>}
 
-        <h2 className="section-title">Invoice terkirim</h2>
+        <div className="card-panel">
+          <h2 className="section-title">Riwayat kredit</h2>
+          {ledger.length === 0 ? (
+            <p className="empty">Belum ada pergerakan kredit.</p>
+          ) : (
+            <div className="ledger-list">
+              {ledger.map((entry) => (
+                <div className="ledger-row" key={`${entry.created_at}-${entry.amount}-${entry.type}`}>
+                  <span className={entry.amount > 0 ? "ledger-plus" : "ledger-minus"}>
+                    {entry.amount > 0 ? `+${entry.amount}` : entry.amount}
+                  </span>
+                  <span className="ledger-ref">{entry.reference}</span>
+                  <span className="hint">
+                    {new Date(entry.created_at).toLocaleDateString("id-ID")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="card-panel">
+          <h2 className="section-title">Referral</h2>
+          {referrals.length === 0 ? (
+            <p className="empty">
+              Belum ada referral. CTA di tiap invoice yang mengajak klienmu daftar.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {referrals.map((ref) => (
+                <div key={ref.id} className="list-item">
+                  <span>{ref.referred?.full_name || ref.referred?.email || "Pengguna baru"}</span>
+                  <span className="side">
+                    <span className="badge badge-paid">+{ref.reward_credits} kredit</span>
+                    <span className="hint">
+                      {new Date(ref.created_at).toLocaleDateString("id-ID")}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <h2 className="section-title">
+          Invoice terkirim ({stats.total}) · Lunas {stats.paid} · Menunggu verifikasi{" "}
+          {stats.awaiting} · Belum bayar {stats.unpaid}
+        </h2>
         {invoices.length === 0 && (
-          <p className="empty">Belum ada invoice. Buat yang pertama.</p>
+          <p className="empty">
+            Belum ada invoice. Buat yang pertama.
+          </p>
         )}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {invoices.map((inv) => (
-            <Link key={inv.id} href={`/invoice/${inv.public_id}`} className="list-item">
-              <span>{inv.client_name}</span>
-              <span className="side">
-                <span>Rp {inv.amount.toLocaleString("id-ID")}</span>
-                <span className={`badge ${inv.status === "paid" ? "badge-paid" : "badge-unpaid"}`}>
-                  {inv.status === "paid" ? "Lunas" : "Belum bayar"}
+            <div key={inv.public_id} className="list-item">
+              <div className="side" style={{ flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
+                <Link
+                  href={`/invoice/${inv.public_id}`}
+                  style={{ color: "inherit", textDecoration: "none" }}
+                >
+                  <strong>{inv.client_name}</strong> · {inv.number}
+                </Link>
+                <span className="hint">
+                  Rp {inv.amount.toLocaleString("id-ID")} · {inv.views} tampilan
                 </span>
-              </span>
-            </Link>
+              </div>
+              <div className="side">
+                <StatusBadge status={inv.status} />
+                {inv.status === "awaiting_verification" && (
+                  <button
+                    className="btn btn-success"
+                    style={{ minHeight: 34, padding: "6px 14px", fontSize: 12 }}
+                    onClick={() => handleVerify(inv.public_id)}
+                  >
+                    Verifikasi pembayaran
+                  </button>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       </main>
     </>
   );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="stat">
+      <div className="stat-label">{label}</div>
+      <div className="stat-value">{value}</div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === "paid") return <span className="badge badge-paid">Lunas</span>;
+  if (status === "awaiting_verification")
+    return <span className="badge badge-warn">Menunggu verifikasi</span>;
+  return <span className="badge badge-unpaid">Belum bayar</span>;
 }
