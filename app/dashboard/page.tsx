@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import { formatMoney } from "@/lib/money";
+import { appText, useLang } from "@/lib/i18n";
+import LangToggle from "@/components/LangToggle";
 
 interface Invoice {
   public_id: string;
@@ -60,6 +62,8 @@ interface DashboardData {
 export default function Dashboard() {
   const supabase = createClient();
   const router = useRouter();
+  const lang = useLang();
+  const t = (k: string) => appText(lang, k);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +77,7 @@ export default function Dashboard() {
     const res = await fetch("/api/dashboard");
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setError(body.error ?? "Gagal memuat dashboard.");
+      setError(body.error ?? t("dashboard.loadFailed"));
       setLoading(false);
       return;
     }
@@ -94,30 +98,34 @@ export default function Dashboard() {
     const res = await fetch("/api/invoices/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ public_id: publicId }),
+      body: JSON.stringify({ public_id: publicId, lang }),
     });
     if (res.ok) load();
     else {
       const body = await res.json().catch(() => ({}));
-      setError(body.error ?? "Gagal verifikasi.");
+      setError(body.error ?? t("dashboard.verifyFailed"));
     }
   }
 
   async function handleConnectStripe() {
     setError(null);
     setConnecting(true);
-    const res = await fetch("/api/payments/connect", { method: "POST" });
+    const res = await fetch("/api/payments/connect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lang }),
+    });
     setConnecting(false);
     if (res.ok) {
       load();
     } else {
       const body = await res.json().catch(() => ({}));
-      setError(body.error ?? "Gagal menghubungkan Stripe.");
+      setError(body.error ?? t("dashboard.connectFailed"));
     }
   }
 
   async function handleResetDemo() {
-    if (!window.confirm("Reset seluruh data akun demo ini?")) return;
+    if (!window.confirm(t("dashboard.resetConfirm"))) return;
     setError(null);
     setResetting(true);
     const res = await fetch("/api/demo/reset", { method: "POST" });
@@ -126,7 +134,7 @@ export default function Dashboard() {
       load();
     } else {
       const body = await res.json().catch(() => ({}));
-      setError(body.error ?? "Gagal reset.");
+      setError(body.error ?? t("dashboard.resetFailed"));
     }
   }
 
@@ -138,13 +146,13 @@ export default function Dashboard() {
       setCopiedId(publicId);
       setTimeout(() => setCopiedId(null), 2000);
     } catch {
-      setError("Gagal menyalin link.");
+      setError(t("dashboard.copyFailed"));
     }
   }
 
   function whatsappLink(publicId: string) {
     const url = `${window.location.origin}/invoice/${publicId}`;
-    return `https://wa.me/?text=${encodeURIComponent("Halo, ini tagihan untuk kamu: " + url)}`;
+    return `https://wa.me/?text=${encodeURIComponent(t("newInvoice.whatsappText") + url)}`;
   }
 
   async function copyReferralCode() {
@@ -153,7 +161,7 @@ export default function Dashboard() {
       setCopiedRef(true);
       setTimeout(() => setCopiedRef(false), 2000);
     } catch {
-      setError("Gagal menyalin kode referral.");
+      setError(t("dashboard.copyFailed"));
     }
   }
 
@@ -170,12 +178,12 @@ export default function Dashboard() {
           <>
             <p>{error}</p>
             <button className="btn btn-primary" onClick={load} style={{ marginTop: 16 }}>
-              Coba lagi
+              {t("common.retry")}
             </button>
           </>
         ) : (
           <>
-            Belum login. <Link href="/signup">Daftar / masuk dulu</Link>.
+            {t("dashboard.notLoggedIn")} <Link href="/signup">{t("common.retry")}</Link>.
           </>
         )}
       </main>
@@ -191,10 +199,11 @@ export default function Dashboard() {
         </Link>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <Link href="/dashboard/new-invoice" className="btn btn-primary">
-            + Buat invoice
+            {t("nav.createInvoice")}
           </Link>
+          <LangToggle />
           <button onClick={handleLogout} className="btn btn-ghost">
-            Keluar
+            {t("nav.logout")}
           </button>
         </div>
       </nav>
@@ -202,46 +211,46 @@ export default function Dashboard() {
       <main className="page-shell">
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div>
-            <h1 className="page-title" style={{ marginBottom: 4 }}>Halo, {profile.full_name ?? "freelancer"}</h1>
+            <h1 className="page-title" style={{ marginBottom: 4 }}>
+              {t("dashboard.greeting")} {profile.full_name ?? "freelancer"}
+            </h1>
             <p className="hint" style={{ margin: 0 }}>
-              {profile.email} · {profile.free_invoice_credits} kredit gratis tersisa
+              {profile.email} · {profile.free_invoice_credits} {t("dashboard.creditsLeft")}
             </p>
           </div>
           <Link href="/dashboard/new-invoice" className="btn btn-primary" style={{ minHeight: 36 }}>
-            + Buat invoice
+            {t("nav.createInvoice")}
           </Link>
         </div>
 
         <div className="stat-grid" style={{ marginTop: 20 }}>
-          <Stat label="Kredit kamu" value={profile.free_invoice_credits.toString()} />
-          <Stat label="Tampilan invoice" value={stats.total_views.toString()} />
-          <Stat label="Klik ajakan referral" value={stats.total_clicks.toString()} />
-          <Stat label="Referral berhasil" value={stats.signups.toString()} />
-          <Stat label="Konversi" value={stats.total_views > 0 ? `${stats.conversion}%` : "—"} />
-          <Stat label="Kredit didapat" value={stats.credits_earned.toString()} />
+          <Stat label={t("dashboard.credit")} value={profile.free_invoice_credits.toString()} />
+          <Stat label={t("dashboard.views")} value={stats.total_views.toString()} />
+          <Stat label={t("dashboard.clicks")} value={stats.total_clicks.toString()} />
+          <Stat label={t("dashboard.referrals")} value={stats.signups.toString()} />
+          <Stat label={t("dashboard.conversion")} value={stats.total_views > 0 ? `${stats.conversion}%` : "—"} />
+          <Stat label={t("dashboard.creditsEarned")} value={stats.credits_earned.toString()} />
         </div>
 
         {error && <p className="error">{error}</p>}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
           <h2 className="section-title" style={{ marginBottom: 0 }}>
-            Invoice ({stats.total})
+            {t("dashboard.invoiceList")} ({stats.total})
           </h2>
           <div className="side" style={{ gap: 8 }}>
-            <span className="badge badge-paid">Lunas {stats.paid}</span>
-            <span className="badge badge-warn">Menunggu {stats.awaiting}</span>
-            <span className="badge badge-unpaid">Belum bayar {stats.unpaid}</span>
+            <span className="badge badge-paid">{t("dashboard.paidCount")} {stats.paid}</span>
+            <span className="badge badge-warn">{t("dashboard.awaitingCount")} {stats.awaiting}</span>
+            <span className="badge badge-unpaid">{t("dashboard.unpaidCount")} {stats.unpaid}</span>
           </div>
         </div>
 
         {invoices.length === 0 ? (
           <div className="card-panel" style={{ textAlign: "center", padding: "36px 20px" }}>
-            <p className="section-eyebrow">MULAI DARI SINI</p>
-            <p style={{ marginTop: 8 }}>
-              Belum ada invoice. Terbitkan yang pertama — gratis pakai kreditmu.
-            </p>
+            <p className="section-eyebrow">{t("dashboard.emptyTitle")}</p>
+            <p style={{ marginTop: 8 }}>{t("dashboard.emptyBody")}</p>
             <Link href="/dashboard/new-invoice" className="btn btn-primary" style={{ marginTop: 16 }}>
-              + Buat invoice
+              {t("nav.createInvoice")}
             </Link>
           </div>
         ) : (
@@ -256,18 +265,18 @@ export default function Dashboard() {
                     <strong>{inv.client_name}</strong> · {inv.number}
                   </Link>
                   <span className="hint">
-                    {formatMoney(inv.amount, inv.currency)} · {inv.views} tampilan ·{" "}
-                    {new Date(inv.created_at).toLocaleDateString("id-ID")}
+                    {formatMoney(inv.amount, inv.currency, lang === "id" ? "id-ID" : "en-US")} · {inv.views} {t("dashboard.viewsCount")} ·{" "}
+                    {new Date(inv.created_at).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
                   </span>
                 </div>
                 <div className="inv-actions">
-                  <StatusBadge status={inv.status} />
+                  <StatusBadge status={inv.status} lang={lang} />
                   {inv.status === "awaiting_verification" && (
                     <button
                       className="btn btn-success"
                       onClick={() => handleVerify(inv.public_id)}
                     >
-                      Verifikasi
+                      {t("dashboard.verify")}
                     </button>
                   )}
                   <a
@@ -276,13 +285,13 @@ export default function Dashboard() {
                     rel="noreferrer"
                     className="btn btn-ghost"
                   >
-                    Kirim WA
+                    {t("dashboard.sendWhatsapp")}
                   </a>
                   <button
                     className="btn btn-ghost"
                     onClick={() => copyInvoiceLink(inv.public_id)}
                   >
-                    {copiedId === inv.public_id ? "✓ Tersalin" : "Salin link"}
+                    {copiedId === inv.public_id ? t("common.copied") : t("common.copyLink")}
                   </button>
                 </div>
               </div>
@@ -293,17 +302,17 @@ export default function Dashboard() {
         {profile.email.endsWith("@involoop.app") && (
           <div className="card-panel demo-reset" style={{ marginTop: 20 }}>
             <div>
-              <h2 className="section-title">Demo workspace</h2>
-              <p className="hint">Reset invoices, payments, referrals, ledger, and credits for a clean presentation.</p>
+              <h2 className="section-title">{t("dashboard.demoWorkspace")}</h2>
+              <p className="hint">{t("dashboard.demoWorkspaceHint")}</p>
             </div>
             <button className="btn btn-ghost" onClick={handleResetDemo} disabled={resetting}>
-              {resetting ? "Resetting…" : "Reset Demo Workspace"}
+              {resetting ? t("dashboard.resetting") : t("dashboard.resetWorkspace")}
             </button>
           </div>
         )}
 
         <div className="card-panel">
-          <h2 className="section-title">Program referral</h2>
+          <h2 className="section-title">{t("dashboard.referralSection")}</h2>
           <div className="ref-code">
             <code>{profile.referral_code}</code>
             <button
@@ -311,26 +320,25 @@ export default function Dashboard() {
               style={{ minHeight: 32, padding: "5px 12px", fontSize: 12 }}
               onClick={copyReferralCode}
             >
-              {copiedRef ? "✓ Tersalin" : "Salin kode"}
+              {copiedRef ? t("common.copied") : t("common.copyCode")}
             </button>
           </div>
           <p className="hint" style={{ marginTop: 0 }}>
-            Kode ini dipakai saat temanmu mendaftar lewat link invoicemu — setiap
-            referral sukses memberi +5 kredit.
+            {t("dashboard.referralCodeHint")}
           </p>
           {referrals.length === 0 ? (
             <p className="empty">
-              Belum ada referral. CTA di tiap invoice yang mengajak klienmu daftar.
+              {t("dashboard.referralEmpty")}
             </p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {referrals.map((ref) => (
                 <div key={ref.id} className="list-item">
-                  <span>{ref.referred?.full_name || ref.referred?.email || "Pengguna baru"}</span>
+                  <span>{ref.referred?.full_name || ref.referred?.email || t("dashboard.newUser")}</span>
                   <span className="side">
-                    <span className="badge badge-paid">+{ref.reward_credits} kredit</span>
+                    <span className="badge badge-paid">+{ref.reward_credits} {t("dashboard.credits")}</span>
                     <span className="hint">
-                      {new Date(ref.created_at).toLocaleDateString("id-ID")}
+                      {new Date(ref.created_at).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
                     </span>
                   </span>
                 </div>
@@ -340,9 +348,9 @@ export default function Dashboard() {
         </div>
 
         <div className="card-panel">
-          <h2 className="section-title">Riwayat kredit</h2>
+          <h2 className="section-title">{t("dashboard.creditHistory")}</h2>
           {ledger.length === 0 ? (
-            <p className="empty">Belum ada pergerakan kredit.</p>
+            <p className="empty">{t("dashboard.creditHistoryEmpty")}</p>
           ) : (
             <div className="ledger-list">
               {ledger.map((entry) => (
@@ -352,7 +360,7 @@ export default function Dashboard() {
                   </span>
                   <span className="ledger-ref">{entry.reference}</span>
                   <span className="hint">
-                    {new Date(entry.created_at).toLocaleDateString("id-ID")}
+                    {new Date(entry.created_at).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
                   </span>
                 </div>
               ))}
@@ -362,34 +370,34 @@ export default function Dashboard() {
 
         <details className="card-panel" style={{ padding: 0 }}>
           <summary style={{ cursor: "pointer", padding: "16px 20px", fontWeight: 600, fontSize: 15 }}>
-            Pengaturan pembayaran
+            {t("dashboard.paymentSettings")}
             <span className="hint" style={{ marginLeft: 10 }}>
-              {profile.stripe_status === "connected" ? "Terhubung" : "Belum terhubung"}
+              {profile.stripe_status === "connected" ? t("dashboard.connected") : t("dashboard.notConnected")}
             </span>
           </summary>
           <div style={{ padding: "0 20px 16px" }}>
             <div className="settings-rows">
               <div className="settings-row">
-                <span>Penyedia pembayaran</span>
+                <span>{t("dashboard.provider")}</span>
                 <strong>Stripe Connect</strong>
               </div>
               <div className="settings-row">
-                <span>Status koneksi</span>
+                <span>{t("dashboard.connectionStatus")}</span>
                 <strong className={profile.stripe_status === "connected" ? "text-ok" : ""}>
-                  {profile.stripe_status === "connected" ? "Terhubung" : "Belum terhubung"}
+                  {profile.stripe_status === "connected" ? t("dashboard.connected") : t("dashboard.notConnected")}
                 </strong>
               </div>
               <div className="settings-row">
-                <span>Mode</span>
-                <strong>Test Mode</strong>
+                <span>{t("dashboard.mode")}</span>
+                <strong>{t("dashboard.testMode")}</strong>
               </div>
               <div className="settings-row">
-                <span>Mata uang default</span>
+                <span>{t("dashboard.defaultCurrency")}</span>
                 <strong>USD</strong>
               </div>
             </div>
             <p className="test-badge" style={{ marginTop: 14 }}>
-              Stripe Test Mode — tidak ada uang asli yang ditarik
+              {t("dashboard.stripeTestBadge")}
             </p>
             {profile.stripe_status !== "connected" && (
               <button
@@ -398,7 +406,7 @@ export default function Dashboard() {
                 onClick={handleConnectStripe}
                 disabled={connecting}
               >
-                {connecting ? <><Spinner /> Menghubungkan…</> : "Hubungkan Stripe"}
+                {connecting ? <><Spinner /> {t("dashboard.connecting")}</> : t("dashboard.connectStripe")}
               </button>
             )}
           </div>
@@ -421,13 +429,14 @@ function Spinner() {
   return <span className="spinner" aria-hidden />;
 }
 
-function StatusBadge({ status }: { status: string }) {
-  if (status === "paid") return <span className="badge badge-paid">Lunas</span>;
+function StatusBadge({ status, lang }: { status: string; lang: "en" | "id" }) {
+  const t = (k: string) => appText(lang, k);
+  if (status === "paid") return <span className="badge badge-paid">{t("status.paid")}</span>;
   if (status === "awaiting_verification")
-    return <span className="badge badge-warn">Menunggu verifikasi</span>;
+    return <span className="badge badge-warn">{t("status.awaiting")}</span>;
   if (status === "payment_pending")
-    return <span className="badge badge-warn">Pembayaran diproses</span>;
+    return <span className="badge badge-warn">{t("status.pending")}</span>;
   if (status === "failed" || status === "refunded")
-    return <span className="badge badge-unpaid">Gagal</span>;
-  return <span className="badge badge-unpaid">Belum dibayar</span>;
+    return <span className="badge badge-unpaid">{t("status.failed")}</span>;
+  return <span className="badge badge-unpaid">{t("status.unpaid")}</span>;
 }

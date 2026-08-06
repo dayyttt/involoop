@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { formatMoney, formatDate } from "@/lib/money";
+import { appText, useLang } from "@/lib/i18n";
+import LangToggle from "@/components/LangToggle";
 
 interface InvoiceData {
   public_id: string;
@@ -23,6 +25,8 @@ interface InvoiceData {
 export default function PublicInvoice() {
   const params = useParams();
   const publicId = params.id as string;
+  const lang = useLang();
+  const t = (k: string, v?: Record<string, string>) => appText(lang, k, v);
 
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,14 +73,14 @@ export default function PublicInvoice() {
     const res = await fetch("/api/payments/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ public_id: publicId }),
+      body: JSON.stringify({ public_id: publicId, lang }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok && data.url) {
       window.location.href = data.url;
       return;
     }
-    setError(data.error ?? "Gagal membuat sesi pembayaran.");
+    setError(data.error ?? t("invoice.checkoutFailed"));
     setSubmitting(false);
   }
 
@@ -86,7 +90,7 @@ export default function PublicInvoice() {
     const res = await fetch("/api/invoices/pay", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ public_id: publicId }),
+      body: JSON.stringify({ public_id: publicId, lang }),
     });
     if (res.ok) {
       setInvoice((prev) =>
@@ -94,7 +98,7 @@ export default function PublicInvoice() {
       );
     } else {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Terjadi kesalahan. Coba lagi.");
+      setError(data.error ?? t("invoice.confirmFailed"));
     }
     setSubmitting(false);
   }
@@ -106,8 +110,9 @@ export default function PublicInvoice() {
           <Link href="/" className="brand">
             Invo<span className="brand-accent">loop</span>
           </Link>
+          <LangToggle />
         </nav>
-        <main className="centered">Memuat...</main>
+        <main className="centered">{t("invoice.loading")}</main>
       </>
     );
   if (!invoice)
@@ -117,8 +122,9 @@ export default function PublicInvoice() {
           <Link href="/" className="brand">
             Invo<span className="brand-accent">loop</span>
           </Link>
+          <LangToggle />
         </nav>
-        <main className="centered">Invoice tidak ditemukan.</main>
+        <main className="centered">{t("invoice.notFound")}</main>
       </>
     );
 
@@ -144,32 +150,33 @@ export default function PublicInvoice() {
         <Link href="/" className="brand">
           Invo<span className="brand-accent">loop</span>
         </Link>
+        <LangToggle />
       </nav>
 
       <main className="pay-layout">
         <div className="card">
           <div className="invoice-head">
             <div>
-              <p className="invoice-label">DARI</p>
+              <p className="invoice-label">{t("invoice.from")}</p>
               <h1 className="invoice-title">{invoice.sender_name}</h1>
             </div>
             <div className="invoice-meta">
               <p className="invoice-label">NO. {invoice.number}</p>
-              <span className="hint">{formatDate(invoice.created_at)}</span>
+              <span className="hint">{formatDate(invoice.created_at, lang === "id" ? "id-ID" : "en-US")}</span>
             </div>
           </div>
 
-          <p className="invoice-label" style={{ marginTop: 24 }}>UNTUK</p>
+          <p className="invoice-label" style={{ marginTop: 24 }}>{t("invoice.to")}</p>
           <h2 className="invoice-client">{invoice.client_name}</h2>
 
           <p className="invoice-desc">{invoice.description}</p>
 
           <div className="invoice-amount" style={{ marginTop: 24 }}>
-            {formatMoney(invoice.amount, invoice.currency)}
+            {formatMoney(invoice.amount, invoice.currency, lang === "id" ? "id-ID" : "en-US")}
           </div>
           {invoice.due_date && (
             <p className="hint" style={{ margin: "6px 0 0" }}>
-              Jatuh tempo {formatDate(invoice.due_date)}
+              {t("invoice.dueDate")} {formatDate(invoice.due_date, lang === "id" ? "id-ID" : "en-US")}
             </p>
           )}
         </div>
@@ -177,16 +184,16 @@ export default function PublicInvoice() {
         <div className="pay-side" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="pay-panel card">
             {paidStatus ? (
-              <div className="pay-status pay-status-paid">✓ Pembayaran diterima</div>
+              <div className="pay-status pay-status-paid">{t("invoice.paid")}</div>
             ) : invoice.status === "awaiting_verification" ? (
-              <div className="pay-status pay-status-warn">Menunggu verifikasi pengirim</div>
+              <div className="pay-status pay-status-warn">{t("invoice.awaiting")}</div>
             ) : invoice.status === "payment_pending" ? (
-              <div className="pay-status pay-status-warn">Pembayaran sedang diproses…</div>
+              <div className="pay-status pay-status-warn">{t("invoice.pending")}</div>
             ) : (
               <>
                 <div className="pay-status pay-status-open">
-                  <span>Belum dibayar</span>
-                  <span>{formatMoney(invoice.amount, invoice.currency)}</span>
+                  <span>{t("invoice.unpaid")}</span>
+                  <span>{formatMoney(invoice.amount, invoice.currency, lang === "id" ? "id-ID" : "en-US")}</span>
                 </div>
                 <div className="pay-options">
                   {invoice.stripe_enabled && (
@@ -196,34 +203,30 @@ export default function PublicInvoice() {
                         disabled={submitting}
                         className="btn btn-primary btn-lg btn-mobile-full"
                       >
-                        {submitting ? "Mengarahkan ke Stripe…" : "Bayar dengan Stripe"}
+                        {submitting ? t("invoice.redirecting") : t("invoice.payStripe")}
                       </button>
                       <p className="hint" style={{ textAlign: "center", margin: 0 }}>
-                        Pembayaran diproses aman oleh Stripe. Involoop tidak
-                        menyimpan data kartu.
+                        {t("invoice.stripeHint")}
                       </p>
                     </>
                   )}
                   {invoice.stripe_enabled && (
-                    <div className="pay-divider">atau transfer manual</div>
+                    <div className="pay-divider">{t("invoice.orManual")}</div>
                   )}
                   <div className="pay-instruction" style={{ marginBottom: 0 }}>
-                    <p>Transfer manual</p>
-                    <span>
-                      Transfer ke rekening yang disepakati dengan {invoice.sender_name},
-                      lalu konfirmasi di bawah.
-                    </span>
+                    <p>{t("invoice.manualTitle")}</p>
+                    <span>{t("invoice.manualBody", { sender: invoice.sender_name })}</span>
                   </div>
                   <button
                     onClick={handleConfirmTransfer}
                     disabled={submitting}
                     className="btn btn-ghost btn-lg btn-mobile-full"
                   >
-                    {submitting ? "Mengirim konfirmasi…" : "Saya sudah transfer"}
+                    {submitting ? t("invoice.sending") : t("invoice.confirmTransfer")}
                   </button>
                 </div>
                 <span className="test-badge" style={{ margin: 0, textAlign: "center" }}>
-                  Stripe Test Mode — tidak ada uang asli yang ditarik
+                  Stripe Test Mode — no real money will be charged
                 </span>
               </>
             )}
@@ -232,10 +235,10 @@ export default function PublicInvoice() {
 
           {invoice.cta_message && (
             <div className="card" style={{ padding: 22, textAlign: "center" }}>
-              <h3 className="referral-heading">Buat invoice seperti ini — gratis</h3>
+              <h3 className="referral-heading">{t("invoice.referralHeading")}</h3>
               <p className="hint" style={{ margin: "8px 0 12px" }}>{invoice.cta_message}</p>
               <button onClick={trackClick} className="referral-link link-btn">
-                Dapatkan 5 kredit gratis saat kamu bergabung lewat invoice ini →
+                {t("invoice.referralCta")}
               </button>
             </div>
           )}
@@ -243,7 +246,7 @@ export default function PublicInvoice() {
       </main>
 
       <p className="hint" style={{ textAlign: "center", marginBottom: 40 }}>
-        Dibuat dengan <Link href="/">Involoop</Link> · invoice yang mendatangkan pengguna berikutnya
+        {t("common.madeWith").replace("Involoop ·", "")} <Link href="/">Involoop</Link>
       </p>
     </>
   );

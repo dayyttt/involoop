@@ -4,13 +4,21 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { formatMoney } from "@/lib/money";
+import { appText, useLang } from "@/lib/i18n";
+import LangToggle from "@/components/LangToggle";
 
 const SAMPLE = "Tagih PT Kreatif Digital Rp2.500.000 untuk pengembangan landing page, jatuh tempo 12 Agustus 2026.";
 
-const SAMPLES = [
+const SAMPLES_ID = [
   SAMPLE,
   "Kirim tagihan ke Rina sebesar 2 juta buat desain logo.",
   "Invoice desain kaos ke Toko Santai 3.750.000 IDR, jatuh tempo seminggu.",
+];
+
+const SAMPLES_EN = [
+  "Bill PT Kreatif Digital Rp2,500,000 for landing page development, due August 12, 2026.",
+  "Send Rina a 2 million invoice for a logo design.",
+  "Invoice a t-shirt design to Toko Santai, IDR 3,750,000, due in a week.",
 ];
 
 interface FormState {
@@ -33,6 +41,9 @@ const EMPTY_FORM: FormState = {
 
 export default function NewInvoice() {
   const supabase = createClient();
+  const lang = useLang();
+  const t = (k: string) => appText(lang, k);
+  const SAMPLES = lang === "id" ? SAMPLES_ID : SAMPLES_EN;
   const [rawText, setRawText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +73,7 @@ export default function NewInvoice() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setError("Kamu belum login.");
+      setError(t("newInvoice.needLogin"));
       setLoading(false);
       return;
     }
@@ -70,13 +81,13 @@ export default function NewInvoice() {
     const res = await fetch("/api/invoices/parse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ raw_text: rawText }),
+      body: JSON.stringify({ raw_text: rawText, lang }),
     });
     const data = await res.json();
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Gagal menyusun invoice");
+      setError(data.error ?? t("newInvoice.aiFailed"));
       return;
     }
 
@@ -101,7 +112,7 @@ export default function NewInvoice() {
 
     const amount = Number(form.amount.replace(/[^0-9.]/g, ""));
     if (!(amount > 0)) {
-      setError("Nominal tidak valid.");
+      setError(t("newInvoice.invalidAmount"));
       setLoading(false);
       return;
     }
@@ -111,6 +122,7 @@ export default function NewInvoice() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         manual: true,
+        lang,
         client_name: form.client_name,
         description: form.description,
         amount,
@@ -123,7 +135,7 @@ export default function NewInvoice() {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Gagal menerbitkan invoice");
+      setError(data.error ?? t("newInvoice.publishFailed"));
       return;
     }
 
@@ -138,7 +150,7 @@ export default function NewInvoice() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError("Gagal menyalin. Salin manual dari link di bawah.");
+      setError(t("newInvoice.copyFailed"));
     }
   }
 
@@ -152,58 +164,61 @@ export default function NewInvoice() {
         <Link href="/" className="brand">
           Invo<span className="brand-accent">loop</span>
         </Link>
-        <Link href="/dashboard" className="btn btn-ghost">
-          ← Dashboard
-        </Link>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <LangToggle />
+          <Link href="/dashboard" className="btn btn-ghost">
+            {t("common.back")}
+          </Link>
+        </div>
       </nav>
 
       <main className="page-shell" style={{ maxWidth: 780 }}>
         {result ? (
           <div className="success-panel" style={{ marginTop: 40, padding: "32px 20px", textAlign: "center" }}>
             <div className="success-hero">✓</div>
-            <p className="section-eyebrow" style={{ textAlign: "center" }}>INVOICE DITERBITKAN</p>
+            <p className="section-eyebrow" style={{ textAlign: "center" }}>{t("newInvoice.published")}</p>
             <h2 className="page-title" style={{ textAlign: "center", margin: "10px 0 18px", fontSize: 22 }}>
-              Invoice siap. Kirim link ini ke klienmu:
+              {t("newInvoice.publishedTitle")}
             </h2>
             <div className="link-copy-row" style={{ maxWidth: 520, marginInline: "auto" }}>
               <code className="code">{result.share_url}</code>
               <button onClick={copyLink} className="btn btn-ghost">
-                {copied ? "✓ Tersalin" : "Salin"}
+                {copied ? t("common.copied") : t("common.copy")}
               </button>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 18, flexWrap: "wrap" }}>
               <a
-                href={`https://wa.me/?text=${encodeURIComponent("Halo, ini tagihan untuk kamu: " + result.share_url)}`}
+                href={`https://wa.me/?text=${encodeURIComponent(t("newInvoice.whatsappText") + result.share_url)}`}
                 target="_blank"
                 rel="noreferrer"
                 className="btn btn-success btn-mobile-full"
               >
-                Kirim via WhatsApp →
+                {t("common.sendWhatsapp")}
               </a>
               <Link href="/dashboard" className="btn btn-primary btn-mobile-full">
-                Lihat dashboard
+                {t("common.viewDashboard")}
               </Link>
             </div>
           </div>
         ) : (
           <>
-            <h1 className="page-title" style={{ marginBottom: 4 }}>Buat invoice</h1>
+            <h1 className="page-title" style={{ marginBottom: 4 }}>{t("newInvoice.title")}</h1>
             <p className="muted" style={{ marginTop: 0, marginBottom: 20 }}>
-              Tulis dalam satu kalimat, biar AI yang menyusun invoicenya.
+              {t("newInvoice.sub")}
             </p>
 
-            <Steps current={step as 1 | 2 | 3} />
+            <Steps current={step as 1 | 2 | 3} labels={[t("newInvoice.step1"), t("newInvoice.step2"), t("newInvoice.step3")]} />
 
             {!showForm && (
               <div className="card-panel">
                 <form onSubmit={handleAI} style={{ display: "flex", flexDirection: "column" }}>
                   <div className="field">
-                    <label>Kalimat tagihanmu</label>
+                    <label>{t("newInvoice.sentenceLabel")}</label>
                     <textarea
                       className="input"
                       value={rawText}
                       onChange={(e) => setRawText(e.target.value)}
-                      placeholder="contoh: tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu"
+                      placeholder={t("newInvoice.sentencePlaceholder")}
                       rows={3}
                     />
                   </div>
@@ -215,7 +230,7 @@ export default function NewInvoice() {
                         onClick={() => setRawText(s)}
                         className="chip"
                       >
-                        Pakai contoh →
+                        {t("newInvoice.useSample")}
                       </button>
                     ))}
                   </div>
@@ -227,10 +242,10 @@ export default function NewInvoice() {
                   >
                     {loading ? (
                       <>
-                        <Spinner /> Menyusun invoice…
+                        <Spinner /> {t("newInvoice.composing")}
                       </>
                     ) : (
-                      "Buat invoice dengan AI"
+                      t("newInvoice.createWithAI")
                     )}
                   </button>
                 </form>
@@ -240,7 +255,7 @@ export default function NewInvoice() {
                   className="btn btn-ghost btn-mobile-full"
                   style={{ marginTop: 14 }}
                 >
-                  Isi manual saja
+                  {t("newInvoice.fillManual")}
                 </button>
               </div>
             )}
@@ -252,37 +267,37 @@ export default function NewInvoice() {
                 <div className="card-panel">
                   {source === "ai" ? (
                     <p className="hint" style={{ marginBottom: 14 }}>
-                      ✨ Hasil AI — periksa dan edit dulu sebelum diterbitkan.
+                      {t("newInvoice.aiResultHint")}
                     </p>
                   ) : (
                     <p className="hint" style={{ marginBottom: 14 }}>
-                      Isi detail invoice, lalu terbitkan.
+                      {t("newInvoice.manualHint")}
                     </p>
                   )}
                   <form onSubmit={handlePublish} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <div className="field">
-                      <label>Nama klien</label>
+                      <label>{t("newInvoice.clientName")}</label>
                       <input
                         className="input"
                         value={form.client_name}
                         onChange={(e) => setField("client_name", e.target.value)}
-                        placeholder="Mis. Rina"
+                        placeholder={t("newInvoice.clientPlaceholder")}
                         required
                       />
                     </div>
                     <div className="field">
-                      <label>Deskripsi jasa</label>
+                      <label>{t("newInvoice.description")}</label>
                       <input
                         className="input"
                         value={form.description}
                         onChange={(e) => setField("description", e.target.value)}
-                        placeholder="Mis. Desain logo"
+                        placeholder={t("newInvoice.descriptionPlaceholder")}
                         required
                       />
                     </div>
                     <div className="form-row">
                       <div className="field">
-                        <label>Nominal</label>
+                        <label>{t("newInvoice.amount")}</label>
                         <input
                           className="input"
                           value={form.amount}
@@ -292,7 +307,7 @@ export default function NewInvoice() {
                         />
                       </div>
                       <div className="field">
-                        <label>Currency</label>
+                        <label>{t("newInvoice.currency")}</label>
                         <select
                           className="input"
                           value={form.currency}
@@ -307,7 +322,7 @@ export default function NewInvoice() {
                       </div>
                     </div>
                     <div className="field">
-                      <label>Jatuh tempo</label>
+                      <label>{t("newInvoice.dueDate")}</label>
                       <input
                         className="input"
                         type="date"
@@ -316,12 +331,12 @@ export default function NewInvoice() {
                       />
                     </div>
                     <div className="field">
-                      <label>Pesan ajakan (opsional)</label>
+                      <label>{t("newInvoice.ctaLabel")}</label>
                       <input
                         className="input"
                         value={form.cta_message}
                         onChange={(e) => setField("cta_message", e.target.value)}
-                        placeholder="Muncul di halaman invoice klien"
+                        placeholder={t("newInvoice.ctaPlaceholder")}
                       />
                     </div>
                     <button
@@ -329,7 +344,7 @@ export default function NewInvoice() {
                       className="btn btn-primary btn-mobile-full"
                       disabled={loading || !form.client_name || !form.description || !form.amount}
                     >
-                      {loading ? "Menerbitkan…" : "Terbitkan invoice"}
+                      {loading ? t("newInvoice.publishing") : t("newInvoice.publish")}
                     </button>
                   </form>
                 </div>
@@ -337,21 +352,21 @@ export default function NewInvoice() {
                 <div className="sticky-col">
                   {previewReady ? (
                     <div className="card" style={{ padding: 26, opacity: 1 }}>
-                      <p className="section-eyebrow">PRATINJAU</p>
+                      <p className="section-eyebrow">{t("newInvoice.preview")}</p>
                       <div className="invoice-head" style={{ marginTop: 14 }}>
                         <div>
-                          <p className="invoice-label">TO</p>
+                          <p className="invoice-label">{t("newInvoice.to")}</p>
                           <h2 className="invoice-client" style={{ marginBottom: 0 }}>{form.client_name}</h2>
                         </div>
                         <div className="invoice-meta">
-                          <span className="badge badge-warn">DRAFT</span>
+                          <span className="badge badge-warn">{t("newInvoice.draft")}</span>
                         </div>
                       </div>
                       <p className="invoice-desc" style={{ margin: "14px 0 18px" }}>{form.description}</p>
-                      <div className="invoice-amount">{formatMoney(amountNum, form.currency)}</div>
+                      <div className="invoice-amount">{formatMoney(amountNum, form.currency, lang === "id" ? "id-ID" : "en-US")}</div>
                       {form.due_date && (
                         <p className="hint" style={{ margin: "6px 0 0" }}>
-                          Jatuh tempo {new Date(form.due_date).toLocaleDateString("id-ID")}
+                          {t("newInvoice.dueOn")} {new Date(form.due_date).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
                         </p>
                       )}
                       {form.cta_message && (
@@ -362,10 +377,9 @@ export default function NewInvoice() {
                     </div>
                   ) : (
                     <div className="card" style={{ padding: 26, opacity: 0.9 }}>
-                      <p className="section-eyebrow">PRATINJAU</p>
+                      <p className="section-eyebrow">{t("newInvoice.preview")}</p>
                       <p className="empty" style={{ marginTop: 14 }}>
-                        Preview invoice muncul di sini setelah kamu melengkapi
-                        nama klien, deskripsi, dan nominal.
+                        {t("newInvoice.previewEmpty")}
                       </p>
                     </div>
                   )}
@@ -383,11 +397,10 @@ function Spinner() {
   return <span className="spinner" aria-hidden />;
 }
 
-function Steps({ current }: { current: 1 | 2 | 3 }) {
-  const items = ["Tulis kalimat", "Periksa & edit", "Terbitkan & kirim"];
+function Steps({ current, labels }: { current: 1 | 2 | 3; labels: [string, string, string] }) {
   return (
     <div className="steps">
-      {items.map((label, i) => {
+      {labels.map((label, i) => {
         const n = i + 1;
         const state = n < current ? "step-done" : n === current ? "step-active" : "";
         return (

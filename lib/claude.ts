@@ -9,8 +9,10 @@ export interface ParsedInvoice {
   cta_message: string;
 }
 
-const SYSTEM_PROMPT = `You turn one freelancer sentence into a structured invoice, in Indonesian or English context.
-You also write ONE short, warm, context-aware referral line (max 20 words, in the SAME language as the input)
+function buildSystemPrompt(lang: string): string {
+  const ctaLang = lang === "id" ? "Indonesian" : "English";
+  return `You turn one freelancer sentence into a structured invoice, in Indonesian or English context.
+You also write ONE short, warm, context-aware referral line (max 20 words, written in ${ctaLang})
 that will be shown to the CLIENT on the payment page, inviting them to try Involoop themselves IF their business
 also needs to bill customers. Tailor the line to the type of work described. Never sound like generic ad copy.
 
@@ -26,8 +28,9 @@ Respond ONLY with valid JSON, no markdown fences, matching this shape:
   "due_date": string | null,
   "cta_message": string
 }`;
+}
 
-export async function parseInvoiceFromText(input: string): Promise<ParsedInvoice> {
+export async function parseInvoiceFromText(input: string, lang = "en"): Promise<ParsedInvoice> {
   const apiKey = process.env.AI_API_KEY;
   const model = process.env.AI_MODEL ?? "broday";
   if (!apiKey || !baseURL) {
@@ -46,7 +49,7 @@ export async function parseInvoiceFromText(input: string): Promise<ParsedInvoice
       model,
       max_tokens: 2000,
       stream: false,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(lang),
       messages: [{ role: "user", content: input }],
     }),
     signal: AbortSignal.timeout(50000),

@@ -128,3 +128,260 @@ export function landingItems(lang: Lang, key: string): Array<[string, string, st
   if (!Array.isArray(node)) return [];
   return node.map((item: Item) => [...item[lang]]);
 }
+
+/* ---- App pages (login, signup, dashboard, invoice, payment) ---- */
+
+type T = readonly [string, string];
+
+export const app = {
+  nav: {
+    dashboard: ["Dashboard", "Dashboard"] as T,
+    logout: ["Log out", "Keluar"] as T,
+    createInvoice: ["+ Create invoice", "+ Buat invoice"] as T,
+  },
+  common: {
+    retry: ["Try again", "Coba lagi"] as T,
+    copy: ["Copy", "Salin"] as T,
+    copied: ["Copied", "Tersalin"] as T,
+    copyLink: ["Copy link", "Salin link"] as T,
+    copyCode: ["Copy code", "Salin kode"] as T,
+    copiedCode: ["Copied", "Tersalin"] as T,
+    sendWhatsapp: ["Send via WhatsApp →", "Kirim via WhatsApp →"] as T,
+    viewDashboard: ["View dashboard", "Lihat dashboard"] as T,
+    back: ["← Dashboard", "← Dashboard"] as T,
+    madeWith: ["Made with Involoop · invoices that bring your next user", "Dibuat dengan Involoop · invoice yang mendatangkan pengguna berikutnya"] as T,
+    loading: ["Loading…", "Memuat…"] as T,
+  },
+  status: {
+    paid: ["Paid", "Lunas"] as T,
+    awaiting: ["Awaiting verification", "Menunggu verifikasi"] as T,
+    pending: ["Payment in progress", "Pembayaran diproses"] as T,
+    failed: ["Failed", "Gagal"] as T,
+    unpaid: ["Unpaid", "Belum dibayar"] as T,
+  },
+  login: {
+    title: ["Sign in to Involoop", "Masuk ke Involoop"] as T,
+    sub: ["Welcome back.", "Selamat datang kembali."] as T,
+    continueGoogle: ["Continue with Google", "Lanjut dengan Google"] as T,
+    orEmail: ["or sign in with email", "atau masuk dengan email"] as T,
+    email: ["Email", "Email"] as T,
+    password: ["Password", "Kata sandi"] as T,
+    emailPlaceholder: ["you@email.com", "kamu@email.com"] as T,
+    passwordPlaceholder: ["Your password", "Kata sandi kamu"] as T,
+    signingIn: ["Signing in…", "Memproses…"] as T,
+    signIn: ["Sign in", "Masuk"] as T,
+    wrongCreds: ["Wrong email or password.", "Email atau kata sandi salah."] as T,
+    oauthFail: ["Could not start sign in. Try again.", "Gagal memulai login. Coba lagi."] as T,
+    noAccount: ["No account?", "Belum punya akun?"] as T,
+    createOne: ["Create one", "Daftar"] as T,
+  },
+  signup: {
+    title: ["Create your account", "Buat akun kamu"] as T,
+    sub: ["3 free credits to publish your first invoices.", "3 kredit gratis untuk menerbitkan invoice pertamamu."] as T,
+    invited: [
+      "You were invited through a friend's invoice — they earn credits and you get bonus credits when you sign up.",
+      "Kamu diundang lewat invoice temanmu — mereka dapat kredit dan kamu dapat bonus kredit saat mendaftar.",
+    ] as T,
+    continueGoogle: ["Continue with Google", "Lanjut dengan Google"] as T,
+    orEmail: ["or sign up with email", "atau daftar dengan email"] as T,
+    fullName: ["Full name", "Nama lengkap"] as T,
+    fullNamePlaceholder: ["e.g. Budi Santoso", "cth. Budi Santoso"] as T,
+    email: ["Email", "Email"] as T,
+    password: ["Password", "Kata sandi"] as T,
+    emailPlaceholder: ["you@email.com", "kamu@email.com"] as T,
+    passwordPlaceholder: ["At least 6 characters", "Minimal 6 karakter"] as T,
+    shortPassword: ["Password must be at least 6 characters.", "Kata sandi minimal 6 karakter."] as T,
+    signupFail: ["Signup failed. Please try again.", "Pendaftaran gagal. Coba lagi."] as T,
+    createdSignIn: ["Account created. Please sign in.", "Akun berhasil dibuat. Silakan masuk."] as T,
+    signingUp: ["Signing up…", "Mendaftar…"] as T,
+    createAccount: ["Create account", "Buat akun"] as T,
+    haveAccount: ["Already have an account?", "Sudah punya akun?"] as T,
+    signIn: ["Sign in", "Masuk"] as T,
+  },
+  dashboard: {
+    greeting: ["Hello,", "Halo,"] as T,
+    creditsLeft: ["free credits left", "kredit gratis tersisa"] as T,
+    credit: ["Your credits", "Kredit kamu"] as T,
+    views: ["Invoice views", "Tampilan invoice"] as T,
+    clicks: ["Referral CTA clicks", "Klik ajakan referral"] as T,
+    referrals: ["Successful referrals", "Referral berhasil"] as T,
+    conversion: ["Conversion", "Konversi"] as T,
+    creditsEarned: ["Credits earned", "Kredit didapat"] as T,
+    invoiceList: ["Invoices", "Invoice"] as T,
+    paidCount: ["Paid", "Lunas"] as T,
+    awaitingCount: ["Awaiting", "Menunggu"] as T,
+    unpaidCount: ["Unpaid", "Belum bayar"] as T,
+    emptyTitle: ["START HERE", "MULAI DARI SINI"] as T,
+    emptyBody: [
+      "No invoices yet. Publish the first one — free with your credits.",
+      "Belum ada invoice. Terbitkan yang pertama — gratis pakai kreditmu.",
+    ] as T,
+    viewsCount: ["views", "tampilan"] as T,
+    verify: ["Verify", "Verifikasi"] as T,
+    sendWhatsapp: ["Send via WA", "Kirim WA"] as T,
+    referralSection: ["Referral program", "Program referral"] as T,
+    referralCodeHint: [
+      "This code is used when a friend signs up through your invoice link — each successful referral earns +5 credits.",
+      "Kode ini dipakai saat temanmu mendaftar lewat link invoicemu — setiap referral sukses memberi +5 kredit.",
+    ] as T,
+    referralEmpty: [
+      "No referrals yet. The CTA on each invoice invites your clients to join.",
+      "Belum ada referral. CTA di tiap invoice yang mengajak klienmu daftar.",
+    ] as T,
+    newUser: ["New user", "Pengguna baru"] as T,
+    credits: ["credits", "kredit"] as T,
+    creditHistory: ["Credit history", "Riwayat kredit"] as T,
+    creditHistoryEmpty: ["No credit activity yet.", "Belum ada pergerakan kredit."] as T,
+    paymentSettings: ["Payment settings", "Pengaturan pembayaran"] as T,
+    connected: ["Connected", "Terhubung"] as T,
+    notConnected: ["Not connected", "Belum terhubung"] as T,
+    provider: ["Payment provider", "Penyedia pembayaran"] as T,
+    connectionStatus: ["Connection status", "Status koneksi"] as T,
+    mode: ["Mode", "Mode"] as T,
+    testMode: ["Test Mode", "Test Mode"] as T,
+    defaultCurrency: ["Default settlement currency", "Mata uang default"] as T,
+    stripeTestBadge: ["Stripe Test Mode — no real money will be charged", "Stripe Test Mode — tidak ada uang asli yang ditarik"] as T,
+    connectStripe: ["Connect Stripe", "Hubungkan Stripe"] as T,
+    connecting: ["Connecting…", "Menghubungkan…"] as T,
+    loadFailed: ["Failed to load dashboard.", "Gagal memuat dashboard."] as T,
+    notLoggedIn: ["Not logged in. Sign up or sign in first.", "Belum login. Daftar / masuk dulu."] as T,
+    copyFailed: ["Could not copy link.", "Gagal menyalin link."] as T,
+    verifyFailed: ["Verification failed.", "Gagal verifikasi."] as T,
+    connectFailed: ["Could not connect Stripe.", "Gagal menghubungkan Stripe."] as T,
+    resetConfirm: ["Reset all data for this demo account?", "Reset seluruh data akun demo ini?"] as T,
+    resetFailed: ["Reset failed.", "Gagal reset."] as T,
+    demoWorkspace: ["Demo workspace", "Demo workspace"] as T,
+    demoWorkspaceHint: [
+      "Reset invoices, payments, referrals, ledger, and credits for a clean presentation.",
+      "Reset invoice, pembayaran, referral, ledger, dan kredit untuk presentasi yang bersih.",
+    ] as T,
+    resetting: ["Resetting…", "Reset…"] as T,
+    resetWorkspace: ["Reset Demo Workspace", "Reset Demo Workspace"] as T,
+  },
+  newInvoice: {
+    title: ["Create invoice", "Buat invoice"] as T,
+    sub: [
+      "Write it in one sentence, let AI compose the invoice.",
+      "Tulis dalam satu kalimat, biar AI yang menyusun invoicenya.",
+    ] as T,
+    step1: ["Write sentence", "Tulis kalimat"] as T,
+    step2: ["Review & edit", "Periksa & edit"] as T,
+    step3: ["Publish & send", "Terbitkan & kirim"] as T,
+    sentenceLabel: ["Your billing sentence", "Kalimat tagihanmu"] as T,
+    sentencePlaceholder: [
+      "e.g. bill Rina 2 million for a logo design, due in 2 weeks",
+      "contoh: tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu",
+    ] as T,
+    useSample: ["Use sample →", "Pakai contoh →"] as T,
+    composing: ["Composing invoice…", "Menyusun invoice…"] as T,
+    createWithAI: ["Create invoice with AI", "Buat invoice dengan AI"] as T,
+    fillManual: ["Fill manually instead", "Isi manual saja"] as T,
+    needLogin: ["You are not logged in.", "Kamu belum login."] as T,
+    aiFailed: [
+      "AI could not compose the invoice. Try again, or use the manual form below.",
+      "AI gagal menyusun invoice. Coba lagi, atau isi form manual di bawah.",
+    ] as T,
+    aiResultHint: [
+      "✨ AI result — check and edit before publishing.",
+      "✨ Hasil AI — periksa dan edit dulu sebelum diterbitkan.",
+    ] as T,
+    manualHint: ["Fill in the invoice details, then publish.", "Isi detail invoice, lalu terbitkan."] as T,
+    clientName: ["Client name", "Nama klien"] as T,
+    clientPlaceholder: ["e.g. Rina", "Mis. Rina"] as T,
+    description: ["Service description", "Deskripsi jasa"] as T,
+    descriptionPlaceholder: ["e.g. Logo design", "Mis. Desain logo"] as T,
+    amount: ["Amount", "Nominal"] as T,
+    currency: ["Currency", "Currency"] as T,
+    dueDate: ["Due date", "Jatuh tempo"] as T,
+    ctaLabel: ["Referral message (optional)", "Pesan ajakan (opsional)"] as T,
+    ctaPlaceholder: ["Shown on the client invoice page", "Muncul di halaman invoice klien"] as T,
+    invalidAmount: ["Invalid amount.", "Nominal tidak valid."] as T,
+    publishFailed: ["Could not publish invoice.", "Gagal menerbitkan invoice"] as T,
+    publishing: ["Publishing…", "Menerbitkan…"] as T,
+    publish: ["Publish invoice", "Terbitkan invoice"] as T,
+    preview: ["PREVIEW", "PRATINJAU"] as T,
+    draft: ["DRAFT", "DRAFT"] as T,
+    previewEmpty: [
+      "The invoice preview appears here once you fill in the client name, description, and amount.",
+      "Preview invoice muncul di sini setelah kamu melengkapi nama klien, deskripsi, dan nominal.",
+    ] as T,
+    to: ["TO", "UNTUK"] as T,
+    dueOn: ["Due", "Jatuh tempo"] as T,
+    published: ["INVOICE PUBLISHED", "INVOICE DITERBITKAN"] as T,
+    publishedTitle: ["Invoice ready. Send this link to your client:", "Invoice siap. Kirim link ini ke klienmu:"] as T,
+    copyFailed: ["Could not copy. Copy manually from the link below.", "Gagal menyalin. Salin manual dari link di bawah."] as T,
+    whatsappText: ["Hi, here is your invoice: ", "Halo, ini tagihan untuk kamu: "] as T,
+  },
+  invoice: {
+    from: ["FROM", "DARI"] as T,
+    to: ["TO", "UNTUK"] as T,
+    dueDate: ["Due", "Jatuh tempo"] as T,
+    paid: ["✓ Payment received", "✓ Pembayaran diterima"] as T,
+    awaiting: ["Awaiting sender verification", "Menunggu verifikasi pengirim"] as T,
+    pending: ["Payment in progress…", "Pembayaran sedang diproses…"] as T,
+    unpaid: ["Unpaid", "Belum dibayar"] as T,
+    payStripe: ["Pay with Stripe", "Bayar dengan Stripe"] as T,
+    redirecting: ["Redirecting to Stripe…", "Mengarahkan ke Stripe…"] as T,
+    stripeHint: [
+      "Payment is securely processed by Stripe. Involoop does not store card information.",
+      "Pembayaran diproses aman oleh Stripe. Involoop tidak menyimpan data kartu.",
+    ] as T,
+    orManual: ["or pay by manual transfer", "atau transfer manual"] as T,
+    manualTitle: ["Manual transfer", "Transfer manual"] as T,
+    manualBody: [
+      "Transfer to the account you agreed with {sender}, then confirm below.",
+      "Transfer ke rekening yang disepakati dengan {sender}, lalu konfirmasi di bawah.",
+    ] as T,
+    confirmTransfer: ["I have completed the transfer", "Saya sudah transfer"] as T,
+    sending: ["Sending confirmation…", "Mengirim konfirmasi…"] as T,
+    checkoutFailed: ["Could not create payment session.", "Gagal membuat sesi pembayaran."] as T,
+    confirmFailed: ["Something went wrong. Try again.", "Terjadi kesalahan. Coba lagi."] as T,
+    referralHeading: ["Create an invoice like this — free", "Buat invoice seperti ini — gratis"] as T,
+    referralBody: ["{cta}", "{cta}"] as T,
+    referralCta: [
+      "Get 5 free credits when you join through this invoice →",
+      "Dapatkan 5 kredit gratis saat kamu bergabung lewat invoice ini →",
+    ] as T,
+    notFound: ["Invoice not found.", "Invoice tidak ditemukan."] as T,
+    loading: ["Loading…", "Memuat…"] as T,
+  },
+  success: {
+    missingSession: ["Missing payment session.", "Sesi pembayaran tidak ditemukan."] as T,
+    notFound: ["Payment session not found.", "Sesi pembayaran tidak ditemukan."] as T,
+    unknownTitle: ["Payment status unknown", "Status pembayaran tidak diketahui"] as T,
+    back: ["Back to Involoop", "Kembali ke Involoop"] as T,
+    successful: ["Payment successful ✓", "Pembayaran berhasil ✓"] as T,
+    invoiceLabel: ["Invoice", "Invoice"] as T,
+    verifiedBy: ["Payment verified by Stripe", "Pembayaran diverifikasi oleh Stripe"] as T,
+    transactionId: ["Transaction ID:", "ID Transaksi:"] as T,
+    paidAt: ["Paid at:", "Dibayar pada:"] as T,
+    referralHeading: ["Create your own invoice — get free credits", "Buat invoice-mu sendiri — dapatkan kredit gratis"] as T,
+    referralBody: [
+      "Join through this invoice and receive credits to publish your first invoices.",
+      "Bergabung lewat invoice ini dan dapatkan kredit untuk menerbitkan invoice pertamamu.",
+    ] as T,
+    referralCta: ["Create your own invoice →", "Buat invoice sendiri →"] as T,
+  },
+} as const;
+
+export function appText(lang: Lang, key: string, vars?: Record<string, string>): string {
+  const parts = key.split(".");
+  let node: any = app;
+  for (const part of parts) node = node?.[part];
+  if (!node || typeof node === "string") return key;
+  const idx = lang === "en" ? 0 : 1;
+  const val = node[idx];
+  if (typeof val !== "string") return key;
+  if (!vars) return val;
+  return val.replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
+}
+
+import { useEffect, useState } from "react";
+
+export function useLang(): Lang {
+  const [lang, setLang] = useState<Lang>("en");
+  useEffect(() => {
+    setLang(getInitialLang());
+  }, []);
+  return lang;
+}

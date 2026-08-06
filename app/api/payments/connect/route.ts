@@ -2,15 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
+import { apiError } from "@/lib/api-lang";
 
 // Connect a Stripe account (test mode) to the signed-in owner. The account is
 // created as a Custom account pre-enabled with a test bank + capabilities, so
 // the demo never needs a real onboarding interview.
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const { lang } = await req.json().catch(() => ({}));
   try {
     if (!stripeConfigured()) {
       return NextResponse.json(
-        { error: "Stripe belum dikonfigurasi. Tambahkan STRIPE_SECRET_KEY." },
+        { error: apiError(lang, "Stripe is not configured. Add STRIPE_SECRET_KEY.", "Stripe belum dikonfigurasi. Tambahkan STRIPE_SECRET_KEY.") },
         { status: 503 }
       );
     }
@@ -93,7 +95,7 @@ export async function POST() {
   } catch (err: any) {
     console.error("stripe connect error", err);
     return NextResponse.json(
-      { error: "Gagal menghubungkan Stripe. Coba lagi." },
+      { error: apiError(lang, "Could not connect Stripe. Try again.", "Gagal menghubungkan Stripe. Coba lagi.") },
       { status: 500 }
     );
   }

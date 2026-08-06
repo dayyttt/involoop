@@ -4,12 +4,15 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
+import { appText, useLang } from "@/lib/i18n";
 
 const REF_COOKIE = "ref_invoice";
 
 export default function SignupForm({ refInvoice }: { refInvoice: string | null }) {
   const router = useRouter();
   const supabase = createClient();
+  const lang = useLang();
+  const t = (k: string) => appText(lang, k);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -36,7 +39,7 @@ export default function SignupForm({ refInvoice }: { refInvoice: string | null }
     setError(null);
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError(t("signup.shortPassword"));
       setLoading(false);
       return;
     }
@@ -52,6 +55,7 @@ export default function SignupForm({ refInvoice }: { refInvoice: string | null }
         password,
         full_name: fullName,
         ref_invoice_public_id: ref ?? undefined,
+        lang,
       }),
     });
 
@@ -59,7 +63,7 @@ export default function SignupForm({ refInvoice }: { refInvoice: string | null }
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Signup failed. Please try again.");
+      setError(data.error ?? t("signup.signupFail"));
       return;
     }
 
@@ -70,7 +74,7 @@ export default function SignupForm({ refInvoice }: { refInvoice: string | null }
     });
 
     if (signInError) {
-      setError("Account created. Please sign in.");
+      setError(t("signup.createdSignIn"));
       router.push("/login");
       return;
     }
@@ -90,72 +94,71 @@ export default function SignupForm({ refInvoice }: { refInvoice: string | null }
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (oauthError) {
-      setError("Could not start sign in. Please try again.");
+      setError(t("login.oauthFail"));
     }
   }
 
   return (
     <main className="auth-shell">
       <div className="card">
-        <h1>Create your account</h1>
-        <p className="sub">3 free credits to publish your first invoices.</p>
+        <h1>{t("signup.title")}</h1>
+        <p className="sub">{t("signup.sub")}</p>
         {refInvoice && (
           <p className="note-box">
-            You were invited through a friend&apos;s invoice — they earn credits
-            and you get bonus credits when you sign up.
+            {t("signup.invited")}
           </p>
         )}
         <div className="oauth-row">
           <button type="button" className="btn btn-ghost" onClick={handleOAuth}>
-            <GoogleIcon /> Continue with Google
+            <GoogleIcon /> {t("signup.continueGoogle")}
           </button>
         </div>
-        <div className="divider"><span>or sign up with email</span></div>
+        <div className="divider"><span>{t("signup.orEmail")}</span></div>
         <form
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
           <div className="field">
-            <label htmlFor="fullName">Full name</label>
+            <label htmlFor="fullName">{t("signup.fullName")}</label>
             <input
               id="fullName"
               className="input"
-              placeholder="e.g. Budi Santoso"
+              placeholder={t("signup.fullNamePlaceholder")}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
             />
           </div>
           <div className="field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t("signup.email")}</label>
             <input
               id="email"
               className="input"
               type="email"
-              placeholder="you@email.com"
+              placeholder={t("signup.emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
           <div className="field">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t("signup.password")}</label>
             <input
               id="password"
               className="input"
               type="password"
-              placeholder="At least 6 characters"
+              placeholder={t("signup.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? "Signing up…" : "Create account"}
+            {loading ? t("signup.signingUp") : t("signup.createAccount")}
           </button>
         </form>
         {error && <p className="error">{error}</p>}
         <p className="hint" style={{ marginTop: 16 }}>
-          Already have an account? <Link href="/login">Sign in</Link>.
+          {t("signup.haveAccount")} <Link href="/login">{t("signup.signIn")}</Link>.
         </p>
       </div>
     </main>

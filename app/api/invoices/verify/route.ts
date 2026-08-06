@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { apiError } from "@/lib/api-lang";
 
 // Owner marks a buyer's transfer as verified -> invoice becomes 'paid'.
-// Expects: { public_id: string }
+// Expects: { public_id: string, lang?: "en" | "id" }
 export async function POST(req: NextRequest) {
   try {
-    const { public_id } = await req.json();
+    const { public_id, lang } = await req.json();
     if (!public_id) {
       return NextResponse.json({ error: "public_id is required" }, { status: 400 });
     }
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     if (error || !invoice) {
       return NextResponse.json(
-        { error: "Invoice tidak ditemukan atau belum dikonfirmasi klien." },
+        { error: apiError(lang, "Invoice not found or not confirmed by the client.", "Invoice tidak ditemukan atau belum dikonfirmasi klien.") },
         { status: 404 }
       );
     }

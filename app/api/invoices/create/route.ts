@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { parseInvoiceFromText } from "@/lib/claude";
+import { apiError } from "@/lib/api-lang";
 
-// Expects: { raw_text: string }
-// raw_text example: "tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu"
+// Expects: { raw_text: string } or { manual: true, ...fields }, lang?: "en" | "id"
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { raw_text, manual, client_name, description, amount, due_date, cta_message, currency } = body;
+    const { raw_text, manual, client_name, description, amount, due_date, cta_message, currency, lang } = body;
 
     let parsed;
 
@@ -20,14 +20,14 @@ export async function POST(req: NextRequest) {
         !(amount > 0)
       ) {
         return NextResponse.json(
-          { error: "Lengkapi nama klien, deskripsi, dan nominal yang valid." },
+          { error: apiError(lang, "Fill in the client name, description, and a valid amount.", "Lengkapi nama klien, deskripsi, dan nominal yang valid.") },
           { status: 400 }
         );
       }
       const cur = typeof currency === "string" ? currency.toUpperCase() : "USD";
       if (!["USD", "EUR", "GBP", "SGD", "IDR"].includes(cur)) {
         return NextResponse.json(
-          { error: "Currency tidak didukung." },
+          { error: apiError(lang, "Currency is not supported.", "Currency tidak didukung.") },
           { status: 400 }
         );
       }
@@ -41,18 +41,21 @@ export async function POST(req: NextRequest) {
       };
     } else if (!raw_text || typeof raw_text !== "string") {
       return NextResponse.json(
-        { error: "Tulis kalimat tagihan dulu." },
+        { error: apiError(lang, "Write your billing sentence first.", "Tulis kalimat tagihan dulu.") },
         { status: 400 }
       );
     } else {
       try {
-        parsed = await parseInvoiceFromText(raw_text);
+        parsed = await parseInvoiceFromText(raw_text, lang === "id" ? "id" : "en");
       } catch (err: any) {
         console.error("AI parse error", err);
         return NextResponse.json(
           {
-            error:
-              "AI gagal menyusun invoice. Coba lagi, atau gunakan form manual di bawah.",
+            error: apiError(
+              lang,
+              "AI could not compose the invoice. Try again, or use the manual form below.",
+              "AI gagal menyusun invoice. Coba lagi, atau gunakan form manual di bawah."
+            ),
           },
           { status: 502 }
         );
@@ -60,7 +63,7 @@ export async function POST(req: NextRequest) {
 
       if (!parsed.client_name || !parsed.description || typeof parsed.amount !== "number" || parsed.amount <= 0) {
         return NextResponse.json(
-          { error: "Hasil AI tidak valid. Coba tulis ulang kalimat tagihan." },
+          { error: apiError(lang, "AI result is invalid. Try writing your sentence again.", "Hasil AI tidak valid. Coba tulis ulang kalimat tagihan.") },
           { status: 502 }
         );
       }
@@ -93,15 +96,18 @@ export async function POST(req: NextRequest) {
       if (msg.includes("NO_CREDITS")) {
         return NextResponse.json(
           {
-            error:
-              "Kredit invoice habis. Ajak klien daftar lewat invoicemu untuk kredit tambahan.",
+            error: apiError(
+              lang,
+              "No invoice credits left. Invite a client through your invoice to earn more.",
+              "Kredit invoice habis. Ajak klien daftar lewat invoicemu untuk kredit tambahan."
+            ),
           },
           { status: 402 }
         );
       }
       console.error("publish error", rpcError?.message);
       return NextResponse.json(
-        { error: "Gagal menerbitkan invoice. Coba lagi." },
+        { error: apiError(lang, "Could not publish the invoice. Try again.", "Gagal menerbitkan invoice. Coba lagi.") },
         { status: 500 }
       );
     }

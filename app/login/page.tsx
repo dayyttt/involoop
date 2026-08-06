@@ -4,10 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
+import { appText, useLang } from "@/lib/i18n";
 
 export default function Login() {
   const supabase = createClient();
   const router = useRouter();
+  const lang = useLang();
+  const t = (k: string) => appText(lang, k);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +30,7 @@ export default function Login() {
     setLoading(false);
 
     if (signInError) {
-      setError("Email atau password salah.");
+      setError(t("login.wrongCreds"));
       return;
     }
 
@@ -41,56 +44,56 @@ export default function Login() {
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (oauthError) {
-      setError("Gagal memulai login. Coba lagi.");
+      setError(t("login.oauthFail"));
     }
   }
 
   return (
     <main className="auth-shell">
       <div className="card">
-        <h1>Sign in to Involoop</h1>
-        <p className="sub">Welcome back.</p>
+        <h1>{t("login.title")}</h1>
+        <p className="sub">{t("login.sub")}</p>
         <div className="oauth-row">
           <button type="button" className="btn btn-ghost" onClick={() => handleOAuth("google")}>
-            <GoogleIcon /> Continue with Google
+            <GoogleIcon /> {t("login.continueGoogle")}
           </button>
         </div>
-        <div className="divider"><span>or sign in with email</span></div>
+        <div className="divider"><span>{t("login.orEmail")}</span></div>
         <form
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
           <div className="field">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t("login.email")}</label>
             <input
               id="email"
               className="input"
               type="email"
-              placeholder="you@email.com"
+              placeholder={t("login.emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
           <div className="field">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t("login.password")}</label>
             <input
               id="password"
               className="input"
               type="password"
-              placeholder="Your password"
+              placeholder={t("login.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? t("login.signingIn") : t("login.signIn")}
           </button>
         </form>
         {error && <p className="error">{error}</p>}
         <p className="hint" style={{ marginTop: 16 }}>
-          No account? <Link href="/signup">Create one</Link>.
+          {t("login.noAccount")} <Link href="/signup">{t("login.createOne")}</Link>.
         </p>
       </div>
     </main>
