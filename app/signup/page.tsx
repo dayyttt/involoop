@@ -119,9 +119,6 @@ function SignupForm() {
           <button type="button" className="btn btn-ghost" onClick={() => handleOAuth("google")}>
             Continue with Google
           </button>
-          <button type="button" className="btn btn-ghost" onClick={() => handleOAuth("github")}>
-            Continue with GitHub
-          </button>
         </div>
         <div className="divider"><span>or sign up with email</span></div>
         <form
