@@ -1,5 +1,4 @@
 import Link from "next/link";
-import LoopScene from "@/components/LoopScene";
 
 const features = [
   ["01", "Invoice dari satu kalimat", "AI memecah kalimat tagihan jadi nama klien, nominal, deskripsi, tenggat, dan CTA referral."],
@@ -59,9 +58,6 @@ export default function Home() {
                 Masuk dashboard
               </Link>
             </div>
-          </div>
-          <div className="hero-webgl">
-            <LoopScene />
           </div>
         </div>
         <div className="trust-strip">
