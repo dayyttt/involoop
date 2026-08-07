@@ -136,7 +136,7 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .neon-landscape canvas { display: block; width: 100% !important; height: 100% !important; }
 /* Keeps the headline readable over the particle field while letting more of it
    through on the right, where the field is the point. */
-.hero-shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(12,8,14,.92) 0%, rgba(12,8,14,.66) 42%, rgba(12,8,14,.06) 80%), linear-gradient(0deg, var(--bg) 0%, transparent 26%); }
+.hero-shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(12,8,14,.88) 0%, rgba(12,8,14,.42) 38%, rgba(12,8,14,0) 68%), linear-gradient(0deg, var(--bg) 0%, transparent 24%); }
 /* align-items: start, not center: if the copy column ever changes height, a
    centred grid would slide the demo card up and down with it. */
 .agency-hero-inner { position: relative; z-index: 2; padding: 76px 0 104px; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start; }

@@ -4,129 +4,131 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { HERO_PULSE, type HeroPulseDetail } from "@/lib/hero-pulse";
 
-// The hero backdrop: a field of ~26,000 points drifting left to right — from
-// you, toward your client — that parts around the cursor and takes a shockwave
-// when the demo composes an invoice.
+// The hero backdrop, built from the product's own subject matter rather than
+// from a graphics demo.
 //
-// Every particle's motion is computed in the vertex shader from its own seed
-// and the clock, so the CPU does nothing per frame but update six uniforms.
-// That is why this is both far denser and cheaper than the wireframe plane it
-// replaces, which rewrote 9,409 vertex positions in JavaScript every frame.
+// Three layers, all in one fragment shader:
+//   1. A slow flowing gradient — the visual language of payments, and the only
+//      register that reads as calm rather than energetic. Sparks and embers
+//      belong to gaming; money does not flicker.
+//   2. A faint ruled grid fading toward the horizon: a ledger, which is what an
+//      invoicing product actually is.
+//   3. Light sweeping left to right, the direction value travels — from you to
+//      your client — with a ring when the demo composes an invoice.
 //
-// The glow comes from additive blending on soft round points rather than a
-// post-processing pass: same look, no EffectComposer, one draw call.
-//
-// It keeps every guard the old scene had — desktop only, skipped under
-// prefers-reduced-motion, paused once the hero leaves the viewport.
+// No geometry: a single full-screen quad, so cost is per pixel rather than per
+// vertex, and the buffer renders at 65% scale because a soft gradient loses
+// nothing to it. That makes this cheaper than both the particle field and the
+// wireframe plane before it.
 
-const COUNT = 15000;
-const SPAN_X = 62;
-const SPAN_Y = 21;
-const SPAN_Z = 34;
-const PULSE_LIFE = 1.8;
+const RESOLUTION_SCALE = 0.65;
+const PULSE_LIFE = 2.0;
 
 const vertexShader = /* glsl */ `
-  attribute vec3 aSeed;
-  attribute float aSpeed;
-  attribute float aScale;
-
-  uniform float uTime;
-  uniform float uPixelRatio;
-  uniform vec3 uMouse;
-  uniform float uMouseStrength;
-  uniform float uPulseAge;
-  uniform vec3 uPulseOrigin;
-
-  varying float vTone;
-  varying float vGlow;
-  varying float vFade;
-  varying float vTint;
-  varying float vSpark;
-
+  varying vec2 vUv;
   void main() {
-    vec3 p = position;
-
-    // Constant drift with a per-particle speed, wrapped so the field never
-    // empties. The direction is the product's direction: sender to recipient.
-    p.x = mod(p.x + uTime * aSpeed + ${(SPAN_X / 2).toFixed(1)}, ${SPAN_X.toFixed(1)}) - ${(SPAN_X / 2).toFixed(1)};
-
-    // Layered sines standing in for curl noise: cheap, and smooth enough that
-    // the field breathes instead of shimmering.
-    float a = uTime * 0.22 + aSeed.x * 6.2831;
-    float b = uTime * 0.17 + aSeed.y * 6.2831;
-    p.y += sin(p.x * 0.075 + a) * 1.9 + cos(p.z * 0.09 + b) * 1.1;
-    p.z += sin(p.x * 0.045 + aSeed.z * 6.2831) * 2.2;
-
-    // The cursor pushes particles aside in the horizontal plane only, so the
-    // field opens around the pointer instead of exploding.
-    vec3 away = vec3(p.x - uMouse.x, 0.0, p.z - uMouse.z);
-    float mouseDist = length(away);
-    float influence = smoothstep(11.0, 0.0, mouseDist) * uMouseStrength;
-    p += normalize(away + vec3(0.0001)) * influence * 3.4;
-
-    float glow = influence * 0.55;
-
-    // One expanding shell when an invoice is composed.
-    if (uPulseAge > 0.0 && uPulseAge < ${PULSE_LIFE.toFixed(1)}) {
-      vec3 fromOrigin = p - uPulseOrigin;
-      float dist = length(fromOrigin);
-      float band = dist - uPulseAge * 30.0;
-      float ring = exp(-band * band / 26.0) * (1.0 - uPulseAge / ${PULSE_LIFE.toFixed(1)});
-      p += normalize(fromOrigin + vec3(0.0001)) * ring * 4.5;
-      glow += ring;
-    }
-
-    vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
-    gl_Position = projectionMatrix * mvPosition;
-
-    // Colour runs along the drift, so the field reads as a gradient in motion.
-    vTone = clamp((p.x + ${(SPAN_X / 2).toFixed(1)}) / ${SPAN_X.toFixed(1)}, 0.0, 1.0);
-    vGlow = glow;
-    vTint = smoothstep(0.12, 0.85, aSeed.z);
-    vSpark = 0.75 + smoothstep(0.82, 1.0, aSeed.x) * 1.6;
-
-    // Distance haze, replacing the old scene's fog: the far edge of the field
-    // dissolves instead of ending in a bright wall of points.
-    float depth = -mvPosition.z;
-    // Thin the field out across the left of the frame, where the headline
-    // sits. Type gets clean ground; the field gathers on the open right.
-    float side = smoothstep(-14.0, 6.0, p.x);
-    vFade = smoothstep(58.0, 16.0, depth) * mix(0.12, 1.0, side);
-
-    // Clamped, or a particle drifting near the camera becomes a 60px blob.
-    gl_PointSize = clamp(aScale * uPixelRatio * (150.0 / max(depth, 1.0)), 1.0, 13.0);
+    vUv = uv;
+    gl_Position = vec4(position.xy, 0.0, 1.0);
   }
 `;
 
 const fragmentShader = /* glsl */ `
-  precision mediump float;
+  precision highp float;
 
-  uniform vec3 uColorA;
-  uniform vec3 uColorB;
-  uniform vec3 uColorBase;
-  uniform float uOpacity;
+  uniform float uTime;
+  uniform float uAspect;
+  uniform vec2 uMouse;
+  uniform float uMouseStrength;
+  uniform float uPulseAge;
+  uniform vec2 uPulseOrigin;
+  uniform vec3 uBase;
+  uniform vec3 uInk;
+  uniform vec3 uWarm;
 
-  varying float vTone;
-  varying float vGlow;
-  varying float vFade;
-  varying float vTint;
-  varying float vSpark;
+  varying vec2 vUv;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+      mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+      u.y
+    );
+  }
+
+  float fbm(vec2 p) {
+    float v = 0.0;
+    float a = 0.5;
+    for (int i = 0; i < 4; i++) {
+      v += a * noise(p);
+      p *= 2.03;
+      a *= 0.5;
+    }
+    return v;
+  }
 
   void main() {
-    // Soft round point, drawn from the fragment's distance to the sprite
-    // centre — no texture to load.
-    float d = length(gl_PointCoord - vec2(0.5));
-    if (d > 0.5) discard;
-    float falloff = smoothstep(0.5, 0.0, d);
+    vec2 uv = vUv;
+    vec2 p = vec2(uv.x * uAspect, uv.y);
 
-    float alpha = falloff * uOpacity * vFade * vSpark * (0.5 + vGlow);
-    if (alpha < 0.01) discard;
+    // Domain-warped noise: the difference between a gradient that flows and one
+    // that merely scrolls.
+    vec2 q = p * 1.5 + vec2(uTime * 0.030, uTime * -0.010);
+    vec2 warp = vec2(fbm(q), fbm(q + vec2(5.2, 1.3)));
+    float field = fbm(q + warp * 1.7);
 
-    // Most points are near-neutral; only the tinted minority carries brand
-    // colour, so overlapping particles build light instead of solid orange.
-    vec3 accent = mix(uColorA, uColorB, vTone);
-    vec3 color = mix(uColorBase, accent, vTint) + vGlow * 1.1;
-    gl_FragColor = vec4(color, alpha);
+    // The cursor lifts the field rather than pushing objects around: this layer
+    // is a surface, so it should behave like one.
+    vec2 m = vec2(uMouse.x * uAspect, uMouse.y);
+    float lift = smoothstep(0.42, 0.0, distance(p, m)) * uMouseStrength;
+    field += lift * 0.22;
+
+    // One ring when an invoice is composed.
+    float ring = 0.0;
+    if (uPulseAge > 0.0 && uPulseAge < 2.0) {
+      vec2 o = vec2(uPulseOrigin.x * uAspect, uPulseOrigin.y);
+      float band = distance(p, o) - uPulseAge * 0.85;
+      ring = exp(-band * band / 0.0035) * (1.0 - uPulseAge / 2.0);
+      field += ring * 0.45;
+    }
+
+    // A soft source in the open right: without one the field is an even
+    // wash with nothing to look at.
+    float core = smoothstep(0.8, 0.0, distance(p, vec2(0.86 * uAspect, 0.72)));
+    field += core * 0.15;
+
+    // Value moving left to right.
+    float sweep = smoothstep(0.78, 1.0, sin((p.x * 0.8 - uTime * 0.14) * 3.14159));
+    field += sweep * 0.05;
+
+    // The ledger: ruled lines, fading in toward the top so they read as a
+    // surface receding rather than as wallpaper.
+    vec2 g = vec2(p.x * 13.0 - uTime * 0.12, p.y * 9.0);
+    vec2 gf = abs(fract(g) - 0.5);
+    float lines = smoothstep(0.47, 0.5, max(gf.x, gf.y));
+    float grid = lines * 0.045 * smoothstep(0.05, 0.7, uv.y);
+
+    // These constants were solved for, not guessed: the curve puts the dim
+    // majority of the frame near 6% luminance, mid tones around 16%, and only
+    // the brightest plumes at 25–30%, which is bright enough to see on a dark
+    // page and dim enough that white type still owns the screen.
+    float t = clamp((field - 0.42) * 2.6, 0.0, 1.0);
+    vec3 color = uBase;
+    color = mix(color, uInk, smoothstep(0.05, 0.85, t) * 0.90);
+    color = mix(color, uWarm, smoothstep(0.80, 1.05, t) * 0.50);
+    color += ring * 0.30 + grid;
+
+    // The headline needs clean ground, and the band below needs no seam: the
+    // field clears to the left and dissolves at the bottom.
+    float alpha = smoothstep(0.04, 0.52, uv.x) * smoothstep(0.0, 0.28, uv.y);
+
+    gl_FragColor = vec4(color, alpha * 0.9);
   }
 `;
 
@@ -155,51 +157,22 @@ export default function NeonLandscape() {
       return; // No WebGL: the gradient shade underneath is a fine fallback.
     }
     el.appendChild(canvas);
-    const pixelRatio = Math.min(window.devicePixelRatio, 1.75);
-    renderer.setPixelRatio(pixelRatio);
+    renderer.setPixelRatio(1); // the buffer is scaled explicitly below
     renderer.setClearColor(0x000000, 0);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 140);
-    camera.position.set(0, 3.2, 26);
-    camera.lookAt(0, 0, -4);
-
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(COUNT * 3);
-    const seeds = new Float32Array(COUNT * 3);
-    const speeds = new Float32Array(COUNT);
-    const scales = new Float32Array(COUNT);
-
-    for (let i = 0; i < COUNT; i++) {
-      // Squaring the vertical spread keeps the field a band around the horizon
-      // rather than static filling the frame.
-      const v = Math.pow(Math.random(), 1.15) * (Math.random() < 0.5 ? -1 : 1);
-      positions[i * 3] = (Math.random() - 0.5) * SPAN_X;
-      positions[i * 3 + 1] = v * (SPAN_Y / 2);
-      positions[i * 3 + 2] = (Math.random() - 0.5) * SPAN_Z - 6;
-      seeds[i * 3] = Math.random();
-      seeds[i * 3 + 1] = Math.random();
-      seeds[i * 3 + 2] = Math.random();
-      speeds[i] = 0.55 + Math.random() * 1.5;
-      scales[i] = 0.7 + Math.random() * 1.5;
-    }
-
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 3));
-    geometry.setAttribute("aSpeed", new THREE.BufferAttribute(speeds, 1));
-    geometry.setAttribute("aScale", new THREE.BufferAttribute(scales, 1));
+    const camera = new THREE.Camera(); // the quad is drawn straight in clip space
 
     const uniforms = {
       uTime: { value: 0 },
-      uPixelRatio: { value: pixelRatio },
-      uMouse: { value: new THREE.Vector3(0, 0, -999) },
+      uAspect: { value: 1 },
+      uMouse: { value: new THREE.Vector2(0.5, 0.5) },
       uMouseStrength: { value: 0 },
       uPulseAge: { value: -1 },
-      uPulseOrigin: { value: new THREE.Vector3() },
-      uColorA: { value: new THREE.Color(0xf14a94) },
-      uColorB: { value: new THREE.Color(0xf39a3f) },
-      uColorBase: { value: new THREE.Color(0x7c6f8c) },
-      uOpacity: { value: 0.8 },
+      uPulseOrigin: { value: new THREE.Vector2(0.75, 0.55) },
+      uBase: { value: new THREE.Color(0x120d16) },
+      uInk: { value: new THREE.Color(0xbc2f74) },
+      uWarm: { value: new THREE.Color(0xffa257) },
     };
 
     const material = new THREE.ShaderMaterial({
@@ -207,26 +180,21 @@ export default function NeonLandscape() {
       vertexShader,
       fragmentShader,
       transparent: true,
+      depthTest: false,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
     });
 
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
+    const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+    quad.frustumCulled = false;
+    scene.add(quad);
 
-    let scroll = 0;
-    const onScroll = () => {
-      scroll = window.scrollY;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    // Pointer mapped onto the field. The strength eases in and out so the field
-    // does not snap open the moment the cursor enters the hero.
     let mouseTargetStrength = 0;
     const onPointerMove = (event: PointerEvent) => {
-      const nx = event.clientX / window.innerWidth - 0.5;
-      const ny = event.clientY / window.innerHeight - 0.5;
-      uniforms.uMouse.value.set(nx * SPAN_X * 0.55, 0, ny * SPAN_Z * 0.5 - 4);
+      const rect = el.getBoundingClientRect();
+      uniforms.uMouse.value.set(
+        (event.clientX - rect.left) / Math.max(rect.width, 1),
+        1 - (event.clientY - rect.top) / Math.max(rect.height, 1)
+      );
       mouseTargetStrength = 1;
     };
     const onPointerLeave = () => {
@@ -238,9 +206,8 @@ export default function NeonLandscape() {
     const resize = () => {
       const w = el.clientWidth || 1;
       const h = el.clientHeight || 1;
-      renderer.setSize(w, h, false);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
+      renderer.setSize(Math.round(w * RESOLUTION_SCALE), Math.round(h * RESOLUTION_SCALE), false);
+      uniforms.uAspect.value = w / h;
     };
     resize();
     const ro = new ResizeObserver(resize);
@@ -253,20 +220,11 @@ export default function NeonLandscape() {
 
     const tick = () => {
       const t = clock.getElapsedTime();
-
       uniforms.uTime.value = t;
-      uniforms.uMouseStrength.value +=
-        (mouseTargetStrength - uniforms.uMouseStrength.value) * 0.06;
+      uniforms.uMouseStrength.value += (mouseTargetStrength - uniforms.uMouseStrength.value) * 0.05;
 
       const age = t - pulseStart;
       uniforms.uPulseAge.value = age >= 0 && age < PULSE_LIFE ? age : -1;
-
-      // Scrolling drifts the camera rather than the field, so leaving the hero
-      // reads as moving past the field instead of the field collapsing.
-      const depth = Math.min(scroll / (window.innerHeight || 1), 1.5);
-      camera.position.y = THREE.MathUtils.lerp(camera.position.y, 3.2 + depth * 5.5, 0.05);
-      camera.position.z = THREE.MathUtils.lerp(camera.position.z, 26 - depth * 6, 0.05);
-      camera.lookAt(0, 0, -4);
 
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
@@ -285,11 +243,13 @@ export default function NeonLandscape() {
 
     const onPulse = (event: Event) => {
       const detail = (event as CustomEvent<HeroPulseDetail>).detail;
-      uniforms.uPulseOrigin.value.set(
-        ((detail?.x ?? 0.75) - 0.5) * SPAN_X * 0.55,
-        0,
-        ((detail?.y ?? 0.45) - 0.5) * SPAN_Z * 0.5 - 4
-      );
+      const rect = el.getBoundingClientRect();
+      if (detail) {
+        uniforms.uPulseOrigin.value.set(
+          (detail.x * window.innerWidth - rect.left) / Math.max(rect.width, 1),
+          1 - (detail.y * window.innerHeight - rect.top) / Math.max(rect.height, 1)
+        );
+      }
       pulseStart = clock.getElapsedTime();
       start(); // in case the hero had scrolled out and the loop was paused
     };
@@ -306,11 +266,10 @@ export default function NeonLandscape() {
       stop();
       io.disconnect();
       ro.disconnect();
-      window.removeEventListener("scroll", onScroll);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerleave", onPointerLeave);
       window.removeEventListener(HERO_PULSE, onPulse);
-      geometry.dispose();
+      quad.geometry.dispose();
       material.dispose();
       renderer.dispose();
       if (canvas.parentNode === el) el.removeChild(canvas);
