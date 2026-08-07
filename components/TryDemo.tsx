@@ -35,7 +35,7 @@ const EXAMPLES: Record<"en" | "id", { label: string; text: string }[]> = {
 
 // The landing page's proof-of-product: a visitor can watch one sentence turn
 // into a real invoice before deciding whether to sign up.
-export default function TryDemo() {
+export default function TryDemo({ signedIn = false }: { signedIn?: boolean }) {
   const lang = useLang();
   const t = (k: string) => landingText(lang, k);
   const locale = lang === "id" ? "id-ID" : "en-US";
@@ -142,7 +142,11 @@ export default function TryDemo() {
           <motion.div className="try-demo-actions" {...line(5)}>
             {/* The sentence goes with them. Without this the visitor writes it
                 here, signs up, and is handed an empty box to type it again. */}
-            <Link href="/signup" className="btn btn-primary" onClick={keepDraft}>
+            <Link
+              href={signedIn ? "/dashboard/new-invoice" : "/signup"}
+              className="btn btn-primary"
+              onClick={keepDraft}
+            >
               {t("demo.publish")}
             </Link>
             <button type="button" className="btn btn-ghost" onClick={reset}>

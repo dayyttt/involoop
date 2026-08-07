@@ -25,6 +25,8 @@ export const landing = {
     pricing: ["Pricing", "Harga"] as Pair,
     faq: ["FAQ", "FAQ"] as Pair,
     getStarted: ["Start free", "Mulai gratis"] as Pair,
+    dashboard: ["Dashboard", "Dashboard"] as Pair,
+    createInvoice: ["Create an invoice", "Buat invoice"] as Pair,
     openMenu: ["Open menu", "Buka menu"] as Pair,
     closeMenu: ["Close menu", "Tutup menu"] as Pair,
   },
@@ -42,6 +44,7 @@ export const landing = {
       "Tulis satu kalimat, dapat link tagihan yang bisa dikirim ke mana saja.",
     ] as Pair,
     cta1: ["Create your first invoice →", "Buat invoice pertama →"] as Pair,
+    ctaSignedIn: ["Create an invoice →", "Buat invoice →"] as Pair,
     cta2: ["Sign in", "Masuk"] as Pair,
     cta3: ["View live sample", "Lihat contoh invoice"] as Pair,
     // One row, three facts, numbers emphasised so the eye catches them without
