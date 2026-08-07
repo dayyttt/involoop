@@ -121,7 +121,10 @@ export default function Dashboard() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    router.push("/");
+    // A full navigation, not router.push: the client router cache still holds
+    // the landing page as it was rendered for a signed-in visitor, so pushing
+    // to it returns a page that still says "Dashboard".
+    window.location.assign("/");
   }
 
   async function handleVerify(publicId: string) {

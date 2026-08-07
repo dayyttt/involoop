@@ -11,9 +11,17 @@ import Landing from "./landing";
 // be stale, the middleware on /dashboard catches it and asks them to sign in —
 // which it would have done anyway.
 export default function Home() {
+  // The value matters, not just the name. Signing out can leave the cookie in
+  // place with its value emptied, and a presence-only test then keeps calling a
+  // signed-out visitor a customer.
   const hasSession = cookies()
     .getAll()
-    .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"));
+    .some(
+      (cookie) =>
+        cookie.name.startsWith("sb-") &&
+        cookie.name.includes("auth-token") &&
+        cookie.value.trim().length > 20
+    );
 
   return <Landing signedIn={hasSession} />;
 }
