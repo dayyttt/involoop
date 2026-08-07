@@ -89,6 +89,19 @@ export function verifySignedMessage(message: string, signatureB58: string, addre
   }
 }
 
+/**
+ * Dollar cents to USDC base units.
+ *
+ * Both are "minor units" and that is exactly the trap: an invoice stores $50 as
+ * 5000 cents, while USDC has six decimals, so the same fifty dollars is
+ * 50000000. Passing one where the other belongs is a ten-thousand-fold error in
+ * the direction of the payer's favour, and it looks entirely plausible on
+ * screen — 0.005 USDC is a real number.
+ */
+export function usdMinorToUsdcMinor(usdMinor: number): number {
+  return Math.round(usdMinor) * 10 ** (USDC_DECIMALS - 2);
+}
+
 /** Minor units to the decimal string a Solana Pay URL expects. String maths, not floats. */
 export function toTokenAmount(minor: number, decimals = USDC_DECIMALS): string {
   const negative = minor < 0;
