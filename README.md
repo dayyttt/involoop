@@ -179,11 +179,16 @@ for demo accounts.
 - Starter: $3 one-time, 10 public invoices, Stripe payment, basic analytics.
 - Pro: $8/month, 50 public invoices, advanced analytics, custom branding.
 
-Paid plan billing is intentionally not enabled during the marathon demo.
+Plan purchases are functional: the landing and dashboard open a Stripe Checkout
+session (test mode) and a verified webhook upgrades the account. Starter is a
+one-time payment; Pro is a monthly subscription with a 30-day grant. Paid-plan
+invoices draw from the plan quota instead of free credits.
 
 ## Known limitations
 
 - Stripe uses sandbox/test mode; no real money is charged.
+- Paid plans are buyable (Stripe test checkout); recurring Pro renewals beyond
+  the initial 30-day grant are not yet auto-extended by the webhook.
 - Platform sandbox Checkout is the tested fallback while production Connect
   availability depends on platform and connected-business country.
 - Manual transfer details are agreed off-platform; Involoop tracks confirmation.

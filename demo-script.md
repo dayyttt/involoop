@@ -63,9 +63,10 @@ mengirim minimal 3 invoice nyata supaya referral loop langsung bergerak."
 - **Anti-fraud?** Reward sekali per akun baru (unique `referred_user_id`),
   self-referral ditolak, kredit disimpan di ledger idempotent (`idempotency_key`
   unique), email dinormalisasi. Refresh/double-submit tidak menggandakan reward.
-- **Pembayaran beneran?** Belum — jujur: B konfirmasi transfer →
-  `awaiting_verification` → A verifikasi → `paid`. Tanpa gateway. Ini scope
-  yang sengaja jujur, bukan klaim integrasi.
+- **Pembayaran beneran?** Paket berbayar bisa dibeli lewat Stripe test checkout
+  (Starter $3 / Pro $8). Pembayaran klien→owner: B konfirmasi transfer →
+  `awaiting_verification` → A verifikasi → `paid`. Jujur soal scope: semua
+  berjalan di test mode, tanpa uang asli.
 - **Siapa yang membayar?** Freelancer/micro-agency yang butuh lebih dari paket
   gratis. Referral menjaga biaya menagih tetap ter-cover.
 - **Kenapa nggak kirim invoice langsung?** Channel (WA/email) sengaja di luar
