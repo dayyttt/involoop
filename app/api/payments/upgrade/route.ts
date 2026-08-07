@@ -58,7 +58,6 @@ export async function POST(req: NextRequest) {
       returnUrl: `${base}/api/payments/capture?plan=${plan}`,
       cancelUrl: `${base}/#pricing`,
       payeeEmail: null,
-      idempotencyKey: `plan_${plan}_${user.id}`,
     });
 
     const url = approvalUrl(order);

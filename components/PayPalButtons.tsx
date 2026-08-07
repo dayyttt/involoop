@@ -73,6 +73,7 @@ export default function PayPalButtons({
   onError,
   labelLoading,
   labelUnavailable,
+  labelDeclined,
   disabled,
 }: {
   currency: string;
@@ -85,6 +86,8 @@ export default function PayPalButtons({
   onError: (message: string) => void;
   labelLoading: string;
   labelUnavailable: string;
+  /** Shown when a card is declined and the buyer is sent back to choose again. */
+  labelDeclined: string;
   disabled?: boolean;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -99,6 +102,7 @@ export default function PayPalButtons({
     let cancelled = false;
     setState("loading");
     const locale = lang === "id" ? "id_ID" : "en_US";
+    const declinedLabel = labelDeclined;
 
     loadSdk(currency, locale)
       .then((paypal) => {
@@ -109,13 +113,21 @@ export default function PayPalButtons({
           .Buttons({
             style: { layout: "vertical", shape: "rect", height: 46, label: "pay" },
             createOrder: () => handlers.current.createOrder(),
-            onApprove: async (data: { orderID: string }) => {
+            onApprove: async (data: { orderID: string }, actions: any) => {
               const res = await fetch("/api/payments/capture", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ orderID: data.orderID }),
               });
               const body = await res.json().catch(() => ({}));
+              // Card declined. PayPal's documented handling is to restart the
+              // same order so the buyer can pick another funding source; the
+              // alternative is telling someone their payment failed when all
+              // that happened is one card said no.
+              if (body.restart) {
+                handlers.current.onError(declinedLabel);
+                return actions.restart();
+              }
               if (!res.ok) {
                 handlers.current.onError(body.error ?? "Payment could not be completed.");
                 return;

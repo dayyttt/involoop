@@ -702,6 +702,10 @@ export const app = {
     description: ["Description", "Deskripsi"] as T,
     amount: ["Amount", "Jumlah"] as T,
     total: ["Total", "Total"] as T,
+    payDeclined: [
+      "That card was declined by the bank. Pick another card, or pay with your PayPal balance.",
+      "Kartu itu ditolak bank. Pilih kartu lain, atau bayar pakai saldo PayPal.",
+    ] as T,
     payLoading: ["Loading secure payment…", "Memuat pembayaran aman…"] as T,
     payUnavailable: [
       "Payment buttons could not load. Refresh the page, or use the bank transfer option below.",

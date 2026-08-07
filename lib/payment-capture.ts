@@ -14,6 +14,9 @@ export interface CaptureResult {
   plan?: { plan: string; userId: string } | null;
   publicId?: string | null;
   error?: string;
+  /** The card was declined. PayPal expects the buyer to be offered another
+      funding source on the same order rather than being told it is over. */
+  retryable?: boolean;
 }
 
 export async function capturePayment(orderId: string): Promise<CaptureResult> {
@@ -32,6 +35,17 @@ export async function capturePayment(orderId: string): Promise<CaptureResult> {
         .eq("provider_session_id", orderId)
         .maybeSingle();
       return { ok: true, paid: payment?.status === "succeeded", publicId: null };
+    }
+    // A declined card is the single most common outcome at this step and it is
+    // not a failure of the payment — the buyer simply has to use a different
+    // card or their PayPal balance. PayPal keeps the order approvable for
+    // exactly that, so it must not be recorded as a dead payment.
+    if (issue.includes("INSTRUMENT_DECLINED")) {
+      await admin
+        .from("payments")
+        .update({ status: "created", updated_at: new Date().toISOString() })
+        .eq("provider_session_id", orderId);
+      return { ok: false, paid: false, retryable: true, error: "INSTRUMENT_DECLINED" };
     }
     console.error("paypal capture error", issue);
     await admin

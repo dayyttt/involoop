@@ -88,8 +88,12 @@ export async function POST(req: NextRequest) {
       returnUrl: `${base}/api/payments/capture?invoice=${invoice.public_id}`,
       cancelUrl: `${base}/invoice/${invoice.public_id}`,
       payeeEmail: owner?.paypal_email ?? null,
-      // A second tap on "Pay" reuses the same order instead of opening a new one.
-      idempotencyKey: `inv_${invoice.id}_${amountMinor}`,
+      // Deliberately no idempotency key. It used to pin every attempt for this
+      // invoice to one PayPal order, which meant a declined card or an expired
+      // order became permanent: reloading the page handed back the same dead
+      // order forever. A fresh order per attempt costs nothing — only one of
+      // them can ever be captured — and it is the difference between "try
+      // another card" working and not.
     });
 
     const url = approvalUrl(order);

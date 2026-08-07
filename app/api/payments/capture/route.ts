@@ -12,6 +12,11 @@ export async function POST(req: NextRequest) {
   }
 
   const result = await capturePayment(orderID);
+  if (result.retryable) {
+    // 200, not an error status: nothing went wrong with the request, the buyer
+    // just needs to choose a different way to pay.
+    return NextResponse.json({ paid: false, restart: true });
+  }
   if (!result.ok) {
     return NextResponse.json({ error: "Payment could not be completed." }, { status: 502 });
   }

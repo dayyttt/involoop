@@ -203,6 +203,7 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                         onError={(message) => setError(message)}
                         labelLoading={t("invoice.payLoading")}
                         labelUnavailable={t("invoice.payUnavailable")}
+                        labelDeclined={t("invoice.payDeclined")}
                         disabled={submitting}
                       />
                       <p className="hint" style={{ textAlign: "center", margin: 0 }}>
