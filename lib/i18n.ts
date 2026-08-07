@@ -591,6 +591,7 @@ export const app = {
     awaiting: ["Awaiting sender verification", "Menunggu verifikasi pengirim"] as T,
     pending: ["Payment in progress…", "Pembayaran sedang diproses…"] as T,
     unpaid: ["Unpaid", "Belum dibayar"] as T,
+    downloadPdf: ["Download PDF", "Unduh PDF"] as T,
     payStripe: ["Pay with Stripe", "Bayar dengan Stripe"] as T,
     redirecting: ["Redirecting to Stripe…", "Mengarahkan ke Stripe…"] as T,
     stripeHint: [

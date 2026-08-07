@@ -244,6 +244,13 @@ export default function NewInvoice() {
               >
                 {t("common.sendWhatsapp")}
               </a>
+              <a
+                className="btn btn-ghost btn-mobile-full"
+                href={`${result.share_url}/pdf?lang=${lang}`}
+                download
+              >
+                {t("invoice.downloadPdf")}
+              </a>
               <Link href="/dashboard" className="btn btn-primary btn-mobile-full">
                 {t("common.viewDashboard")}
               </Link>

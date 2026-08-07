@@ -134,7 +134,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const shareUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/invoice/${invoice.public_id}`;
+    // The origin this request arrived on, not a configured one: a link copied
+    // on localhost should be a localhost link, and one copied in production a
+    // production link.
+    const origin = new URL(req.url).origin;
+    const shareUrl = `${origin}/invoice/${invoice.public_id}`;
 
     return NextResponse.json({ invoice, share_url: shareUrl });
   } catch (err: any) {

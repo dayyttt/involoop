@@ -179,6 +179,16 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
             {error && <p className="error" style={{ margin: 0 }}>{error}</p>}
           </div>
 
+          {/* The document, for forwarding. A client sends this to whoever
+              actually pays, and the referral goes with it. */}
+          <a
+            className="btn btn-ghost btn-mobile-full"
+            href={`/invoice/${publicId}/pdf?lang=${lang}`}
+            download
+          >
+            {t("invoice.downloadPdf")}
+          </a>
+
           {invoice.cta_message && (
             <div className="card" style={{ padding: 22, textAlign: "center" }}>
               <h3 className="referral-heading">{t("invoice.referralHeading")}</h3>
