@@ -9,6 +9,8 @@ import { formatMoney, formatDateShort } from "@/lib/money";
 import { appText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
+import StatusBadge from "@/components/StatusBadge";
+import InvoiceModal, { type ModalInvoice } from "@/components/InvoiceModal";
 
 interface Invoice {
   public_id: string;
@@ -20,6 +22,9 @@ interface Invoice {
   views: number;
   referral_clicks?: number;
   created_at: string;
+  description?: string;
+  due_date?: string | null;
+  cta_message?: string | null;
 }
 
 interface LedgerEntry {
@@ -79,12 +84,64 @@ export default function Dashboard() {
   const [upgraded, setUpgraded] = useState(false);
   const [filter, setFilter] = useState<"all" | "unpaid" | "awaiting" | "paid">("all");
   const [tab, setTab] = useState<"overview" | "invoices" | "loop">("overview");
+  const [openInvoice, setOpenInvoice] = useState<ModalInvoice | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+
+  // The modal edits and deletes in place. Refetching the whole dashboard after
+  // each change would blank the list and lose the person's scroll position, so
+  // the local copy is patched and the derived numbers recompute from it.
+  function applyInvoiceUpdate(next: ModalInvoice) {
+    setData((prev) =>
+      prev
+        ? {
+            ...prev,
+            invoices: prev.invoices.map((inv) =>
+              inv.public_id === next.public_id ? { ...inv, ...next } : inv
+            ),
+          }
+        : prev
+    );
+  }
+
+  // The open invoice lives in the URL, so a refresh keeps it open and a link to
+  // a specific invoice can be pasted anywhere. replaceState rather than push:
+  // the back button should leave the dashboard, not unwind a modal.
+  function openInvoiceModal(inv: ModalInvoice | null) {
+    setOpenInvoice(inv);
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (inv) url.searchParams.set("invoice", inv.public_id);
+    else url.searchParams.delete("invoice");
+    window.history.replaceState(null, "", url.toString());
+  }
+
+  function applyInvoiceDelete(publicId: string) {
+    setData((prev) =>
+      prev
+        ? { ...prev, invoices: prev.invoices.filter((inv) => inv.public_id !== publicId) }
+        : prev
+    );
+    setFlash(t("dashboard.detailDeleted"));
+    setTimeout(() => setFlash(null), 3000);
+  }
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.search.includes("upgraded=")) {
       setUpgraded(true);
     }
   }, []);
+
+  // A dashboard opened at ?invoice=<id> lands with that invoice already open.
+  useEffect(() => {
+    if (!data) return;
+    const wanted = new URLSearchParams(window.location.search).get("invoice");
+    if (!wanted) return;
+    const match = data.invoices.find((inv) => inv.public_id === wanted);
+    if (match) {
+      setOpenInvoice(match);
+      setTab("invoices");
+    }
+  }, [data]);
 
   async function handleUpgrade(plan: "starter" | "pro") {
     setError(null);
@@ -246,7 +303,24 @@ export default function Dashboard() {
       </main>
     );
 
-  const { profile, invoices, ledger, referrals, stats } = data;
+  const { profile, invoices, ledger, referrals, stats: serverStats } = data;
+
+  // Everything that counts invoices is recomputed from the list held here, so
+  // deleting one from the modal updates the donut, the filter chips and the
+  // view totals in the same frame. Signups and credits come from the ledger and
+  // referral tables, which the modal never touches, so those stay as served.
+  const invoiceViews = invoices.reduce((sum, inv) => sum + (inv.views ?? 0), 0);
+  const stats = {
+    ...serverStats,
+    total: invoices.length,
+    paid: invoices.filter((i) => i.status === "paid").length,
+    unpaid: invoices.filter((i) => i.status === "unpaid").length,
+    awaiting: invoices.filter((i) => i.status === "awaiting_verification").length,
+    total_views: invoiceViews,
+    total_clicks: invoices.reduce((sum, inv) => sum + (inv.referral_clicks ?? 0), 0),
+    conversion:
+      invoiceViews > 0 ? Math.round((serverStats.signups / invoiceViews) * 100) : 0,
+  };
 
   // What a freelancer opens a dashboard for: how much is still owed and how
   // much has landed. Grouped per currency because one account can bill in IDR
@@ -365,16 +439,22 @@ export default function Dashboard() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: Math.min(index, 6) * 0.04 }}
             >
-              <div className="list-item" style={{ flexWrap: "wrap", gap: 10 }}>
-                <div className="side" style={{ flexDirection: "column", alignItems: "flex-start", gap: 2, flex: "1 1 220px" }}>
-                  <Link href={`/invoice/${inv.public_id}`} style={{ color: "inherit", textDecoration: "none" }}>
-                    <strong>{inv.client_name}</strong> · {inv.number}
-                  </Link>
+              <div className="list-item list-item-open" style={{ flexWrap: "wrap", gap: 10 }}>
+                {/* The row itself opens the invoice. It used to link straight to
+                    the client-facing page, which answered "what does my client
+                    see" but never "what did I actually bill". */}
+                <button
+                  type="button"
+                  className="row-open"
+                  onClick={() => openInvoiceModal(inv)}
+                  aria-label={`${t("dashboard.openDetail")} ${inv.number}`}
+                >
+                  <strong>{inv.client_name}</strong> · {inv.number}
                   <span className="hint">
                     {formatMoney(inv.amount, inv.currency, locale)} · {inv.views} {t("dashboard.viewsCount")} ·{" "}
                     {formatDateShort(inv.created_at, locale)}
                   </span>
-                </div>
+                </button>
                 <div className="inv-actions">
                   <StatusBadge status={inv.status} lang={lang} />
                   {inv.status === "awaiting_verification" && (
@@ -717,6 +797,26 @@ export default function Dashboard() {
           </>
         )}
       </main>
+
+      <InvoiceModal
+        invoice={openInvoice}
+        lang={lang}
+        onClose={() => openInvoiceModal(null)}
+        onUpdated={applyInvoiceUpdate}
+        onDeleted={applyInvoiceDelete}
+      />
+
+      {flash && (
+        <motion.div
+          className="toast"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          role="status"
+        >
+          {flash}
+        </motion.div>
+      )}
     </>
   );
 }
@@ -740,14 +840,3 @@ function Spinner() {
   return <span className="spinner" aria-hidden />;
 }
 
-function StatusBadge({ status, lang }: { status: string; lang: "en" | "id" }) {
-  const t = (k: string) => appText(lang, k);
-  if (status === "paid") return <span className="badge badge-paid">{t("status.paid")}</span>;
-  if (status === "awaiting_verification")
-    return <span className="badge badge-warn">{t("status.awaiting")}</span>;
-  if (status === "payment_pending")
-    return <span className="badge badge-warn">{t("status.pending")}</span>;
-  if (status === "failed" || status === "refunded")
-    return <span className="badge badge-unpaid">{t("status.failed")}</span>;
-  return <span className="badge badge-unpaid">{t("status.unpaid")}</span>;
-}
