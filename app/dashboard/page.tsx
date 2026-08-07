@@ -42,6 +42,8 @@ interface DashboardData {
     referral_code: string;
     stripe_account_id: string | null;
     stripe_status: string;
+    plan?: string;
+    plan_expires_at?: string | null;
   };
   invoices: Invoice[];
   ledger: LedgerEntry[];
@@ -71,6 +73,31 @@ export default function Dashboard() {
   const [resetting, setResetting] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedRef, setCopiedRef] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+  const [upgraded, setUpgraded] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("upgraded=")) {
+      setUpgraded(true);
+    }
+  }, []);
+
+  async function handleUpgrade(plan: "starter" | "pro") {
+    setError(null);
+    setUpgrading(true);
+    const res = await fetch("/api/payments/upgrade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.url) {
+      window.location.href = data.url;
+      return;
+    }
+    setUpgrading(false);
+    setError(data.error ?? t("dashboard.upgradeFailed"));
+  }
 
   async function load() {
     setError(null);
@@ -233,6 +260,43 @@ export default function Dashboard() {
         </div>
 
         {error && <p className="error">{error}</p>}
+
+        {upgraded && (
+          <div className="success-panel" style={{ marginBottom: 12 }}>
+            {t("dashboard.upgraded")}
+          </div>
+        )}
+
+        <div className="card-panel" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <h2 className="section-title" style={{ marginBottom: 4 }}>
+              {t("dashboard.currentPlan")}: <PlanName plan={profile.plan} t={t} />
+            </h2>
+            {profile.plan !== "free" && profile.plan_expires_at && (
+              <p className="hint" style={{ margin: 0 }}>
+                {new Date(profile.plan_expires_at).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
+              </p>
+            )}
+          </div>
+          {profile.plan === "free" && (
+            <div className="side" style={{ gap: 8, flexWrap: "wrap" }}>
+              <button
+                className="btn btn-ghost"
+                onClick={() => handleUpgrade("starter")}
+                disabled={upgrading}
+              >
+                Starter · {t("dashboard.upgrade")}
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => handleUpgrade("pro")}
+                disabled={upgrading}
+              >
+                Pro · {t("dashboard.upgrade")}
+              </button>
+            </div>
+          )}
+        </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
           <h2 className="section-title" style={{ marginBottom: 0 }}>
@@ -414,6 +478,12 @@ export default function Dashboard() {
       </main>
     </>
   );
+}
+
+function PlanName({ plan, t }: { plan?: string; t: (k: string) => string }) {
+  if (plan === "starter") return <>{t("dashboard.planStarter")}</>;
+  if (plan === "pro") return <>{t("dashboard.planPro")}</>;
+  return <>{t("dashboard.planFree")}</>;
 }
 
 function Stat({ label, value }: { label: string; value: string }) {

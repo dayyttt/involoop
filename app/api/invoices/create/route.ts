@@ -105,6 +105,18 @@ export async function POST(req: NextRequest) {
           { status: 402 }
         );
       }
+      if (msg.includes("PLAN_LIMIT")) {
+        return NextResponse.json(
+          {
+            error: apiError(
+              lang,
+              "You reached your plan's invoice limit. Upgrade for more, or invite a client to earn credits.",
+              "Limit invoice paketmu tercapai. Upgrade untuk kuota lebih, atau ajak klien daftar untuk kredit."
+            ),
+          },
+          { status: 402 }
+        );
+      }
       console.error("publish error", rpcError?.message);
       return NextResponse.json(
         { error: apiError(lang, "Could not publish the invoice. Try again.", "Gagal menerbitkan invoice. Coba lagi.") },

@@ -2,18 +2,43 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import NeonLandscape from "@/components/NeonLandscape";
+import { createClient } from "@/lib/supabase-browser";
 import { landing, getInitialLang, setLangCookie, landingText, landingItems, type Lang } from "@/lib/i18n";
 
 export default function Home() {
   const [lang, setLang] = useState<Lang>(getInitialLang());
   const t = (key: string) => landingText(lang, key);
+  const router = useRouter();
 
   const toggleLang = () => {
     const next: Lang = lang === "en" ? "id" : "en";
     setLangCookie(next);
     setLang(next);
   };
+
+  async function handleUpgrade(plan: "starter" | "pro") {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    const res = await fetch("/api/payments/upgrade", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.url) {
+      window.location.href = data.url;
+    } else {
+      alert(data.error ?? "Upgrade failed");
+    }
+  }
 
   const features = landingItems(lang, "features.items");
   const processSteps = landingItems(lang, "process.steps");
@@ -221,7 +246,7 @@ export default function Home() {
             <ul className="plan-features">
               <li>{t("pricing.s1")}</li><li>{t("pricing.s2")}</li><li>{t("pricing.s3")}</li>
             </ul>
-            <Link href="/signup" className="btn btn-primary" style={{ width: "100%" }}>{t("pricing.ctaStart")}</Link>
+            <button onClick={() => handleUpgrade("starter")} className="btn btn-primary" style={{ width: "100%" }}>{t("pricing.ctaUpgrade")}</button>
           </div>
           <div className="plan">
             <h3 className="plan-name">{t("pricing.pro")}</h3>
@@ -230,7 +255,7 @@ export default function Home() {
             <ul className="plan-features">
               <li>{t("pricing.p1")}</li><li>{t("pricing.p2")}</li><li>{t("pricing.p3")}</li>
             </ul>
-            <Link href="/signup" className="btn btn-ghost" style={{ width: "100%" }}>{t("pricing.ctaContact")}</Link>
+            <button onClick={() => handleUpgrade("pro")} className="btn btn-ghost" style={{ width: "100%" }}>{t("pricing.ctaUpgrade")}</button>
           </div>
         </div>
         <p className="hint" style={{ textAlign: "center", marginTop: 28 }}>{t("pricing.note")}</p>

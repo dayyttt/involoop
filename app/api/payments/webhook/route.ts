@@ -52,6 +52,22 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as any;
+        const meta = session.metadata ?? {};
+
+        // Paid plan purchase (platform account). Grants a quota, no invoice.
+        if (meta.purpose === "plan_upgrade" && meta.user_id) {
+          const plan = ["starter", "pro"].includes(meta.plan) ? meta.plan : "starter";
+          const expiresAt =
+            plan === "pro"
+              ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString()
+              : null;
+          await admin
+            .from("profiles")
+            .update({ plan, plan_expires_at: expiresAt, plan_session_id: null })
+            .eq("id", meta.user_id);
+          break;
+        }
+
         const paymentIntentId =
           typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
 
@@ -130,6 +146,14 @@ export async function POST(req: NextRequest) {
       }
       case "checkout.session.expired": {
         const session = event.data.object as any;
+        if ((session.metadata ?? {}).purpose === "plan_upgrade") {
+          const admin2 = createAdminClient();
+          await admin2
+            .from("profiles")
+            .update({ plan_session_id: null })
+            .eq("plan_session_id", session.id);
+          break;
+        }
         await admin
           .from("payments")
           .update({ status: "cancelled", updated_at: new Date().toISOString() })
