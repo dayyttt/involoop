@@ -11,7 +11,10 @@ interface SpotlightCardProps {
 export default function SpotlightCard({
   children,
   className = "",
-  spotlightColor = "rgba(241, 74, 148, 0.14)",
+  // Neutral, not brand. A coloured wash across a whole card reads as
+  // "selected"; a light one reads as "under the cursor", which is what a hover
+  // actually means.
+  spotlightColor = "rgba(255, 255, 255, 0.055)",
 }: SpotlightCardProps) {
   const divRef = useRef<HTMLDivElement>(null);
 
