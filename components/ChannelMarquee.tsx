@@ -27,7 +27,7 @@ export default function ChannelMarquee({ label }: { label?: string }) {
         renderItem={(item) => {
           const channel = item as (typeof CHANNELS)[number];
           return (
-            <span className="channel-chip" style={{ "--brand": channel.color } as React.CSSProperties}>
+            <span className="channel-chip">
               <img src={channel.src} alt={channel.name} />
               <span className="channel-chip-name">{channel.name}</span>
             </span>
