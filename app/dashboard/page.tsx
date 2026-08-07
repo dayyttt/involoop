@@ -78,6 +78,7 @@ export default function Dashboard() {
   const [upgrading, setUpgrading] = useState(false);
   const [upgraded, setUpgraded] = useState(false);
   const [filter, setFilter] = useState<"all" | "unpaid" | "awaiting" | "paid">("all");
+  const [tab, setTab] = useState<"overview" | "invoices" | "loop">("overview");
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.search.includes("upgraded=")) {
@@ -281,58 +282,182 @@ export default function Dashboard() {
     return inv.status === "unpaid" || inv.status === "payment_pending" || inv.status === "failed";
   });
 
+  // ---- Derived views of the same data, for the overview grid ----
+  const primary = currencies[0];
+  const primaryMoney = primary ? byCurrency[primary] : null;
+  const locale = lang === "id" ? "id-ID" : "en-US";
+
+  // Seven days of billing, from the invoices themselves. No invented series:
+  // days with nothing published are simply empty columns.
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - (6 - i));
+    return d;
+  });
+  const perDay = days.map((day) => {
+    const next = new Date(day);
+    next.setDate(next.getDate() + 1);
+    const total = invoices
+      .filter((inv) => {
+        const at = new Date(inv.created_at);
+        return at >= day && at < next && (!primary || inv.currency === primary);
+      })
+      .reduce((sum, inv) => sum + inv.amount, 0);
+    return { day, total };
+  });
+  const peak = Math.max(...perDay.map((d) => d.total), 1);
+
+  const split = [
+    { key: "paid", value: stats.paid, color: "var(--success)" },
+    { key: "awaiting", value: stats.awaiting, color: "var(--warn)" },
+    { key: "unpaid", value: stats.unpaid, color: "var(--primary)" },
+  ].filter((slice) => slice.value > 0);
+  const splitTotal = split.reduce((sum, slice) => sum + slice.value, 0) || 1;
+  let sweep = 0;
+  const donut = split
+    .map((slice) => {
+      const from = (sweep / splitTotal) * 360;
+      sweep += slice.value;
+      const to = (sweep / splitTotal) * 360;
+      return `${slice.color} ${from}deg ${to}deg`;
+    })
+    .join(", ");
+
+  const TABS: { key: "overview" | "invoices" | "loop"; label: string }[] = [
+    { key: "overview", label: t("dashboard.tabOverview") },
+    { key: "invoices", label: t("dashboard.tabInvoices") },
+    { key: "loop", label: t("dashboard.tabLoop") },
+  ];
+
+  const invoiceList = (
+    <>
+      {invoices.length > 0 && (
+        <div className="chip-row" style={{ marginTop: 0, marginBottom: 12 }}>
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setFilter(f.key)}
+              className={`chip ${filter === f.key ? "chip-active" : ""}`}
+              aria-pressed={filter === f.key}
+            >
+              {f.label} <span className="chip-count">{f.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {invoices.length === 0 ? (
+        <div className="card-panel" style={{ textAlign: "center", padding: "36px 20px" }}>
+          <p className="section-eyebrow">{t("dashboard.emptyTitle")}</p>
+          <p style={{ marginTop: 8 }}>{t("dashboard.emptyBody")}</p>
+          <Link href="/dashboard/new-invoice" className="btn btn-primary" style={{ marginTop: 16 }}>
+            {t("nav.createInvoice")}
+          </Link>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {filteredInvoices.map((inv, index) => (
+            <motion.div
+              key={inv.public_id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: Math.min(index, 6) * 0.04 }}
+            >
+              <div className="list-item" style={{ flexWrap: "wrap", gap: 10 }}>
+                <div className="side" style={{ flexDirection: "column", alignItems: "flex-start", gap: 2, flex: "1 1 220px" }}>
+                  <Link href={`/invoice/${inv.public_id}`} style={{ color: "inherit", textDecoration: "none" }}>
+                    <strong>{inv.client_name}</strong> · {inv.number}
+                  </Link>
+                  <span className="hint">
+                    {formatMoney(inv.amount, inv.currency, locale)} · {inv.views} {t("dashboard.viewsCount")} ·{" "}
+                    {new Date(inv.created_at).toLocaleDateString(locale)}
+                  </span>
+                </div>
+                <div className="inv-actions">
+                  <StatusBadge status={inv.status} lang={lang} />
+                  {inv.status === "awaiting_verification" && (
+                    <button className="btn btn-success" onClick={() => handleVerify(inv.public_id)}>
+                      {t("dashboard.verify")}
+                    </button>
+                  )}
+                  <a href={whatsappLink(inv.public_id)} target="_blank" rel="noreferrer" className="btn btn-ghost">
+                    {t("dashboard.sendWhatsapp")}
+                  </a>
+                  <button className="btn btn-ghost" onClick={() => copyInvoiceLink(inv.public_id)}>
+                    {copiedId === inv.public_id ? t("common.copied") : t("common.copyLink")}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+          {filteredInvoices.length === 0 && (
+            <p className="empty" style={{ padding: "16px 0" }}>{t("dashboard.emptyBody")}</p>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  const attentionStrip = awaiting.length > 0 && (
+    <button
+      type="button"
+      className="attention"
+      onClick={() => {
+        setTab("invoices");
+        setFilter("awaiting");
+      }}
+    >
+      <span className="attention-pulse" aria-hidden />
+      <span className="attention-text">
+        <strong>
+          {awaiting.length} {t("dashboard.attentionCount")}
+        </strong>
+        <span>{t("dashboard.attentionBody")}</span>
+      </span>
+      <span className="attention-go">{t("dashboard.attentionGo")}</span>
+    </button>
+  );
+
   return (
     <>
-      <nav className="nav">
+      <nav className="nav dash-nav">
         <Link href="/" className="brand">
           Invo<span className="brand-accent">loop</span>
         </Link>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+
+        {/* The menu belongs up here, so the page stops being one long scroll
+            and each view can be as dense as it needs to be. */}
+        <div className="dash-tabs" role="tablist">
+          {TABS.map((item) => (
+            <button
+              key={item.key}
+              role="tab"
+              aria-selected={tab === item.key}
+              className={`dash-tab${tab === item.key ? " dash-tab-on" : ""}`}
+              onClick={() => setTab(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="dash-nav-actions">
           <Link href="/dashboard/new-invoice" className="btn btn-primary">
             {t("nav.createInvoice")}
           </Link>
           <LangToggle />
-          <button onClick={handleLogout} className="btn btn-ghost">
+          <button onClick={handleLogout} className="btn btn-ghost dash-logout">
             {t("nav.logout")}
           </button>
         </div>
       </nav>
 
-      <main className="page-shell">
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div>
-            <h1 className="page-title" style={{ marginBottom: 4 }}>
-              {t("dashboard.greeting")} {profile.full_name ?? "freelancer"}
-            </h1>
-            <p className="hint" style={{ margin: 0 }}>
-              {profile.email} · {profile.free_invoice_credits} {t("dashboard.creditsLeft")}
-            </p>
-          </div>
-          <Link href="/dashboard/new-invoice" className="btn btn-primary" style={{ minHeight: 36 }}>
-            {t("nav.createInvoice")}
-          </Link>
-        </div>
-
-        {awaiting.length > 0 && (
-          <button
-            type="button"
-            className="attention"
-            onClick={() => {
-              setFilter("awaiting");
-              document.getElementById("invoice-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-          >
-            <span className="attention-pulse" aria-hidden />
-            <span className="attention-text">
-              <strong>
-                {awaiting.length} {t("dashboard.attentionCount")}
-              </strong>
-              <span>{t("dashboard.attentionBody")}</span>
-            </span>
-            <span className="attention-go">{t("dashboard.attentionGo")}</span>
-          </button>
-        )}
-
+      <main className="dash-shell">
+        {error && <p className="error">{error}</p>}
+        {upgraded && <div className="success-panel" style={{ marginBottom: 12 }}>{t("dashboard.upgraded")}</div>}
+        {attentionStrip}
         {!stripeConnected && (
           <div className="setup-banner">
             <div>
@@ -340,314 +465,254 @@ export default function Dashboard() {
               <p>{t("dashboard.setupBody")}</p>
             </div>
             <button className="btn btn-primary" onClick={handleConnectStripe} disabled={connecting}>
-              {connecting ? (
-                <>
-                  <Spinner /> {t("dashboard.connecting")}
-                </>
-              ) : (
-                t("dashboard.connectStripe")
-              )}
+              {connecting ? <><Spinner /> {t("dashboard.connecting")}</> : t("dashboard.connectStripe")}
             </button>
           </div>
         )}
 
-        <h2 className="section-title">{t("dashboard.moneyTitle")}</h2>
-        {currencies.length === 0 ? (
-          <p className="empty" style={{ marginBottom: 8 }}>{t("dashboard.moneyEmpty")}</p>
-        ) : (
-          <div className="money-grid">
-            {currencies.map((currency) => {
-              const money = byCurrency[currency];
-              // Nothing outstanding is good news, but "Rp 0" as the headline
-              // reads like an empty card. When everything is settled the card
-              // leads with what actually arrived.
-              const settled = money.outstanding === 0 && money.billed > 0;
-              return (
-              <div className={`money-card${settled ? " money-card-settled" : ""}`} key={currency}>
-                <span className="stat-label">
-                  {settled ? t("dashboard.moneySettled") : t("dashboard.moneyOutstanding")} · {currency}
-                </span>
-                <div className="stat-value money">
-                  {formatMoney(
-                    settled ? money.received : money.outstanding,
-                    currency,
-                    lang === "id" ? "id-ID" : "en-US"
-                  )}
-                </div>
-                <div className="money-sub">
-                  {!settled && (
-                    <span>
-                      {t("dashboard.moneyReceived")}:{" "}
-                      <b className="text-ok">
-                        {formatMoney(money.received, currency, lang === "id" ? "id-ID" : "en-US")}
-                      </b>
-                    </span>
-                  )}
-                  <span>
-                    {t("dashboard.moneyBilled")}:{" "}
-                    <b>{formatMoney(money.billed, currency, lang === "id" ? "id-ID" : "en-US")}</b>
-                  </span>
-                  {settled && <span className="text-ok">{t("dashboard.moneyAllPaid")}</span>}
-                </div>
+        {tab === "overview" && (
+          <div className="bento">
+            {/* The balance card, and the two things you can do with it. */}
+            <section className="bento-hero">
+              <span className="bento-label">
+                {primaryMoney && primaryMoney.outstanding === 0 && primaryMoney.billed > 0
+                  ? t("dashboard.moneySettled")
+                  : t("dashboard.moneyOutstanding")}
+                {primary ? ` · ${primary}` : ""}
+              </span>
+              <div className="bento-figure money">
+                {primaryMoney
+                  ? formatMoney(
+                      primaryMoney.outstanding === 0 && primaryMoney.billed > 0
+                        ? primaryMoney.received
+                        : primaryMoney.outstanding,
+                      primary,
+                      locale
+                    )
+                  : formatMoney(0, "IDR", locale)}
               </div>
-              );
-            })}
-          </div>
-        )}
-
-        <h2 className="section-title">{t("dashboard.growthTitle")}</h2>
-        <div className="stat-grid">
-          <Stat label={t("dashboard.credit")} value={profile.free_invoice_credits.toString()} />
-          <Stat label={t("dashboard.views")} value={stats.total_views.toString()} />
-          <Stat label={t("dashboard.clicks")} value={stats.total_clicks.toString()} />
-          <Stat label={t("dashboard.referrals")} value={stats.signups.toString()} />
-          <Stat label={t("dashboard.conversion")} value={stats.total_views > 0 ? `${stats.conversion}%` : "0"} />
-          <Stat label={t("dashboard.creditsEarned")} value={stats.credits_earned.toString()} />
-        </div>
-
-        {error && <p className="error">{error}</p>}
-
-        {upgraded && (
-          <div className="success-panel" style={{ marginBottom: 12 }}>
-            {t("dashboard.upgraded")}
-          </div>
-        )}
-
-        <div className="card-panel" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div>
-            <h2 className="section-title" style={{ margin: 0 }}>
-              {t("dashboard.currentPlan")}: <PlanName plan={profile.plan} t={t} />
-            </h2>
-            <p className="hint" style={{ margin: "4px 0 0" }}>
-              {profile.free_invoice_credits} {t("dashboard.creditsLeft")} · {t("dashboard.creditIsInvoice")}
-            </p>
-            {profile.plan !== "free" && profile.plan_expires_at && (
-              <p className="hint" style={{ margin: 0 }}>
-                {new Date(profile.plan_expires_at).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
+              <p className="bento-note">
+                {primaryMoney
+                  ? `${t("dashboard.moneyBilled")}: ${formatMoney(primaryMoney.billed, primary, locale)}`
+                  : t("dashboard.moneyEmpty")}
               </p>
-            )}
-          </div>
-          {profile.plan === "free" && (
-            <div className="side" style={{ gap: 8, flexWrap: "wrap" }}>
-              <button
-                className="btn btn-ghost"
-                onClick={() => handleUpgrade("starter")}
-                disabled={upgrading}
-              >
-                Starter · {t("dashboard.upgrade")}
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={() => handleUpgrade("pro")}
-                disabled={upgrading}
-              >
-                Pro · {t("dashboard.upgrade")}
-              </button>
-            </div>
-          )}
-        </div>
+              <div className="bento-actions">
+                <Link href="/dashboard/new-invoice" className="btn btn-primary">
+                  {t("nav.createInvoice")}
+                </Link>
+                <button type="button" className="btn btn-ghost" onClick={() => setTab("invoices")}>
+                  {t("dashboard.tabInvoices")}
+                </button>
+              </div>
+            </section>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-          <h2 className="section-title" id="invoice-list" style={{ marginBottom: 0 }}>
-            {t("dashboard.invoiceList")}
-          </h2>
-        </div>
+            <section className="bento-card bento-recv">
+              <span className="bento-label">{t("dashboard.moneyReceived")}</span>
+              <div className="bento-sub money text-ok">
+                {primaryMoney ? formatMoney(primaryMoney.received, primary, locale) : "—"}
+              </div>
+              <p className="hint">{stats.paid} {t("dashboard.filterPaid").toLowerCase()}</p>
+            </section>
 
-        {invoices.length > 0 && (
-          <div className="chip-row" style={{ marginTop: 0, marginBottom: 12 }}>
-            {FILTERS.map((f) => (
-              <button
-                key={f.key}
-                type="button"
-                onClick={() => setFilter(f.key)}
-                className={`chip ${filter === f.key ? "chip-active" : ""}`}
-                aria-pressed={filter === f.key}
-              >
-                {f.label} <span className="chip-count">{f.count}</span>
-              </button>
-            ))}
-          </div>
-        )}
+            <section className="bento-card bento-await">
+              <span className="bento-label">{t("dashboard.moneyOutstanding")}</span>
+              <div className="bento-sub money" style={{ color: "var(--warn)" }}>
+                {primaryMoney ? formatMoney(primaryMoney.outstanding, primary, locale) : "—"}
+              </div>
+              <p className="hint">{stats.unpaid + stats.awaiting} {t("dashboard.filterUnpaid").toLowerCase()}</p>
+            </section>
 
-        {invoices.length === 0 ? (
-          <div className="card-panel" style={{ textAlign: "center", padding: "36px 20px" }}>
-            <p className="section-eyebrow">{t("dashboard.emptyTitle")}</p>
-            <p style={{ marginTop: 8 }}>{t("dashboard.emptyBody")}</p>
-            <Link href="/dashboard/new-invoice" className="btn btn-primary" style={{ marginTop: 16 }}>
-              {t("nav.createInvoice")}
-            </Link>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {filteredInvoices.map((inv, index) => (
-              <motion.div
-                key={inv.public_id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, delay: index * 0.05 }}
-              >
-                <div className="list-item" style={{ flexWrap: "wrap", gap: 10 }}>
-                <div className="side" style={{ flexDirection: "column", alignItems: "flex-start", gap: 2, flex: "1 1 220px" }}>
-                  <Link
-                    href={`/invoice/${inv.public_id}`}
-                    style={{ color: "inherit", textDecoration: "none" }}
-                  >
-                    <strong>{inv.client_name}</strong> · {inv.number}
-                  </Link>
-                  <span className="hint">
-                    {formatMoney(inv.amount, inv.currency, lang === "id" ? "id-ID" : "en-US")} · {inv.views} {t("dashboard.viewsCount")} ·{" "}
-                    {new Date(inv.created_at).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
-                  </span>
+            {/* Seven days of real billing. Empty days stay empty. */}
+            <section className="bento-card bento-chart">
+              <span className="bento-label">{t("dashboard.chartTitle")}</span>
+              <div className="bars">
+                {perDay.map(({ day, total }) => (
+                  <div className="bar-col" key={day.toISOString()}>
+                    <div
+                      className={`bar${total > 0 ? " bar-on" : ""}`}
+                      style={{ height: `${Math.max((total / peak) * 100, 3)}%` }}
+                      title={formatMoney(total, primary ?? "IDR", locale)}
+                    />
+                    <span>{day.toLocaleDateString(locale, { weekday: "narrow" })}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="bento-card bento-donut">
+              <span className="bento-label">{t("dashboard.splitTitle")}</span>
+              <div className="donut-wrap">
+                <div
+                  className="donut"
+                  style={{ background: split.length ? `conic-gradient(${donut})` : "var(--line)" }}
+                >
+                  <span>{stats.total}</span>
                 </div>
-                <div className="inv-actions">
-                  <StatusBadge status={inv.status} lang={lang} />
-                  {inv.status === "awaiting_verification" && (
-                    <button
-                      className="btn btn-success"
-                      onClick={() => handleVerify(inv.public_id)}
-                    >
-                      {t("dashboard.verify")}
+                <ul className="donut-key">
+                  <li><i style={{ background: "var(--success)" }} />{t("dashboard.filterPaid")} <b>{stats.paid}</b></li>
+                  <li><i style={{ background: "var(--warn)" }} />{t("dashboard.filterAwaiting")} <b>{stats.awaiting}</b></li>
+                  <li><i style={{ background: "var(--primary)" }} />{t("dashboard.filterUnpaid")} <b>{stats.unpaid}</b></li>
+                </ul>
+              </div>
+            </section>
+
+            {/* The wallet column: credits, plan, and the last movements. */}
+            <aside className="bento-side">
+              <div className="side-credits">
+                <span className="bento-label">{t("dashboard.credit")}</span>
+                <div className="bento-figure">{profile.free_invoice_credits}</div>
+                <p className="hint">{t("dashboard.creditIsInvoice")}</p>
+                {profile.plan === "free" && (
+                  <div className="side-plan">
+                    <button className="btn btn-ghost" onClick={() => handleUpgrade("starter")} disabled={upgrading}>
+                      Starter
                     </button>
-                  )}
-                  <a
-                    href={whatsappLink(inv.public_id)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn btn-ghost"
-                  >
-                    {t("dashboard.sendWhatsapp")}
-                  </a>
-                  <button
-                    className="btn btn-ghost"
-                    onClick={() => copyInvoiceLink(inv.public_id)}
-                  >
-                    {copiedId === inv.public_id ? t("common.copied") : t("common.copyLink")}
-                  </button>
-                </div>
-                </div>
-              </motion.div>
-            ))}
-            {filteredInvoices.length === 0 && (
-              <p className="empty" style={{ padding: "16px 0" }}>
-                {t("dashboard.emptyBody")}
-              </p>
-            )}
+                    <button className="btn btn-primary" onClick={() => handleUpgrade("pro")} disabled={upgrading}>
+                      Pro
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="side-ledger">
+                <span className="bento-label">{t("dashboard.creditHistory")}</span>
+                {ledger.length === 0 ? (
+                  <p className="empty">{t("dashboard.creditHistoryEmpty")}</p>
+                ) : (
+                  <div className="ledger-list">
+                    {ledger.slice(0, 6).map((entry) => (
+                      <div className="ledger-row" key={`${entry.created_at}-${entry.amount}-${entry.type}`}>
+                        <span className={entry.amount > 0 ? "ledger-plus" : "ledger-minus"}>
+                          {entry.amount > 0 ? `+${entry.amount}` : entry.amount}
+                        </span>
+                        <span className="ledger-ref">{entry.reference}</span>
+                        <span className="hint">{new Date(entry.created_at).toLocaleDateString(locale)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button type="button" className="link-btn side-more" onClick={() => setTab("loop")}>
+                  {t("dashboard.seeAll")}
+                </button>
+              </div>
+            </aside>
           </div>
         )}
 
-        {profile.email.endsWith("@involoop.app") && (
-          <div className="card-panel demo-reset" style={{ marginTop: 20 }}>
-            <div>
-              <h2 className="section-title">{t("dashboard.demoWorkspace")}</h2>
-              <p className="hint">{t("dashboard.demoWorkspaceHint")}</p>
-            </div>
-            <button className="btn btn-ghost" onClick={handleResetDemo} disabled={resetting}>
-              {resetting ? t("dashboard.resetting") : t("dashboard.resetWorkspace")}
-            </button>
-          </div>
+        {tab === "invoices" && (
+          <>
+            <h2 className="section-title" style={{ marginTop: 0 }}>{t("dashboard.invoiceList")}</h2>
+            {invoiceList}
+          </>
         )}
 
-        <div className="card-panel dash-block">
-          <h2 className="section-title" style={{ marginTop: 0 }}>{t("dashboard.referralSection")}</h2>
-          <div className="ref-code">
-            <code>{profile.referral_code}</code>
-            <button
-              className="btn btn-ghost"
-              style={{ minHeight: 32, padding: "5px 12px", fontSize: 12 }}
-              onClick={copyReferralCode}
-            >
-              {copiedRef ? t("common.copied") : t("common.copyCode")}
-            </button>
-          </div>
-          <p className="hint" style={{ marginTop: 0 }}>
-            {t("dashboard.referralCodeHint")}
-          </p>
-          {referrals.length === 0 ? (
-            <p className="empty">
-              {t("dashboard.referralEmpty")}
-            </p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {referrals.map((ref) => (
-                <div key={ref.id} className="list-item">
-                  <span>{ref.referred?.full_name || ref.referred?.email || t("dashboard.newUser")}</span>
-                  <span className="side">
-                    <span className="badge badge-paid">+{ref.reward_credits} {t("dashboard.credits")}</span>
-                    <span className="hint">
-                      {new Date(ref.created_at).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
-                    </span>
-                  </span>
-                </div>
-              ))}
+        {tab === "loop" && (
+          <>
+            <h2 className="section-title" style={{ marginTop: 0 }}>{t("dashboard.growthTitle")}</h2>
+            <div className="stat-grid">
+              <Stat label={t("dashboard.views")} value={stats.total_views.toString()} />
+              <Stat label={t("dashboard.clicks")} value={stats.total_clicks.toString()} />
+              <Stat label={t("dashboard.referrals")} value={stats.signups.toString()} />
+              <Stat label={t("dashboard.conversion")} value={stats.total_views > 0 ? `${stats.conversion}%` : "0"} />
+              <Stat label={t("dashboard.creditsEarned")} value={stats.credits_earned.toString()} />
+              <Stat label={t("dashboard.credit")} value={profile.free_invoice_credits.toString()} />
             </div>
-          )}
-        </div>
 
-        <div className="card-panel dash-block">
-          <h2 className="section-title" style={{ marginTop: 0 }}>{t("dashboard.creditHistory")}</h2>
-          {ledger.length === 0 ? (
-            <p className="empty">{t("dashboard.creditHistoryEmpty")}</p>
-          ) : (
-            <div className="ledger-list">
-              {ledger.map((entry) => (
-                <div className="ledger-row" key={`${entry.created_at}-${entry.amount}-${entry.type}`}>
-                  <span className={entry.amount > 0 ? "ledger-plus" : "ledger-minus"}>
-                    {entry.amount > 0 ? `+${entry.amount}` : entry.amount}
-                  </span>
-                  <span className="ledger-ref">{entry.reference}</span>
-                  <span className="hint">
-                    {new Date(entry.created_at).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
-                  </span>
+            <div className="card-panel dash-block">
+              <h2 className="section-title" style={{ marginTop: 0 }}>{t("dashboard.referralSection")}</h2>
+              <div className="ref-code">
+                <code>{profile.referral_code}</code>
+                <button
+                  className="btn btn-ghost"
+                  style={{ minHeight: 32, padding: "5px 12px", fontSize: 12 }}
+                  onClick={copyReferralCode}
+                >
+                  {copiedRef ? t("common.copied") : t("common.copyCode")}
+                </button>
+              </div>
+              <p className="hint" style={{ marginTop: 0 }}>{t("dashboard.referralCodeHint")}</p>
+              {referrals.length === 0 ? (
+                <p className="empty">{t("dashboard.referralEmpty")}</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {referrals.map((ref) => (
+                    <div key={ref.id} className="list-item">
+                      <span>{ref.referred?.full_name || ref.referred?.email || t("dashboard.newUser")}</span>
+                      <span className="side">
+                        <span className="badge badge-paid">+{ref.reward_credits} {t("dashboard.credits")}</span>
+                        <span className="hint">{new Date(ref.created_at).toLocaleDateString(locale)}</span>
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
-        </div>
 
-        <details className="card-panel dash-block" style={{ padding: 0 }}>
-          <summary style={{ cursor: "pointer", padding: "16px 20px", fontWeight: 600, fontSize: 15 }}>
-            {t("dashboard.paymentSettings")}
-            <span className="hint" style={{ marginLeft: 10 }}>
-              {profile.stripe_status === "connected" ? t("dashboard.connected") : t("dashboard.notConnected")}
-            </span>
-          </summary>
-          <div style={{ padding: "0 20px 16px" }}>
-            <div className="settings-rows">
-              <div className="settings-row">
-                <span>{t("dashboard.provider")}</span>
-                <strong>Stripe Connect</strong>
-              </div>
-              <div className="settings-row">
-                <span>{t("dashboard.connectionStatus")}</span>
-                <strong className={profile.stripe_status === "connected" ? "text-ok" : ""}>
-                  {profile.stripe_status === "connected" ? t("dashboard.connected") : t("dashboard.notConnected")}
-                </strong>
-              </div>
-              <div className="settings-row">
-                <span>{t("dashboard.mode")}</span>
-                <strong>{t("dashboard.testMode")}</strong>
-              </div>
-              <div className="settings-row">
-                <span>{t("dashboard.defaultCurrency")}</span>
-                <strong>{currencies[0] ?? "IDR"}</strong>
-              </div>
+            <div className="card-panel dash-block">
+              <h2 className="section-title" style={{ marginTop: 0 }}>{t("dashboard.creditHistory")}</h2>
+              {ledger.length === 0 ? (
+                <p className="empty">{t("dashboard.creditHistoryEmpty")}</p>
+              ) : (
+                <div className="ledger-list">
+                  {ledger.map((entry) => (
+                    <div className="ledger-row" key={`${entry.created_at}-${entry.amount}-${entry.type}`}>
+                      <span className={entry.amount > 0 ? "ledger-plus" : "ledger-minus"}>
+                        {entry.amount > 0 ? `+${entry.amount}` : entry.amount}
+                      </span>
+                      <span className="ledger-ref">{entry.reference}</span>
+                      <span className="hint">{new Date(entry.created_at).toLocaleDateString(locale)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            {stripeConnected && <p className="hint">{t("dashboard.setupDone")}</p>}
-            <p className="test-badge" style={{ marginTop: 14 }}>
-              {t("dashboard.stripeTestBadge")}
-            </p>
-            {profile.stripe_status !== "connected" && (
-              <button
-                className="btn btn-primary"
-                style={{ marginTop: 14 }}
-                onClick={handleConnectStripe}
-                disabled={connecting}
-              >
-                {connecting ? <><Spinner /> {t("dashboard.connecting")}</> : t("dashboard.connectStripe")}
-              </button>
+
+            {profile.email.endsWith("@involoop.app") && (
+              <div className="card-panel demo-reset dash-block">
+                <div>
+                  <h2 className="section-title" style={{ marginTop: 0 }}>{t("dashboard.demoWorkspace")}</h2>
+                  <p className="hint">{t("dashboard.demoWorkspaceHint")}</p>
+                </div>
+                <button className="btn btn-ghost" onClick={handleResetDemo} disabled={resetting}>
+                  {resetting ? t("dashboard.resetting") : t("dashboard.resetWorkspace")}
+                </button>
+              </div>
             )}
-          </div>
-        </details>
+
+            <details className="card-panel dash-block" style={{ padding: 0 }}>
+              <summary style={{ cursor: "pointer", padding: "16px 20px", fontWeight: 600, fontSize: 15 }}>
+                {t("dashboard.paymentSettings")}
+                <span className="hint" style={{ marginLeft: 10 }}>
+                  {stripeConnected ? t("dashboard.connected") : t("dashboard.notConnected")}
+                </span>
+              </summary>
+              <div style={{ padding: "0 20px 16px" }}>
+                <div className="settings-rows">
+                  <div className="settings-row">
+                    <span>{t("dashboard.provider")}</span>
+                    <strong>Stripe Connect</strong>
+                  </div>
+                  <div className="settings-row">
+                    <span>{t("dashboard.connectionStatus")}</span>
+                    <strong className={stripeConnected ? "text-ok" : ""}>
+                      {stripeConnected ? t("dashboard.connected") : t("dashboard.notConnected")}
+                    </strong>
+                  </div>
+                  <div className="settings-row">
+                    <span>{t("dashboard.mode")}</span>
+                    <strong>{t("dashboard.testMode")}</strong>
+                  </div>
+                  <div className="settings-row">
+                    <span>{t("dashboard.defaultCurrency")}</span>
+                    <strong>{currencies[0] ?? "IDR"}</strong>
+                  </div>
+                </div>
+                <p className="test-badge" style={{ marginTop: 14 }}>{t("dashboard.stripeTestBadge")}</p>
+                {stripeConnected && <p className="hint">{t("dashboard.setupDone")}</p>}
+              </div>
+            </details>
+          </>
+        )}
       </main>
     </>
   );
