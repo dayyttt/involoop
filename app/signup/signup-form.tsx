@@ -90,17 +90,17 @@ export default function SignupForm({
 
     document.cookie = `${REF_COOKIE}=; path=/; max-age=0`;
 
+    // The plan choice travels to the dashboard, which opens the payment modal
+    // for it. This used to fire the upgrade call from here and, if it failed —
+    // a session cookie the server could not see yet, PayPal down, anything —
+    // fall through to the invoice creator without a word. Someone who clicked
+    // "Upgrade Pro" and made an account got neither the plan nor an
+    // explanation. It also means one purchase experience instead of two: the
+    // same modal whether the plan is chosen on the landing page or before the
+    // account existed.
     if (plan) {
-      const res = await fetch("/api/payments/upgrade", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.url) {
-        window.location.href = data.url;
-        return;
-      }
+      router.push(`/dashboard?upgrade=${plan}`);
+      return;
     }
 
     // Someone who just created an account came to send an invoice, not to read
@@ -133,7 +133,7 @@ export default function SignupForm({
         <p className="sub">{t("signup.sub")}</p>
         {plan && (
           <p className="note-box">
-            {plan === "starter" ? "Starter $3" : "Pro $8/month"} · {t("login.payAfter")}
+            {plan === "starter" ? "Starter · $3 one-time" : "Pro · $8 for 30 days"} · {t("login.payAfter")}
           </p>
         )}
         {refInvoice && (

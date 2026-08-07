@@ -134,6 +134,20 @@ export default function Dashboard() {
     }
   }, []);
 
+  // Arriving from a pricing card, with or without an account beforehand: the
+  // plan that was clicked opens its payment modal here, so the intent survives
+  // the trip through signup.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("upgrade");
+    if (wanted !== "starter" && wanted !== "pro") return;
+    setUpgradePlan(wanted);
+    // Consume it. Left in the URL, a refresh after paying would reopen the
+    // payment modal for a plan the account already has.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("upgrade");
+    window.history.replaceState(null, "", url.toString());
+  }, []);
+
   // A dashboard opened at ?invoice=<id> lands with that invoice already open.
   useEffect(() => {
     if (!data) return;
