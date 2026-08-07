@@ -224,12 +224,15 @@ export default function Home() {
               const [num, title, text] = f;
               return (
                 <AnimatedContent className="reveal-item" key={num} delay={(index % 3) * 0.06}>
-                  <SpotlightCard
-                    className={`feature-card${index === 1 ? " feature-card-active" : ""}`}
-                  >
+                  <SpotlightCard className="feature-card">
                     <span className="feature-icon">{num}</span>
                     <h3>{title}</h3>
                     <p>{text}</p>
+                    {/* Opens on hover or keyboard focus, into space the card was
+                        already reserving — so nothing below it shifts. */}
+                    <div className="feature-more">
+                      <span>{t(`features.d${index + 1}`)}</span>
+                    </div>
                     <Link href="/signup">{t("features.tryCta")}</Link>
                   </SpotlightCard>
                 </AnimatedContent>

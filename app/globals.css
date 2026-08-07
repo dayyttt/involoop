@@ -269,19 +269,29 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .value-list { display: flex; flex-wrap: wrap; gap: 10px 22px; margin: 24px 0; color: var(--text-2); font-size: 12px; font-weight: 700; }
 .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 28px 0; padding-top: 24px; border-top: 1px solid var(--line); }
 .metric-row strong { display: block; color: var(--primary); font: 800 30px var(--font-jakarta), sans-serif; }
-.metric-row span { color: var(--muted); font-size: 11px; }
+/* Direct children only. As `.metric-row span` this also matched the span
+   CountUp renders inside <strong>, shrinking the figure to 11px and leaving
+   the "+" at 30px beside it. */
+.metric-row > div > span { display: block; margin-top: 2px; color: var(--muted); font-size: 11.5px; line-height: 1.4; }
 
 .muted-band { padding: 112px 0; background: rgba(33,26,37,.42); }
 .section-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
 .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 42px; }
-.feature-card { min-height: 270px; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(33,26,37,.7); transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.feature-card { display: flex; flex-direction: column; min-height: 292px; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(33,26,37,.7); transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
 .feature-card:hover { transform: translateY(var(--lift-card)); border-color: var(--primary); }
 .feature-card-active { border-color: rgba(241,74,148,.7); background: linear-gradient(145deg, rgba(241,74,148,.1), rgba(33,26,37,.75)); }
 .feature-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 6px; color: #fff; background: var(--surface); font: 800 11px var(--font-jakarta), sans-serif; }
 .feature-card-active .feature-icon { background: var(--primary); }
-.feature-card h3 { margin-top: 32px; font-size: 18px; }
+.feature-card h3 { margin-top: 26px; font-size: 18px; }
+.feature-icon { transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
+.feature-card:hover .feature-icon, .feature-card:focus-within .feature-icon { background: var(--gradient); }
+/* The 0fr → 1fr row is the whole trick: it animates height without anyone
+   having to measure anything in JavaScript. */
+.feature-more { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows var(--dur) var(--ease), opacity var(--dur) var(--ease); }
+.feature-more > span { overflow: hidden; color: var(--text-2); font-size: 12.5px; line-height: 1.65; }
+.feature-card:hover .feature-more, .feature-card:focus-within .feature-more { grid-template-rows: 1fr; opacity: 1; }
 .feature-card p { color: var(--text-2); font-size: 13px; line-height: 1.7; }
-.feature-card a { display: inline-block; margin-top: 14px; color: var(--text); font-size: 12px; font-weight: 800; text-decoration: none; }
+.feature-card a { display: inline-block; margin-top: auto; padding-top: 14px; color: var(--text); font-size: 12px; font-weight: 800; text-decoration: none; }
 .feature-card:hover a { color: var(--primary); }
 
 /* SpotlightCard (reactbits) — feature card mouse spotlight */
@@ -318,7 +328,10 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .process-head { max-width: 640px; margin-bottom: 56px; }
 .process-head .body-copy { margin-top: 14px; }
 .process-grid { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
-.process-grid::before { content: ""; position: absolute; top: 23px; left: calc(10% + 6px); right: calc(10% + 6px); height: 2px; background: linear-gradient(90deg, var(--primary), var(--primary-2)); opacity: .35; }
+/* One segment per gap, anchored to the nodes it joins, rather than one bar
+   spanning the container and overshooting the last node. */
+.p-step::after { content: ""; position: absolute; top: 22px; left: 58px; right: -28px; height: 2px; background: linear-gradient(90deg, var(--primary), var(--primary-2)); opacity: .3; }
+.p-step:last-child::after { display: none; }
 .p-step { position: relative; padding: 58px 12px 0; }
 .p-node { position: absolute; top: 0; left: 12px; width: 46px; height: 46px; display: grid; place-items: center; border: 3px solid var(--bg); border-radius: 50%; color: #fff; background: var(--gradient); box-shadow: var(--glow); font: 800 15px var(--font-jakarta), sans-serif; }
 .p-step h3 { font-size: 16px; margin: 4px 0 8px; }
@@ -382,7 +395,8 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 
 /* ---- Testimonials ---- */
 .testimonial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 42px; }
-.testimonial { display: flex; flex-direction: column; gap: 14px; justify-content: space-between; min-height: 230px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--container); }
+.testimonial { display: flex; flex-direction: column; gap: 14px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--container); transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.testimonial:hover { transform: translateY(var(--lift-card)); border-color: var(--line-2); }
 .testimonial p { margin: 0; color: var(--text-2); font-size: 13.5px; line-height: 1.75; }
 .testimonial-author { display: flex; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
 .t-avatar { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: #fff; background: var(--gradient); font: 800 13px var(--font-jakarta), sans-serif; flex: none; }
@@ -660,7 +674,7 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
   .feature-grid { grid-template-columns: 1fr; }
   .process-head { margin-bottom: 40px; }
   .process-grid { grid-template-columns: 1fr; gap: 0; }
-  .process-grid::before { top: 0; bottom: 0; left: 23px; width: 2px; height: auto; right: auto; background: linear-gradient(180deg, var(--primary), var(--primary-2)); opacity: .3; }
+  .p-step::after { top: 46px; bottom: -8px; left: 22px; right: auto; width: 2px; height: auto; background: linear-gradient(180deg, var(--primary), var(--primary-2)); }
   .p-step { padding: 0 0 30px 64px; }
   .p-node { left: 0; }
   .reward-grid { grid-template-columns: 1fr; }

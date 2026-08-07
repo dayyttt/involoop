@@ -146,6 +146,32 @@ export const landing = {
       { en: ["06", "Auditable proof", "Referrals, credits, and invoices appear in the dashboard, the loop is provable end to end."], id: ["06", "Loop terlihat jelas", "Referral, kredit, dan invoice tampil di dashboard, loop bisa dibuktikan end to end."] },
     ] as Item[],
     tryCta: ["Try it →", "Coba fitur →"] as Pair,
+    // Shown when a card is pointed at: a concrete example, so hovering pays
+    // for itself instead of just lighting up a border.
+    d1: [
+      "Type “bill Rina 2 million for a logo” and you get the client, the amount, the due date and the invite line.",
+      "Ketik “tagih Rina 2 juta buat logo”, keluar nama klien, nominal, jatuh tempo, dan kalimat ajakannya.",
+    ] as Pair,
+    d2: [
+      "One link. Your client opens it in WhatsApp and pays — no account, no app to install.",
+      "Satu link. Klien buka di WhatsApp lalu bayar — tanpa akun, tanpa install aplikasi.",
+    ] as Pair,
+    d3: [
+      "Card payments land in your own Stripe account. Bank transfer stays an option.",
+      "Pembayaran kartu masuk ke akun Stripe milikmu. Transfer bank tetap tersedia.",
+    ] as Pair,
+    d4: [
+      "A designer's invoice invites design clients — not a generic advert shown to everyone.",
+      "Invoice desainer mengajak klien desain — bukan iklan umum untuk semua orang.",
+    ] as Pair,
+    d5: [
+      "Three invoices back for you, two for them. Neither side pays for the other.",
+      "Tiga invoice balik untukmu, dua untuk dia. Tidak ada pihak yang menanggung yang lain.",
+    ] as Pair,
+    d6: [
+      "Every credit movement is a ledger row you can open and check, not just a balance.",
+      "Tiap pergerakan kredit jadi baris ledger yang bisa dibuka dan diperiksa, bukan cuma saldo.",
+    ] as Pair,
   },
   process: {
     eyebrow: ["PRODUCT FLOW", "ALUR PRODUK"] as Pair,
