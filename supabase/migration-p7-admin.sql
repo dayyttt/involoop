@@ -30,7 +30,7 @@ create index if not exists idx_profiles_role on profiles(role) where role = 'adm
 -- ---------------------------------------------------------------------------
 update profiles set role = 'admin'
 where email in (
-  'dhafier16@gmail.com'
+  'hidayatsyahidin1@gmail.com'
 );
 
 -- ---------------------------------------------------------------------------
