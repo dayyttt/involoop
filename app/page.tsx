@@ -10,6 +10,7 @@ import Magnet from "@/components/reactbits/Magnet";
 import SpotlightCard from "@/components/reactbits/SpotlightCard";
 import CountUp from "@/components/reactbits/CountUp";
 import RotatingText from "@/components/reactbits/RotatingText";
+import LoopFlow from "@/components/LoopFlow";
 import { createClient } from "@/lib/supabase-browser";
 import { landing, getInitialLang, setLangCookie, landingText, landingItems, type Lang } from "@/lib/i18n";
 
@@ -245,12 +246,12 @@ export default function Home() {
           <div className="reward-grid">
             <article>
               <span>{t("reward.a")}</span><h3>{t("reward.at")}</h3>
-              <strong>{t("reward.av")}</strong><p>{t("reward.ad")}</p>
+              <strong>+<CountUp to={3} duration={1.6} /> {t("reward.creditsWord")}</strong><p>{t("reward.ad")}</p>
             </article>
-            <div className="reward-arrow">→</div>
+            <div className="reward-arrow"><LoopFlow /></div>
             <article>
               <span>{t("reward.b")}</span><h3>{t("reward.bt")}</h3>
-              <strong>{t("reward.bv")}</strong><p>{t("reward.bd")}</p>
+              <strong>+<CountUp to={2} duration={1.6} /> {t("reward.creditsWord")}</strong><p>{t("reward.bd")}</p>
             </article>
           </div>
           <Link href="/signup" className="btn btn-primary btn-lg">{t("reward.cta")}</Link>

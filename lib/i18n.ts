@@ -110,8 +110,9 @@ export const landing = {
     eyebrow: ["TWO-WAY REWARDS", "REWARD DUA ARAH"] as Pair,
     title: ["Both sides win. The loop runs itself.", "Kedua pihak menang. Loop lanjut sendiri."] as Pair,
     lead: ["No change to how freelancers work. Rewards only appear when a referral actually signs up.", "Freelancer tidak perlu mengubah cara kerja. Reward muncul hanya ketika referral benar-benar selesai mendaftar."] as Pair,
-    a: ["A", "A"] as Pair, at: ["Freelancer", "Freelancer"] as Pair, av: ["+3 credits", "+3 kredit"] as Pair, ad: ["Every successful referral from an invoice.", "Setiap referral berhasil dari invoice."] as Pair,
-    b: ["B", "B"] as Pair, bt: ["Client", "Klien"] as Pair, bv: ["+2 credits", "+2 kredit"] as Pair, bd: ["Bonus on top of the standard signup credits.", "Bonus di atas kredit signup biasa."] as Pair,
+    a: ["A", "A"] as Pair, at: ["Freelancer", "Freelancer"] as Pair, ad: ["Every successful referral from an invoice.", "Setiap referral berhasil dari invoice."] as Pair,
+    b: ["B", "B"] as Pair, bt: ["Client", "Klien"] as Pair, bd: ["Bonus on top of the standard signup credits.", "Bonus di atas kredit signup biasa."] as Pair,
+    creditsWord: ["credits", "kredit"] as Pair,
     cta: ["Start your first loop", "Mulai loop pertamamu"] as Pair,
   },
   testimonials: {
