@@ -166,6 +166,8 @@ export const landing = {
     a: ["A", "A"] as Pair, at: ["Freelancer", "Freelancer"] as Pair, ad: ["Every successful referral from an invoice.", "Setiap referral berhasil dari invoice."] as Pair,
     b: ["B", "B"] as Pair, bt: ["Client", "Klien"] as Pair, bd: ["Bonus on top of the standard signup credits.", "Bonus di atas kredit signup biasa."] as Pair,
     creditsWord: ["credits", "kredit"] as Pair,
+    keyYou: ["You", "Kamu"] as Pair,
+    keyClient: ["Your client", "Klienmu"] as Pair,
     cta: ["Start your first loop", "Mulai loop pertamamu"] as Pair,
   },
   testimonials: {

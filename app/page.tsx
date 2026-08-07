@@ -12,6 +12,7 @@ import RotatingWord from "@/components/RotatingWord";
 import LoopFlow from "@/components/LoopFlow";
 import TryDemo from "@/components/TryDemo";
 import PaperScan from "@/components/PaperScan";
+import RewardWeave from "@/components/RewardWeave";
 import { createClient } from "@/lib/supabase-browser";
 import { landing, landingText, landingItems } from "@/lib/i18n";
 import { useLang, useSetLang } from "@/components/LangProvider";
@@ -262,17 +263,28 @@ export default function Home() {
         <AnimatedContent className="site-shell reward-inner">
           <h2>{t("reward.title")}</h2>
           <p className="reward-lead">{t("reward.lead")}</p>
-          <div className="reward-grid">
-            <article>
-              <span>{t("reward.a")}</span><h3>{t("reward.at")}</h3>
-              <strong>+<CountUp to={3} duration={1.6} /> {t("reward.creditsWord")}</strong><p>{t("reward.ad")}</p>
-            </article>
-            <div className="reward-arrow"><LoopFlow /></div>
-            <article>
-              <span>{t("reward.b")}</span><h3>{t("reward.bt")}</h3>
-              <strong>+<CountUp to={2} duration={1.6} /> {t("reward.creditsWord")}</strong><p>{t("reward.bd")}</p>
-            </article>
+          <div className="reward-split">
+            <div className="weave-col">
+              <RewardWeave />
+            </div>
+            <div className="reward-parties">
+              <article className="party party-you">
+                <span>{t("reward.a")}</span><h3>{t("reward.at")}</h3>
+                <strong>+<CountUp to={3} duration={1.6} /> {t("reward.creditsWord")}</strong><p>{t("reward.ad")}</p>
+              </article>
+              <div className="reward-arrow"><LoopFlow /></div>
+              <article className="party party-client">
+                <span>{t("reward.b")}</span><h3>{t("reward.bt")}</h3>
+                <strong>+<CountUp to={2} duration={1.6} /> {t("reward.creditsWord")}</strong><p>{t("reward.bd")}</p>
+              </article>
+            </div>
           </div>
+          {/* Names the two colours, so the abstract picture becomes a diagram
+              anyone can read at a glance instead of decoration. */}
+          <p className="reward-legend">
+            <span className="key key-you" /> {t("reward.keyYou")}
+            <span className="key key-client" /> {t("reward.keyClient")}
+          </p>
           <Link href="/signup" className="btn btn-primary btn-lg">{t("reward.cta")}</Link>
         </AnimatedContent>
       </section>
