@@ -198,10 +198,25 @@ export default function Dashboard() {
     }
   }
 
+  // A spinner in the middle of an empty page tells you nothing is happening.
+  // A skeleton of the real layout tells you what is arriving, and where.
   if (loading)
     return (
-      <main className="centered">
-        <span className="spinner" />
+      <main className="page-shell" aria-busy="true">
+        <div className="skel skel-title" />
+        <div className="skel skel-line" />
+        <div className="money-grid" style={{ marginTop: 26 }}>
+          <div className="skel skel-card" />
+          <div className="skel skel-card" />
+        </div>
+        <div className="stat-grid" style={{ marginTop: 26 }}>
+          {[0, 1, 2, 3, 4, 5].map((n) => (
+            <div className="skel skel-stat" key={n} />
+          ))}
+        </div>
+        <div className="skel skel-row" />
+        <div className="skel skel-row" />
+        <div className="skel skel-row" />
       </main>
     );
   if (!data)
@@ -248,11 +263,16 @@ export default function Dashboard() {
   const currencies = Object.keys(byCurrency).sort((a, b) => byCurrency[b].billed - byCurrency[a].billed);
   const stripeConnected = profile.stripe_status === "connected";
 
-  const FILTERS: { key: "all" | "unpaid" | "awaiting" | "paid"; label: string }[] = [
-    { key: "all", label: t("dashboard.filterAll") },
-    { key: "unpaid", label: t("dashboard.filterUnpaid") },
-    { key: "awaiting", label: t("dashboard.filterAwaiting") },
-    { key: "paid", label: t("dashboard.filterPaid") },
+  // Invoices a client says they have paid. This is the one thing on the page
+  // that is genuinely waiting on the owner, so it gets said out loud instead of
+  // hiding as a button inside a row.
+  const awaiting = invoices.filter((inv) => inv.status === "awaiting_verification");
+
+  const FILTERS: { key: "all" | "unpaid" | "awaiting" | "paid"; label: string; count: number }[] = [
+    { key: "all", label: t("dashboard.filterAll"), count: stats.total },
+    { key: "unpaid", label: t("dashboard.filterUnpaid"), count: stats.unpaid },
+    { key: "awaiting", label: t("dashboard.filterAwaiting"), count: stats.awaiting },
+    { key: "paid", label: t("dashboard.filterPaid"), count: stats.paid },
   ];
   const filteredInvoices = invoices.filter((inv) => {
     if (filter === "all") return true;
@@ -292,6 +312,26 @@ export default function Dashboard() {
             {t("nav.createInvoice")}
           </Link>
         </div>
+
+        {awaiting.length > 0 && (
+          <button
+            type="button"
+            className="attention"
+            onClick={() => {
+              setFilter("awaiting");
+              document.getElementById("invoice-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            <span className="attention-pulse" aria-hidden />
+            <span className="attention-text">
+              <strong>
+                {awaiting.length} {t("dashboard.attentionCount")}
+              </strong>
+              <span>{t("dashboard.attentionBody")}</span>
+            </span>
+            <span className="attention-go">{t("dashboard.attentionGo")}</span>
+          </button>
+        )}
 
         {!stripeConnected && (
           <div className="setup-banner">
@@ -391,14 +431,9 @@ export default function Dashboard() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
-          <h2 className="section-title" style={{ marginBottom: 0 }}>
-            {t("dashboard.invoiceList")} ({stats.total})
+          <h2 className="section-title" id="invoice-list" style={{ marginBottom: 0 }}>
+            {t("dashboard.invoiceList")}
           </h2>
-          <div className="side" style={{ gap: 8 }}>
-            <span className="badge badge-paid">{t("dashboard.paidCount")} {stats.paid}</span>
-            <span className="badge badge-warn">{t("dashboard.awaitingCount")} {stats.awaiting}</span>
-            <span className="badge badge-unpaid">{t("dashboard.unpaidCount")} {stats.unpaid}</span>
-          </div>
         </div>
 
         {invoices.length > 0 && (
@@ -409,8 +444,9 @@ export default function Dashboard() {
                 type="button"
                 onClick={() => setFilter(f.key)}
                 className={`chip ${filter === f.key ? "chip-active" : ""}`}
+                aria-pressed={filter === f.key}
               >
-                {f.label}
+                {f.label} <span className="chip-count">{f.count}</span>
               </button>
             ))}
           </div>

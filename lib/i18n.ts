@@ -460,6 +460,12 @@ export const app = {
     upgrade: ["Upgrade", "Upgrade"] as T,
     upgraded: ["Plan upgraded!", "Paket berhasil di-upgrade!"] as T,
     upgradeFailed: ["Could not start upgrade. Try again.", "Gagal memulai upgrade. Coba lagi."] as T,
+    attentionCount: ["invoices need you", "invoice menunggumu"] as T,
+    attentionBody: [
+      "Your client says they sent the transfer. Check your account, then confirm it.",
+      "Klienmu bilang sudah transfer. Cek rekeningmu, lalu konfirmasi.",
+    ] as T,
+    attentionGo: ["Show them", "Lihat"] as T,
     filterAll: ["All", "Semua"] as T,
     filterUnpaid: ["Unpaid", "Belum bayar"] as T,
     filterAwaiting: ["Awaiting", "Menunggu"] as T,

@@ -542,6 +542,39 @@ textarea.input { resize: vertical; }
 .stat-value { margin-top: 5px; color: #fff; font: 800 32px var(--font-jakarta), sans-serif; }
 .section-title { margin: 26px 0 12px; font-size: 17px; }
 
+/* ---- Dashboard: what needs doing, then money, then metrics ----
+   The one thing on this page genuinely waiting on the owner is an invoice a
+   client says they paid. It used to be a button hidden inside a row; now it is
+   the first thing on the screen and clicking it filters the list to exactly
+   those invoices. */
+.attention { display: flex; align-items: center; gap: 14px; width: 100%; margin: 20px 0 4px; padding: 16px 18px; border: 1px solid rgba(244,189,85,.34); border-radius: var(--radius); background: rgba(244,189,85,.07); color: var(--text); text-align: left; font: inherit; cursor: pointer; transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.attention:hover { transform: translateY(var(--lift)); border-color: rgba(244,189,85,.6); }
+.attention-pulse { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 0 rgba(244,189,85,.55); animation: attentionPulse 2.2s ease-out infinite; }
+@keyframes attentionPulse { 70% { box-shadow: 0 0 0 9px rgba(244,189,85,0); } 100% { box-shadow: 0 0 0 0 rgba(244,189,85,0); } }
+.attention-text { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.attention-text strong { color: var(--warn); font-size: 14px; }
+.attention-text span { color: var(--text-2); font-size: 12.5px; line-height: 1.5; }
+.attention-go { flex: none; color: var(--warn); font-size: 12px; font-weight: 800; }
+@media (max-width: 560px) { .attention { align-items: flex-start; } .attention-go { display: none; } }
+
+/* Counts belong on the filters that use them, not in a separate badge row
+   saying the same three numbers a second time. */
+.chip-count { display: inline-block; margin-left: 4px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chip-active .chip-count { color: inherit; opacity: .75; }
+
+/* ---- Loading ----
+   A skeleton of the real layout, so the wait shows what is coming and where,
+   rather than a spinner in the middle of nothing. */
+.skel { position: relative; overflow: hidden; border-radius: var(--radius); background: rgba(255,255,255,.035); }
+.skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.05), transparent); animation: skelSweep 1.4s ease-in-out infinite; }
+@keyframes skelSweep { to { transform: translateX(100%); } }
+.skel-title { width: 220px; height: 30px; margin-bottom: 10px; }
+.skel-line { width: 300px; height: 14px; }
+.skel-card { height: 116px; }
+.skel-stat { height: 92px; }
+.skel-row { height: 62px; margin-top: 10px; }
+@media (prefers-reduced-motion: reduce) { .skel::after, .attention-pulse { animation: none; } }
+
 /* ---- Dashboard: money first, growth metrics second ---- */
 .money-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 8px; }
 .money-card { padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--container); }
