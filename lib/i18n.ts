@@ -34,6 +34,27 @@ export const landing = {
     p3: ["+2 bonus for the client", "+2 bonus untuk klien"] as Pair,
     note: ["No credit card required · Start free in 30 seconds", "Tanpa kartu kredit · Mulai gratis dalam 30 detik"] as Pair,
   },
+  marquee: {
+    label: ["Shared through the channels you already use", "Dikirim lewat channel yang sudah kamu pakai"] as Pair,
+  },
+  how: {
+    eyebrow: ["IN PLAIN WORDS", "DENGAN BAHASA SEDERHANA"] as Pair,
+    title: ["Three steps. No jargon.", "Tiga langkah. Tanpa istilah teknis."] as Pair,
+    items: [
+      {
+        en: ["1", "Describe the bill", "Type what you sold, like “bill Rina 2 million for a logo design”."],
+        id: ["1", "Tulis tagihannya", "Ketik jasa yang kamu jual, contoh “tagih Rina 2 juta buat desain logo”."],
+      },
+      {
+        en: ["2", "Share one link", "AI builds a clean public invoice you can send on WhatsApp, email, anywhere."],
+        id: ["2", "Kirim satu link", "AI membuat invoice publik yang rapi, kirim lewat WhatsApp, email, di mana saja."],
+      },
+      {
+        en: ["3", "Get paid and grow", "The client pays, and both accounts earn credits for the next invoice."],
+        id: ["3", "Dibayar dan bertumbuh", "Klien membayar, lalu kedua akun mendapat kredit untuk invoice berikutnya."],
+      },
+    ] as Item[],
+  },
   personas: {
     en: ["DESIGNERS", "DEVELOPERS", "CONSULTANTS", "VIDEO EDITORS", "FREELANCERS", "CREATORS B2B"],
     id: ["DESAINER", "DEVELOPER", "KONSULTAN", "VIDEO EDITOR", "FREELANCER SOLO", "CREATOR B2B"],

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NeonLandscape from "@/components/NeonLandscape";
+import ChannelMarquee from "@/components/ChannelMarquee";
 import { createClient } from "@/lib/supabase-browser";
 import { landing, getInitialLang, setLangCookie, landingText, landingItems, type Lang } from "@/lib/i18n";
 
@@ -44,7 +45,7 @@ export default function Home() {
   const processSteps = landingItems(lang, "process.steps");
   const testimonials = landingItems(lang, "testimonials.items");
   const trustItems = landingItems(lang, "trust.items");
-  const personas = lang === "en" ? landing.personas.en : landing.personas.id;
+  const howSteps = landingItems(lang, "how.items");
 
   return (
     <main className="landing">
@@ -106,13 +107,24 @@ export default function Home() {
           </div>
         </div>
         <div className="trust-strip">
-          <div className="marquee">
-            <div className="marquee-track">
-              {[...personas, ...personas].map((item, i) => (
-                <span key={i}>{item}</span>
-              ))}
+          <ChannelMarquee label={t("marquee.label")} />
+        </div>
+      </section>
+
+      <section id="how" className="site-shell section-space">
+        <div className="process-head">
+          <p className="section-eyebrow">{t("how.eyebrow")}</p>
+          <h2>{t("how.title")}</h2>
+        </div>
+        <div className="plain-steps">
+          {howSteps.map(([num, title, text], index) => (
+            <div className="plain-step" key={num}>
+              {index > 0 && <span className="plain-arrow">→</span>}
+              <span className="plain-num">{num}</span>
+              <h3>{title}</h3>
+              <p>{text}</p>
             </div>
-          </div>
+          ))}
         </div>
       </section>
 
