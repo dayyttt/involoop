@@ -122,7 +122,8 @@ export async function POST(req: NextRequest) {
       .eq("id", invoice.id)
       .eq("status", "unpaid");
 
-    return NextResponse.json({ url });
+    // `id` drives the in-page buttons; `url` is the redirect fallback.
+    return NextResponse.json({ id: order.id, url });
   } catch (err: any) {
     console.error("paypal checkout error", err?.message ?? err);
     return NextResponse.json(

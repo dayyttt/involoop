@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       .update({ plan_session_id: order.id })
       .eq("id", user.id);
 
-    return NextResponse.json({ url });
+    return NextResponse.json({ id: order.id, url });
   } catch (err: any) {
     console.error("upgrade error", err?.message ?? err);
     return NextResponse.json(

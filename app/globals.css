@@ -1196,3 +1196,34 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 @media (prefers-reduced-motion: reduce) {
   .row-open, .list-item-open, .modal-close { transition: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   PayPal buttons
+   Rendered inside a PayPal iframe, so almost nothing here can be styled — only
+   the space around it. The job is to make the handoff invisible: reserve the
+   exact height the buttons will take so the panel does not jump when they
+   arrive, and keep the surrounding rhythm identical to our own buttons.
+--------------------------------------------------------------------------- */
+/* 46 + 8 + 46 button stack, plus PayPal's own "powered by" line. */
+.pp-slot { position: relative; min-height: 132px; }
+.pp-slot.is-disabled { opacity: .55; pointer-events: none; }
+.pp-mount { width: 100%; }
+
+/* The skeleton sits ON TOP of the live mount rather than replacing it, so the
+   SDK always has a real width to measure. Two bars at the height the buttons
+   render (46px) plus their gutter, so nothing shifts when they arrive. */
+.pp-skeleton {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--container);
+}
+.skel-btn { height: 46px; border-radius: 6px; }
+.pp-skeleton .hint { text-align: center; margin: 2px 0 0; }
+.pp-failed { text-align: center; margin: 0; padding: 12px 0; }
+
+.modal-panel-sm { width: min(420px, 100%); }
+.modal-panel-sm .modal-money strong { font-size: 34px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .skel::after { animation: none; }
+}

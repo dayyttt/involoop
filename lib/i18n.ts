@@ -506,6 +506,9 @@ export const app = {
     planPro: ["Pro", "Pro"] as T,
     upgrade: ["Upgrade", "Upgrade"] as T,
     upgraded: ["Plan upgraded!", "Paket berhasil di-upgrade!"] as T,
+    upgradeTitle: ["Upgrade plan", "Naikkan paket"] as T,
+    upgradePrice: ["One-time payment", "Bayar sekali"] as T,
+    upgradeIncludes: ["Includes {n} public invoices", "Termasuk {n} invoice publik"] as T,
     upgradeFailed: ["Could not start upgrade. Try again.", "Gagal memulai upgrade. Coba lagi."] as T,
     attentionCount: ["invoices need you", "invoice menunggumu"] as T,
     attentionBody: [
@@ -686,6 +689,15 @@ export const app = {
     downloadPdf: ["Download PDF", "Unduh PDF"] as T,
     payPaypal: ["Pay with PayPal", "Bayar dengan PayPal"] as T,
     redirecting: ["Redirecting to PayPal…", "Mengarahkan ke PayPal…"] as T,
+    payLoading: ["Loading secure payment…", "Memuat pembayaran aman…"] as T,
+    payUnavailable: [
+      "Payment buttons could not load. Refresh the page, or use the bank transfer option below.",
+      "Tombol pembayaran gagal dimuat. Muat ulang halaman, atau pakai opsi transfer bank di bawah.",
+    ] as T,
+    payCurrencyUnsupported: [
+      "This invoice is in {currency}, which card and PayPal payment does not cover. Pay by bank transfer and confirm below.",
+      "Invoice ini dalam {currency}, yang belum dilayani pembayaran kartu maupun PayPal. Bayar lewat transfer bank lalu konfirmasi di bawah.",
+    ] as T,
     payHint: [
       "Payment is securely processed by PayPal. You can pay with a PayPal balance or a card, and Involoop never sees either.",
       "Pembayaran diproses aman oleh PayPal. Bisa pakai saldo PayPal atau kartu, dan Involoop tidak pernah melihat keduanya.",

@@ -11,6 +11,7 @@ import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
 import StatusBadge from "@/components/StatusBadge";
 import InvoiceModal, { type ModalInvoice } from "@/components/InvoiceModal";
+import UpgradeModal, { type UpgradePlan } from "@/components/UpgradeModal";
 
 interface Invoice {
   public_id: string;
@@ -78,7 +79,7 @@ export default function Dashboard() {
   const [resetting, setResetting] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedRef, setCopiedRef] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
+  const [upgradePlan, setUpgradePlan] = useState<UpgradePlan | null>(null);
   const [upgraded, setUpgraded] = useState(false);
   const [filter, setFilter] = useState<"all" | "unpaid" | "awaiting" | "paid">("all");
   const [tab, setTab] = useState<"overview" | "invoices" | "loop">("overview");
@@ -141,22 +142,6 @@ export default function Dashboard() {
     }
   }, [data]);
 
-  async function handleUpgrade(plan: "starter" | "pro") {
-    setError(null);
-    setUpgrading(true);
-    const res = await fetch("/api/payments/upgrade", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.url) {
-      window.location.href = data.url;
-      return;
-    }
-    setUpgrading(false);
-    setError(data.error ?? t("dashboard.upgradeFailed"));
-  }
 
   async function load() {
     setError(null);
@@ -630,10 +615,10 @@ export default function Dashboard() {
                 <p className="hint">{t("dashboard.creditIsInvoice")}</p>
                 {profile.plan === "free" && (
                   <div className="side-plan">
-                    <button className="btn btn-ghost" onClick={() => handleUpgrade("starter")} disabled={upgrading}>
+                    <button className="btn btn-ghost" onClick={() => setUpgradePlan("starter")}>
                       Starter
                     </button>
-                    <button className="btn btn-primary" onClick={() => handleUpgrade("pro")} disabled={upgrading}>
+                    <button className="btn btn-primary" onClick={() => setUpgradePlan("pro")}>
                       Pro
                     </button>
                   </div>
@@ -780,6 +765,17 @@ export default function Dashboard() {
           </>
         )}
       </main>
+
+      <UpgradeModal
+        plan={upgradePlan}
+        lang={lang}
+        onClose={() => setUpgradePlan(null)}
+        onPaid={(plan) => {
+          setUpgradePlan(null);
+          setUpgraded(true);
+          load();
+        }}
+      />
 
       <InvoiceModal
         invoice={openInvoice}

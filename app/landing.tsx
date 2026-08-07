@@ -17,6 +17,7 @@ import PayLoop from "@/components/PayLoop";
 import { createClient } from "@/lib/supabase-browser";
 import { landing, landingText, landingItems } from "@/lib/i18n";
 import { useLang, useSetLang } from "@/components/LangProvider";
+import UpgradeModal, { type UpgradePlan } from "@/components/UpgradeModal";
 
 // The backdrop is an image first — it renders everywhere, including on phones
 // and without JavaScript. The component layers a depth shader over it only
@@ -30,6 +31,7 @@ export default function Landing({ signedIn }: { signedIn: boolean }) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  const [upgradePlan, setUpgradePlan] = useState<UpgradePlan | null>(null);
 
   // Someone with an account is not here to sign up again: every route into the
   // product points at the product, and the labels say so.
@@ -48,17 +50,8 @@ export default function Landing({ signedIn }: { signedIn: boolean }) {
       router.push(`/signup?plan=${plan}`);
       return;
     }
-    const res = await fetch("/api/payments/upgrade", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan, lang }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.ok && data.url) {
-      window.location.href = data.url;
-    } else {
-      setUpgradeError(data.error ?? "Upgrade failed");
-    }
+    // Signed in: pay right here rather than bouncing to another domain.
+    setUpgradePlan(plan);
   }
 
   const features = landingItems(lang, "features.items");
@@ -369,6 +362,16 @@ export default function Landing({ signedIn }: { signedIn: boolean }) {
           </AnimatedContent>
         </div>
         {upgradeError && <p className="error" style={{ textAlign: "center" }}>{upgradeError}</p>}
+
+        <UpgradeModal
+          plan={upgradePlan}
+          lang={lang}
+          onClose={() => setUpgradePlan(null)}
+          onPaid={() => {
+            setUpgradePlan(null);
+            router.push("/dashboard?upgraded=1");
+          }}
+        />
         <p className="hint" style={{ textAlign: "center", marginTop: 28 }}>{t("pricing.note")}</p>
       </section>
 

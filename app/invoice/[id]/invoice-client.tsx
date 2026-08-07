@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { formatMoney, formatDate } from "@/lib/money";
 import { appText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
 import type { PublicInvoice } from "@/lib/invoice-server";
+import PayPalButtons from "@/components/PayPalButtons";
 
 // Receives the invoice already resolved on the server: no loading shell, no
 // blank first paint for a client opening the link on mobile data.
@@ -18,6 +19,7 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
 
   const [invoice, setInvoice] = useState<PublicInvoice>(initial);
   const [submitting, setSubmitting] = useState(false);
+  const paidOrderRef = useRef<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,8 +40,9 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
     trackView();
   }, [publicId]);
 
-  async function handlePay() {
-    setSubmitting(true);
+  // Handed to the PayPal buttons: they call this when the client commits, and
+  // the order is created server-side from the database amount.
+  async function createPaypalOrder(): Promise<string> {
     setError(null);
     const res = await fetch("/api/payments/checkout", {
       method: "POST",
@@ -47,12 +50,19 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
       body: JSON.stringify({ public_id: publicId, lang }),
     });
     const data = await res.json().catch(() => ({}));
-    if (res.ok && data.url) {
-      window.location.href = data.url;
-      return;
+    if (!res.ok || !data.id) {
+      const message = data.error ?? t("invoice.checkoutFailed");
+      setError(message);
+      throw new Error(message);
     }
-    setError(data.error ?? t("invoice.checkoutFailed"));
-    setSubmitting(false);
+    return data.id;
+  }
+
+  function handlePaid() {
+    // The capture already succeeded server-side. Reflect it here rather than
+    // making the client reload to find out whether their money went through.
+    setInvoice((prev) => ({ ...prev, status: "paid" }));
+    window.location.href = "/payment/success?order=" + encodeURIComponent(paidOrderRef.current ?? "");
   }
 
   async function handleConfirmTransfer() {
@@ -128,6 +138,11 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
 
         <div className="pay-side" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="pay-panel card">
+            {/* payment_pending means an order was created and not finished —
+                the client opened PayPal and closed it, or the card was declined.
+                It used to render a dead "pending" panel with no way forward,
+                which stranded anyone who changed their mind mid-checkout. They
+                still owe the money, so they still get the buttons. */}
             {paidStatus ? (
               <div className="pay-status pay-status-paid">{t("invoice.paid")}</div>
             ) : invoice.status === "awaiting_verification" ? (
@@ -135,8 +150,6 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                 <div className="pay-status pay-status-warn">{t("invoice.awaiting")}</div>
                 <p className="hint" style={{ margin: 0 }}>{t("invoice.awaitingHint")}</p>
               </>
-            ) : invoice.status === "payment_pending" ? (
-              <div className="pay-status pay-status-warn">{t("invoice.pending")}</div>
             ) : (
               <>
                 <div className="pay-status pay-status-open">
@@ -144,20 +157,32 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                   <span>{money}</span>
                 </div>
                 <div className="pay-options">
-                  {invoice.paypal_enabled && (
+                  {invoice.paypal_enabled ? (
                     <>
-                      <button
-                        onClick={handlePay}
+                      <PayPalButtons
+                        currency={invoice.currency}
+                        lang={lang}
+                        createOrder={createPaypalOrder}
+                        onApproved={(orderId) => {
+                          paidOrderRef.current = orderId;
+                          handlePaid();
+                        }}
+                        onError={(message) => setError(message)}
+                        labelLoading={t("invoice.payLoading")}
+                        labelUnavailable={t("invoice.payUnavailable")}
                         disabled={submitting}
-                        className="btn btn-primary btn-lg btn-mobile-full"
-                      >
-                        {submitting ? t("invoice.redirecting") : t("invoice.payPaypal")}
-                      </button>
+                      />
                       <p className="hint" style={{ textAlign: "center", margin: 0 }}>
                         {t("invoice.payHint")}
                       </p>
                       <div className="pay-divider">{t("invoice.orManual")}</div>
                     </>
+                  ) : (
+                    /* PayPal does not settle this currency, so the only honest
+                       thing to show is the transfer route. */
+                    <p className="hint" style={{ margin: 0 }}>
+                      {t("invoice.payCurrencyUnsupported", { currency: invoice.currency })}
+                    </p>
                   )}
                   <div className="pay-instruction" style={{ marginBottom: 0 }}>
                     <p>{t("invoice.manualTitle")}</p>
