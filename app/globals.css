@@ -578,6 +578,13 @@ textarea.input { resize: vertical; }
 /* ---- Dashboard: money first, growth metrics second ---- */
 .money-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 8px; }
 .money-card { padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--container); }
+.money-card-settled { border-color: rgba(72,215,160,.28); }
+.money-card-settled .stat-value { color: var(--success); }
+
+/* Air between the major blocks. Without it the referral and ledger panels
+   began 8px under the last invoice row, in the same card style, and read as
+   part of the invoice list rather than as sections of their own. */
+.dash-block { margin-top: 30px; }
 .money-card .stat-value { font-size: 28px; margin-top: 6px; }
 .money-sub { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
 .money-sub b { color: var(--text); }

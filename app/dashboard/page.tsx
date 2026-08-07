@@ -356,28 +356,42 @@ export default function Dashboard() {
           <p className="empty" style={{ marginBottom: 8 }}>{t("dashboard.moneyEmpty")}</p>
         ) : (
           <div className="money-grid">
-            {currencies.map((currency) => (
-              <div className="money-card" key={currency}>
+            {currencies.map((currency) => {
+              const money = byCurrency[currency];
+              // Nothing outstanding is good news, but "Rp 0" as the headline
+              // reads like an empty card. When everything is settled the card
+              // leads with what actually arrived.
+              const settled = money.outstanding === 0 && money.billed > 0;
+              return (
+              <div className={`money-card${settled ? " money-card-settled" : ""}`} key={currency}>
                 <span className="stat-label">
-                  {t("dashboard.moneyOutstanding")} · {currency}
+                  {settled ? t("dashboard.moneySettled") : t("dashboard.moneyOutstanding")} · {currency}
                 </span>
                 <div className="stat-value money">
-                  {formatMoney(byCurrency[currency].outstanding, currency, lang === "id" ? "id-ID" : "en-US")}
+                  {formatMoney(
+                    settled ? money.received : money.outstanding,
+                    currency,
+                    lang === "id" ? "id-ID" : "en-US"
+                  )}
                 </div>
                 <div className="money-sub">
-                  <span>
-                    {t("dashboard.moneyReceived")}:{" "}
-                    <b className="text-ok">
-                      {formatMoney(byCurrency[currency].received, currency, lang === "id" ? "id-ID" : "en-US")}
-                    </b>
-                  </span>
+                  {!settled && (
+                    <span>
+                      {t("dashboard.moneyReceived")}:{" "}
+                      <b className="text-ok">
+                        {formatMoney(money.received, currency, lang === "id" ? "id-ID" : "en-US")}
+                      </b>
+                    </span>
+                  )}
                   <span>
                     {t("dashboard.moneyBilled")}:{" "}
-                    <b>{formatMoney(byCurrency[currency].billed, currency, lang === "id" ? "id-ID" : "en-US")}</b>
+                    <b>{formatMoney(money.billed, currency, lang === "id" ? "id-ID" : "en-US")}</b>
                   </span>
+                  {settled && <span className="text-ok">{t("dashboard.moneyAllPaid")}</span>}
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -401,9 +415,12 @@ export default function Dashboard() {
 
         <div className="card-panel" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div>
-            <h2 className="section-title" style={{ marginBottom: 4 }}>
+            <h2 className="section-title" style={{ margin: 0 }}>
               {t("dashboard.currentPlan")}: <PlanName plan={profile.plan} t={t} />
             </h2>
+            <p className="hint" style={{ margin: "4px 0 0" }}>
+              {profile.free_invoice_credits} {t("dashboard.creditsLeft")} · {t("dashboard.creditIsInvoice")}
+            </p>
             {profile.plan !== "free" && profile.plan_expires_at && (
               <p className="hint" style={{ margin: 0 }}>
                 {new Date(profile.plan_expires_at).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
@@ -530,8 +547,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="card-panel">
-          <h2 className="section-title">{t("dashboard.referralSection")}</h2>
+        <div className="card-panel dash-block">
+          <h2 className="section-title" style={{ marginTop: 0 }}>{t("dashboard.referralSection")}</h2>
           <div className="ref-code">
             <code>{profile.referral_code}</code>
             <button
@@ -566,8 +583,8 @@ export default function Dashboard() {
           )}
         </div>
 
-        <div className="card-panel">
-          <h2 className="section-title">{t("dashboard.creditHistory")}</h2>
+        <div className="card-panel dash-block">
+          <h2 className="section-title" style={{ marginTop: 0 }}>{t("dashboard.creditHistory")}</h2>
           {ledger.length === 0 ? (
             <p className="empty">{t("dashboard.creditHistoryEmpty")}</p>
           ) : (
@@ -587,7 +604,7 @@ export default function Dashboard() {
           )}
         </div>
 
-        <details className="card-panel" style={{ padding: 0 }}>
+        <details className="card-panel dash-block" style={{ padding: 0 }}>
           <summary style={{ cursor: "pointer", padding: "16px 20px", fontWeight: 600, fontSize: 15 }}>
             {t("dashboard.paymentSettings")}
             <span className="hint" style={{ marginLeft: 10 }}>

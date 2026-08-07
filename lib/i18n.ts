@@ -475,6 +475,9 @@ export const app = {
     moneyReceived: ["Received", "Sudah diterima"] as T,
     moneyBilled: ["Billed in total", "Total ditagihkan"] as T,
     moneyEmpty: ["Publish an invoice and the totals show up here.", "Terbitkan invoice, totalnya akan muncul di sini."] as T,
+    moneySettled: ["Received", "Sudah diterima"] as T,
+    moneyAllPaid: ["Nothing outstanding", "Tidak ada tagihan tertunggak"] as T,
+    creditIsInvoice: ["1 credit = 1 invoice", "1 kredit = 1 invoice"] as T,
     growthTitle: ["Your loop", "Loop kamu"] as T,
     setupTitle: ["Finish one step so clients can pay you", "Selesaikan satu langkah agar klien bisa membayar"] as T,
     setupBody: [
