@@ -55,6 +55,9 @@ interface DashboardData {
     plan_used?: number | null;
     plan_quota?: number | null;
     plan_active?: boolean;
+    role?: string;
+    suspended_at?: string | null;
+    suspended_reason?: string | null;
   };
   invoices: Invoice[];
   ledger: LedgerEntry[];
@@ -515,6 +518,16 @@ export default function Dashboard() {
         </div>
 
         <div className="dash-nav-actions">
+          {/* Only an operator sees this. It is also the answer to "am I signed
+              in with the right account?": /admin returns a bare 404 to everyone
+              else on purpose, which tells the owner nothing when they are on
+              the wrong one of their five Google logins. If this link is here,
+              the console will open. */}
+          {profile.role === "admin" && (
+            <Link href="/admin" className="btn btn-ghost admin-link">
+              {t("nav.console")}
+            </Link>
+          )}
           <Link href="/dashboard/new-invoice" className="btn btn-primary">
             {t("nav.createInvoice")}
           </Link>
@@ -551,6 +564,19 @@ export default function Dashboard() {
               <button className="btn btn-ghost" onClick={() => setPendingPlan(null)}>
                 {t("dashboard.pendingPlanDismiss")}
               </button>
+            </div>
+          </div>
+        )}
+
+        {profile.suspended_at && (
+          <div className="setup-banner pending-plan">
+            <div>
+              <strong>{t("dashboard.suspendedTitle")}</strong>
+              <p>
+                {profile.suspended_reason
+                  ? profile.suspended_reason
+                  : t("dashboard.suspendedBody")}
+              </p>
             </div>
           </div>
         )}

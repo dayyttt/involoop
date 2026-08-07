@@ -328,6 +328,7 @@ export const app = {
   nav: {
     dashboard: ["Dashboard", "Dashboard"] as T,
     logout: ["Log out", "Keluar"] as T,
+    console: ["Operator console", "Konsol operator"] as T,
     createInvoice: ["+ Create invoice", "+ Buat invoice"] as T,
   },
   common: {
@@ -515,6 +516,11 @@ export const app = {
     planPlusCredits: ["Plus {n} referral credits, kept for when your plan ends.", "Plus {n} kredit referral, disimpan untuk saat paketmu habis."] as T,
     planEnded: ["Your paid period has ended. You are back on referral credits.", "Masa berbayarmu sudah berakhir. Kamu kembali memakai kredit referral."] as T,
     planGet: ["Get", "Ambil"] as T,
+    suspendedTitle: ["Your account is suspended", "Akunmu ditangguhkan"] as T,
+    suspendedBody: [
+      "You cannot publish new invoices. Invoices you already sent stay payable. Contact support to have this reviewed.",
+      "Kamu tidak bisa menerbitkan invoice baru. Invoice yang sudah terkirim tetap bisa dibayar. Hubungi dukungan untuk peninjauan.",
+    ] as T,
     pendingPlanTitle: ["You chose {plan} — not paid yet", "Kamu memilih {plan} — belum dibayar"] as T,
     pendingPlanBody: [
       "Your account is still running on free credits. Finish the payment and the invoices are added straight away.",
