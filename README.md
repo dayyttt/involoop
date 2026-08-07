@@ -44,7 +44,15 @@ idempotent ledger, not only as a balance.
 - Public invoice page; no client login required. Server-rendered with a
   generated Open Graph card, so a link pasted into WhatsApp previews the
   sender, amount, and status instead of a generic site title.
-- Multicurrency: USD, EUR, GBP, SGD, IDR. Money stored as integer minor units.
+- Multicurrency: IDR, MYR, SGD, THB, PHP, USD, EUR, GBP. The currency follows
+  the sentence ("RM 3000" bills in ringgit), then the visitor's country, then
+  USD. Amounts are never converted — an invoice states one figure in one
+  currency, and that is what Stripe charges. Money is stored as integer minor
+  units, with zero-decimal currencies handled as a set rather than a special
+  case.
+- Every invoice downloads as a PDF carrying the sender's name as the letterhead
+  and the referral invitation in the footer, so the loop survives being
+  forwarded to an accountant who never saw the original link.
 - Stripe sandbox Checkout + verified webhook + permanent Vercel endpoint.
 - Manual transfer fallback: client confirms → owner verifies.
 - Referral attribution survives refresh via query + cookie.
@@ -56,6 +64,8 @@ idempotent ledger, not only as a balance.
   there is no language flash and `<html lang>` is always honest.
 - Privacy Policy and Terms pages describing what is actually stored, what
   credits are, and that payments run in Stripe test mode.
+- Profile page: the display name is the invoice letterhead, edited against a
+  live miniature of the invoice header.
 - Demo-only workspace reset.
 
 ## Accessibility and performance notes
