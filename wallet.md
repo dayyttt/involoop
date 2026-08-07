@@ -1,970 +1,655 @@
 Kamu bertindak sebagai Senior Blockchain Payment Engineer, Solana Engineer, Backend Engineer, dan QA Engineer.
 
-Tugasmu adalah menambahkan pembayaran invoice menggunakan USDC di jaringan Solana ke project Involoop tanpa merusak alur pembayaran Stripe yang sudah ada.
+Tugasmu menambahkan pembayaran USDC di jaringan Solana ke Involoop **untuk dua arah yang berbeda**, tanpa merusak alur PayPal yang sudah berjalan.
 
-Jangan langsung mengubah kode sebelum melakukan audit terhadap implementasi Stripe, invoice, payment, referral, credit ledger, dan database yang sudah tersedia.
+Jangan mengubah kode sebelum menyelesaikan FASE 1 (audit).
 
-# KONTEKS PRODUK
+---
 
-Involoop adalah SaaS invoice untuk freelancer, consultant, dan micro-agency global.
+# 0. YANG BERUBAH DARI REVISI SEBELUMNYA
 
-Saat ini Involoop memiliki atau sedang menyelesaikan pembayaran melalui Stripe.
+Dokumen versi lama menulis "Stripe" di mana-mana dan hanya memikirkan satu arah pembayaran. Keduanya sudah tidak benar. Empat koreksi yang mengubah rancangan:
 
-Tambahkan opsi pembayaran kedua:
+**a. Rail fiat sekarang PayPal, bukan Stripe.** Stripe sudah dicabut habis: `lib/stripe.ts`, route Connect, dan dependency-nya dihapus. Alasannya Stripe tidak menerima bisnis Indonesia. Setiap kalimat "jangan rusak Stripe" berarti "jangan rusak PayPal".
 
-* Stripe untuk pembayaran fiat.
-* USDC on Solana untuk pembayaran crypto.
-* Manual bank transfer sebagai fallback.
+**b. Ada dua arah pembayaran, bukan satu.** Ini bagian terpenting dan seluruh Bab 1 membahasnya. Dokumen lama hanya merancang pembayaran invoice (klien → freelancer). Langganan (pengguna → Involoop) punya penerima, kepemilikan dana, konsekuensi kegagalan, dan tanggung jawab hukum yang **berbeda total**.
 
-Pembayaran crypto harus bersifat non-custodial:
+**c. Pembelian paket saat ini tidak tercatat di mana pun.** `payments.invoice_id` adalah `NOT NULL`, jadi pembelian paket — yang tidak punya invoice — secara struktural tidak bisa masuk tabel itu. Hari ini ketika seseorang membeli Pro lewat PayPal, tidak ada baris pembayaran yang tersimpan: tidak ada nominal, tidak ada ID transaksi, tidak ada jalan rekonsiliasi. Ini lubang yang **sudah ada sekarang**, dan crypto membuatnya berbahaya karena uang on-chain yang tidak tercatat tidak bisa dilacak balik.
 
-```text
-Wallet client
-→ langsung mengirim USDC
-→ wallet owner invoice
-```
+**d. Dokumen lama mengarang tabel baru.** Ia mengusulkan `Payment`, `CryptoPayment`, `WalletConnection` dari nol, seolah belum ada apa-apa. Padahal `payments` sudah provider-neutral (`provider`, `provider_session_id`, `provider_payment_id`, `provider_charge_id`) dan `webhook_events` sudah punya `UNIQUE(provider_event_id)`. Membangun model paralel akan membuat dua sumber kebenaran tentang uang. Rancangan baru memperluas yang ada.
 
-Involoop tidak boleh:
+---
 
-* Menahan crypto.
-* Menjadi perantara dana.
-* Menyimpan private key.
-* Meminta seed phrase.
-* Memiliki akses untuk memindahkan dana owner.
-* Membuat custodial wallet.
-* Mengubah transaksi crypto tanpa tanda tangan pengguna.
+# 1. DUA ARAH PEMBAYARAN
 
-Involoop hanya bertugas:
+Ini inti dokumen. Salah memahami bab ini akan menghasilkan sistem yang benar untuk satu arah dan berbahaya untuk arah lain.
 
-1. Menyimpan alamat wallet owner yang telah diverifikasi.
-2. Membuat payment request yang unik untuk setiap invoice.
-3. Mendeteksi pembayaran on-chain.
-4. Memverifikasi transaksi melalui Solana RPC.
-5. Mengubah status payment dan invoice.
-6. Menampilkan bukti transaksi.
-7. Melanjutkan distribution dan referral loop.
-
-# TARGET IMPLEMENTASI
-
-Gunakan:
+## 1.1 Arah A — Klien membayar invoice freelancer
 
 ```text
-Network demo: Solana Devnet
-Settlement asset: USDC Devnet
-Payment protocol: Solana Pay
-Wallet awal: Phantom dan wallet Solana-compatible
-Detection: Helius webhook atau RPC subscription
-Verification: Solana RPC server-side
+Wallet klien  →  USDC  →  wallet freelancer
+                            (Involoop tidak pernah menyentuh dana)
 ```
 
-Jangan membuat smart contract sendiri.
+## 1.2 Arah B — Pengguna membayar langganan ke Involoop
 
-Jangan membuat token Involoop.
+```text
+Wallet pengguna  →  USDC  →  wallet platform Involoop
+                               (Involoop ADALAH penerimanya)
+```
 
-Jangan menambahkan jaringan lain seperti Ethereum, Base, Polygon, atau BNB Chain pada tahap ini.
+## 1.3 Perbedaan yang merembet ke mana-mana
 
-# ATURAN PENTING
+| | Arah A · Invoice | Arah B · Langganan |
+|---|---|---|
+| Penerima | wallet freelancer, di-snapshot per invoice | wallet platform, tetap, dari env |
+| Kepemilikan dana | non-custodial, Involoop di luar jalur uang | Involoop memegang dana — custodial secara definisi |
+| Sumber nominal | `invoices.amount_minor` | harga paket tetap ($3 / $8) |
+| Saat sukses | `invoices.status = paid` | `profiles.plan` diberikan, jendela kuota mulai |
+| Kredit referral | **tidak** diberikan (klien belum tentu pengguna) | tidak relevan |
+| Kalau verifikasi gagal padahal dana terkirim | masalah antara dua pengguna; Involoop memfasilitasi | **Involoop berutang ke pengguna** |
+| Refund | freelancer mengirim transaksi baru dari wallet-nya | Involoop harus refund dari wallet platform |
+| Jika wallet penerima berubah | invoice lama tetap ke snapshot lama | tidak ada snapshot; alamat platform dari env |
 
-* Jangan merusak alur Stripe yang sudah ada.
-* Jangan mengubah model payment menjadi khusus crypto.
-* Stripe dan Solana harus memakai abstraction payment yang sama.
-* Semua transaksi demo memakai Solana Devnet.
-* Jangan menggunakan uang atau USDC nyata.
-* Jangan menggunakan Solana Mainnet sebelum seluruh test Devnet lulus.
-* Jangan memasukkan secret ke source code.
-* Jangan commit `.env`.
-* Jangan menampilkan private environment variable di output.
-* Jangan meminta atau menyimpan seed phrase maupun private key.
-* Jangan menandai invoice PAID hanya karena client kembali dari wallet.
-* Jangan mempercayai data nominal, recipient, token, atau signature dari frontend.
-* Blockchain dan hasil verifikasi server adalah sumber kebenaran.
-* Jika environment variable belum tersedia, tandai BLOCKED dan jelaskan apa yang dibutuhkan tanpa mengarang hasil.
+Baris "kalau verifikasi gagal" adalah alasan kedua arah tidak boleh dibangun sebagai satu jalur seragam. Pada Arah A, uang sudah pindah dari klien ke freelancer dan Involoop hanya gagal mencatatnya — buruk, tapi tidak ada yang kehilangan uang. Pada Arah B, pengguna membayar Involoop dan **tidak menerima apa pun**. Itu kewajiban, bukan bug tampilan.
 
-# FASE 0 — VALIDASI STRIPE SEBELUM MEMULAI
+## 1.4 Konsekuensi rancangan
 
-Sebelum menambahkan crypto payment, pastikan alur Stripe berikut sudah lulus:
+1. `payments.invoice_id` harus dibuat **nullable**, dan ditambah `purpose` (`invoice` | `plan`) serta `user_id` untuk pembelian paket. Tanpa ini Arah B tidak punya tempat tinggal.
+2. Verifikasi on-chain harus tahu **penerima mana** yang diharapkan: snapshot invoice, atau alamat platform. Satu fungsi, dua sumber penerima, tidak pernah dari frontend.
+3. Harus ada **antrean operator** untuk pembayaran yang terverifikasi on-chain tapi gagal diberikan paketnya. Konsol admin sudah ada — tab baru "Unmatched payments" adalah tempatnya.
+4. Wallet platform adalah **risiko kustodi**. Di devnet tidak masalah. Untuk mainnet, ini keputusan yang harus dicatat di gerbang migrasi, bukan diselundupkan.
+
+## 1.5 Pertanyaan produk yang harus dijawab sebelum membangun Arah B
+
+Paket Involoop berharga **$3 dan $8**. Biaya jaringan Solana memang kecil, tapi friksi bagi pengguna besar: memasang wallet, punya SOL untuk gas, memahami jaringan. Untuk nominal sekecil itu, membayar dengan kartu jauh lebih mudah.
+
+Rekomendasi: **tetap bangun Arah B**, karena ia membuktikan kemampuan dua arah dan itu yang dinilai. Tapi di UI, **PayPal tetap pilihan utama** dan USDC ditawarkan sebagai alternatif, bukan sebaliknya. Jangan memaksa orang membayar $3 dengan crypto.
+
+---
+
+# 2. ATURAN YANG TIDAK BOLEH DILANGGAR
+
+* Jangan merusak alur PayPal yang sudah berjalan.
+* Jangan mengubah model pembayaran menjadi khusus crypto.
+* PayPal dan Solana memakai abstraksi pembayaran yang sama.
+* Semua demo memakai **Solana Devnet**. Jangan pakai mainnet sebelum seluruh gerbang di Bab 15 lulus.
+* Jangan menyimpan seed phrase atau private key pengguna. Jangan pernah memintanya.
+* Jangan membuat custodial wallet untuk pengguna.
+* Jangan menandai invoice PAID atau memberikan paket hanya karena pengguna kembali dari wallet.
+* Jangan mempercayai nominal, penerima, token, atau signature yang datang dari frontend.
+* Blockchain dan hasil verifikasi server adalah satu-satunya sumber kebenaran.
+* Jangan membuat smart contract sendiri. Jangan membuat token Involoop.
+* Jangan menambah jaringan lain (Ethereum, Base, Polygon, BNB) pada tahap ini.
+* Jangan memasukkan secret ke source code. Jangan commit `.env`.
+* Jika environment variable belum ada, tandai **BLOCKED** dan jelaskan apa yang kurang. Jangan mengarang hasil.
+
+---
+
+# 3. TARGET TEKNIS
+
+```text
+Network demo      : Solana Devnet
+Aset settlement   : USDC Devnet
+Protokol          : Solana Pay
+Wallet            : Wallet Standard adapter (Phantom, Solflare, Backpack)
+Deteksi           : webhook penyedia RPC + reconciliation job
+Verifikasi final  : Solana RPC dari sisi server
+```
+
+Untuk RPC gunakan **satu** penyedia dan sebutkan mana yang dipakai: Helius atau Alchemy. Keduanya menyediakan webhook. Jangan memakai RPC publik `api.devnet.solana.com` untuk verifikasi — rate limit-nya akan membuat verifikasi gagal secara acak dan itu terlihat seperti bug pembayaran.
+
+Jangan mengikat implementasi ke Phantom saja. Pakai adapter Wallet Standard supaya wallet lain ikut jalan tanpa kode tambahan.
+
+---
+
+# 4. FASE 1 — AUDIT SEBELUM MENYENTUH KODE
+
+Laporkan kondisi awal:
+
+1. Struktur invoice, payment, webhook, referral, credit ledger.
+2. Semua route di `app/api/payments/**` dan apa yang dilakukan masing-masing.
+3. `publish_invoice`, `update_invoice`, `delete_invoice`, `dashboard_payload` — RPC mana yang menyentuh uang.
+4. Bagaimana pembelian paket dilacak hari ini (jawabannya: hampir tidak).
+5. Apakah alur PayPal berikut lulus:
 
 ```text
 Owner membuat invoice
-→ client membuka public invoice
-→ client membayar melalui Stripe test mode
-→ webhook terverifikasi
-→ payment menjadi CONFIRMED
-→ invoice menjadi PAID
-→ duplicate webhook tidak menggandakan data
+→ klien membuka invoice publik
+→ klien membayar lewat PayPal sandbox
+→ capture berhasil
+→ webhook terverifikasi ulang ke PayPal
+→ payment CONFIRMED
+→ invoice PAID
+→ webhook ganda tidak menggandakan apa pun
 ```
 
-Jalankan test yang sudah tersedia.
+Kalau alur PayPal masih gagal, laporkan dulu dan jangan lanjut. Crypto boleh ditambahkan hanya kalau kegagalan PayPal tidak berhubungan dengan struktur pembayaran bersama.
 
-Jika alur Stripe masih gagal, jangan melanjutkan integrasi wallet.
+---
 
-Laporkan blocker Stripe terlebih dahulu.
+# 5. FASE 2 — MODEL DATA
 
-Crypto payment baru boleh ditambahkan jika Stripe sudah stabil atau kegagalannya tidak berhubungan dengan struktur payment bersama.
+Perluas yang sudah ada. Jangan membuat dunia paralel.
 
-# FASE 1 — AUDIT PROJECT
+## 5.1 Perubahan pada `payments`
 
-Deteksi dan laporkan:
+```sql
+alter table payments alter column invoice_id drop not null;
+alter table payments add column if not exists purpose text not null default 'invoice'
+  check (purpose in ('invoice','plan'));
+alter table payments add column if not exists user_id uuid references profiles(id) on delete set null;
 
-1. Framework frontend.
-2. Framework backend.
-3. ORM.
-4. Database.
-5. Testing framework.
-6. Struktur authentication.
-7. Struktur invoice.
-8. Struktur payment.
-9. Struktur Stripe integration.
-10. Struktur webhook.
-11. Struktur referral.
-12. Struktur credit ledger.
-13. Struktur event timeline.
-14. Existing payment state machine.
-15. Existing API route dan service layer.
-
-Cari semua file yang berhubungan dengan:
-
-```text
-invoice
-payment
-stripe
-checkout
-webhook
-wallet
-solana
-crypto
-referral
-credit ledger
-timeline
-public invoice
-demo account
+-- Sebuah baris harus jelas membayari apa. Tidak boleh ada baris tanpa tujuan.
+alter table payments add constraint payments_target_ck check (
+  (purpose = 'invoice' and invoice_id is not null) or
+  (purpose = 'plan'    and user_id   is not null)
+);
 ```
 
-Buat ringkasan kondisi awal sebelum mengubah kode.
+Perubahan ini **juga memperbaiki lubang PayPal yang sudah ada**: mulai sekarang pembelian paket lewat PayPal wajib menulis baris `payments` dengan `purpose = 'plan'`. Tanpa itu tidak ada catatan bahwa uang pernah masuk.
 
-# FASE 2 — UNIFIED PAYMENT MODEL
+## 5.2 Tabel baru khusus data on-chain
 
-Jangan membuat sistem payment terpisah yang tidak berhubungan dengan Stripe.
-
-Gunakan model abstraksi yang mendukung berbagai payment rail.
-
-Struktur minimum:
-
-```text
-Payment
-- id
-- invoice_id
-- method
-- provider
-- status
-- amount_minor
-- currency
-- settlement_asset
-- network
-- provider_reference
-- payer_reference
-- paid_at
-- failed_at
-- expired_at
-- refunded_at
-- created_at
-- updated_at
+```sql
+create table crypto_payments (
+  id uuid primary key default gen_random_uuid(),
+  payment_id uuid not null unique references payments(id) on delete cascade,
+  network text not null,                    -- 'solana-devnet' | 'solana-mainnet'
+  token_symbol text not null,               -- 'USDC'
+  token_mint text not null,                 -- alamat mint, bukan nama
+  token_decimals int not null,
+  recipient_wallet text not null,           -- snapshot, dibekukan saat request dibuat
+  expected_amount_minor bigint not null,
+  payment_reference text not null unique,   -- kunci pencocokan on-chain
+  transaction_signature text unique,        -- null sampai terdeteksi
+  commitment text,
+  status text not null default 'awaiting_payment',
+  last_error text,
+  attempts int not null default 0,
+  detected_at timestamptz,
+  confirmed_at timestamptz,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
 ```
 
-Contoh Stripe:
+`UNIQUE(transaction_signature)` adalah pertahanan utama terhadap replay: satu transaksi on-chain tidak akan pernah membayari dua hal.
 
-```text
-method: FIAT
-provider: STRIPE
-currency: USD
-settlement_asset: null
-network: null
+## 5.3 Wallet freelancer
+
+```sql
+alter table profiles add column if not exists solana_wallet text;
+alter table profiles add column if not exists solana_wallet_verified_at timestamptz;
+
+create table wallet_nonces (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  nonce text not null unique,
+  used_at timestamptz,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
 ```
 
-Contoh Solana:
+## 5.4 Aturan angka
 
-```text
-method: STABLECOIN
-provider: SOLANA_PAY
-currency: USD
-settlement_asset: USDC
-network: SOLANA_DEVNET
-```
+Jangan pernah memakai floating point untuk uang atau token. Gunakan integer minor unit sesuai `token_decimals` (USDC = 6). Konversi dilakukan dengan aritmetika string atau bigint, tidak dengan `Number` — pola yang sama sudah dipakai di `toPaypalAmount`, ikuti itu.
 
-Tambahkan data khusus crypto pada tabel terpisah jika lebih aman:
+---
 
-```text
-CryptoPayment
-- id
-- payment_id
-- invoice_id
-- network
-- token_symbol
-- token_mint
-- token_decimals
-- recipient_wallet_snapshot
-- expected_amount_minor
-- payment_reference
-- transaction_signature
-- commitment
-- status
-- detected_at
-- confirmed_at
-- finalized_at
-- created_at
-- updated_at
-```
+# 6. FASE 3 — MENGHUBUNGKAN WALLET FREELANCER (Arah A)
 
-Tambahkan unique constraint:
+Alur:
 
-```text
-UNIQUE(payment_reference)
-UNIQUE(transaction_signature)
-UNIQUE(payment_id)
-```
+1. Freelancer klik **Connect wallet** di halaman profil.
+2. Frontend meminta public key dari wallet.
+3. Backend membuat nonce acak, tersimpan, punya expiry, sekali pakai.
+4. Freelancer menandatangani pesan.
+5. Backend memverifikasi signature terhadap public key.
+6. Backend menyimpan alamat dan menandainya terverifikasi.
 
-Jangan gunakan floating point untuk jumlah uang atau token.
-
-Gunakan integer minor units berdasarkan token decimals.
-
-# FASE 3 — WALLET CONNECTION OWNER
-
-Tambahkan menu:
-
-```text
-Payment Settings
-→ Crypto Wallet
-```
-
-Flow:
-
-1. Owner klik Connect Wallet.
-2. Frontend meminta public key wallet.
-3. Backend membuat nonce acak dan memiliki expiry.
-4. Owner menandatangani pesan menggunakan wallet.
-5. Backend memverifikasi signature.
-6. Backend menyimpan public wallet address.
-7. Backend menandai wallet sebagai verified.
-8. Nonce tidak boleh digunakan ulang.
-
-Pesan signature harus menjelaskan:
+Pesan yang ditandatangani harus jujur tentang apa yang tidak dilakukannya:
 
 ```text
 Sign this message to connect your Solana wallet to Involoop.
-This request does not authorize any transaction or transfer.
-Nonce: ...
-Domain: ...
-Issued at: ...
-Expires at: ...
+
+This proves you own this address. It does not authorize any
+transaction, transfer, or spending approval.
+
+Wallet:    <address>
+Account:   <user id>
+Domain:    involoop.vercel.app
+Nonce:     <nonce>
+Issued at: <iso>
+Expires:   <iso, 10 menit>
 ```
 
-Simpan:
+Aturan: nonce sekali pakai, punya expiry, terikat ke domain dan user id. Alamat wallet harus divalidasi sebagai public key Solana yang sah (base58, 32 byte) sebelum disimpan.
+
+UI wajib memuat:
+
+> Involoop tidak akan pernah meminta recovery phrase atau private key kamu.
+
+## 6.1 Mengganti wallet
+
+Mengganti wallet adalah operasi berisiko tinggi — salah alamat berarti uang klien masuk ke orang lain.
+
+1. Butuh sesi yang masih segar.
+2. Butuh signature dari wallet **baru**.
+3. Tulis ke audit log (`admin_audit` sudah ada polanya; buat setara untuk aksi pengguna).
+4. **Invoice yang sudah terbit tidak berubah penerimanya.** Ia memakai `recipient_wallet` yang dibekukan saat request dibuat.
+5. Beri tahu di UI bahwa invoice lama tetap mengarah ke wallet lama, dan cara mengubahnya adalah menghapus lalu menerbitkan ulang.
+
+---
+
+# 7. FASE 4 — PERMINTAAN PEMBAYARAN
+
+Satu fungsi, dua sumber penerima. Ini titik di mana kedua arah bertemu dan harus tetap terpisah dengan jelas.
 
 ```text
-WalletConnection
-- id
-- user_id
-- network
-- wallet_address
-- verification_status
-- verified_at
-- last_changed_at
-- created_at
-- updated_at
+buatPermintaanUSDC({ purpose })
+
+  purpose = 'invoice'
+    penerima   = invoices.owner → profiles.solana_wallet (dibekukan ke crypto_payments.recipient_wallet)
+    nominal    = invoices.amount_minor
+    syarat     = invoice.currency = 'USD' DAN owner punya wallet terverifikasi
+
+  purpose = 'plan'
+    penerima   = SOLANA_PLATFORM_WALLET (env, divalidasi saat boot)
+    nominal    = harga paket tetap
+    syarat     = pengguna sedang login
 ```
 
-Aturan keamanan:
+Keduanya:
 
-* Jangan pernah meminta seed phrase.
-* Jangan pernah meminta private key.
-* Jangan pernah meminta file keypair.
-* Signature hanya membuktikan kepemilikan public address.
-* Nonce harus single-use.
-* Nonce harus memiliki expiration.
-* Domain dan user ID harus terikat ke challenge.
-* Wallet address harus divalidasi sebagai public key Solana yang valid.
+* Nominal dan penerima **selalu** dari server. Tidak pernah dari frontend.
+* Mint USDC diambil dari allowlist per network, bukan dari nama token.
+* Setiap permintaan punya `payment_reference` unik. Reference inilah yang dicari on-chain.
+* Setiap permintaan punya `expires_at`. Permintaan kedaluwarsa tidak boleh diselesaikan.
 
-Tambahkan UI notice:
-
-> Involoop will never ask for your recovery phrase or private key.
-
-# FASE 4 — PERUBAHAN WALLET OWNER
-
-Perubahan wallet adalah operasi berisiko tinggi.
-
-Implementasikan:
-
-1. Re-authentication menggunakan password atau session fresh.
-2. Signature dari wallet baru.
-3. Notifikasi email.
-4. Audit log.
-5. Optional cooldown.
-6. Invoice lama tidak otomatis berubah recipient.
-
-Saat invoice dipublikasikan, simpan:
+Solana Pay URL berisi: `recipient`, `amount`, `spl-token`, `reference`, `label`, `message`.
 
 ```text
-recipient_wallet_snapshot
+label   : Involoop · INV20260017
+message : Payment for brand website design and development
 ```
 
-Jika owner mengganti wallet pada profil:
-
-* Invoice lama tetap memakai wallet snapshot lama.
-* Invoice baru memakai wallet baru.
-* Owner dapat membatalkan dan menerbitkan ulang invoice lama jika ingin mengganti recipient.
-* Jangan mengubah payment request invoice yang sudah dipublikasikan tanpa peringatan eksplisit.
-
-# FASE 5 — CREATE CRYPTO PAYMENT REQUEST
-
-Pada create atau publish invoice, tambahkan opsi:
+Untuk paket:
 
 ```text
-Payment methods
-
-[ ] Stripe
-[ ] USDC on Solana
-[ ] Manual transfer
+label   : Involoop Pro · 30 days
+message : Involoop plan purchase
 ```
 
-Opsi USDC hanya aktif jika owner mempunyai verified wallet.
+## 7.1 Kebijakan mata uang
 
-Saat owner mengaktifkan USDC:
+Involoop menagih dalam 8 mata uang: IDR, MYR, SGD, THB, PHP, USD, EUR, GBP.
 
-1. Ambil invoice amount dari database.
-2. Ambil recipient dari wallet snapshot.
-3. Gunakan USDC mint resmi sesuai Devnet.
-4. Buat unique payment reference.
-5. Buat Solana Pay transfer request.
-6. Simpan payment dan crypto payment record.
-7. Buat QR code dan payment URL.
-8. Jangan mengambil nominal atau recipient dari frontend.
+Untuk MVP wallet: **USDC hanya untuk invoice berdenominasi USD.**
 
-Payment request harus mempunyai:
+Jangan membuat konversi diam-diam. Jangan menambah oracle atau FX otomatis. Kalau invoice bukan USD, sembunyikan opsi USDC dan katakan alasannya dalam satu kalimat — pola yang sama sudah dipakai untuk IDR dan MYR di PayPal, ikuti itu.
+
+Untuk paket, harga sudah dalam USD, jadi tidak ada masalah.
+
+---
+
+# 8. FASE 5 — UX UNTUK ORANG YANG BELUM PERNAH PAKAI CRYPTO
+
+Ini bagian yang paling menentukan apakah fitur ini terpakai atau hanya jadi pajangan. Sebagian besar klien yang membuka invoice **tidak punya wallet dan tidak ingin punya**.
+
+## 8.1 Urutan pilihan tidak boleh berubah
 
 ```text
-recipient
-amount
-spl-token
-reference
-label
-message
-memo jika diperlukan
+[ Pay with PayPal ]        ← utama, tetap paling atas
+[ Debit or Credit Card ]
+──────── atau ────────
+[ Pay with USDC ]          ← alternatif, tidak menonjol
+[ Bank transfer ]
 ```
 
-Contoh label:
+Crypto **tidak** menjadi default dan tidak diberi warna paling mencolok. Orang yang mencarinya akan menemukannya; orang yang tidak, tidak perlu terganggu.
+
+## 8.2 Kalau opsi USDC tidak muncul, katakan kenapa
+
+Tiga sebab, tiga kalimat berbeda:
+
+* Invoice bukan USD → "Pembayaran USDC baru tersedia untuk invoice dalam USD."
+* Freelancer belum menghubungkan wallet → jangan tampilkan apa pun ke klien. Ini urusan freelancer, bukan klien. Tampilkan pengingat di dashboard freelancer.
+* Fitur belum dikonfigurasi di server → jangan tampilkan.
+
+## 8.3 Tiga hal yang paling sering membuat orang bingung
+
+**a. "Saya sudah kirim tapi statusnya belum berubah."** Konfirmasi on-chain butuh beberapa detik. Tampilkan progres yang jujur, bukan spinner tanpa keterangan:
 
 ```text
-Involoop Invoice INV-2026-001
+Menunggu pembayaran   → belum ada transaksi masuk
+Transaksi terdeteksi   → sudah masuk, sedang dikonfirmasi jaringan
+Pembayaran dikonfirmasi → selesai
 ```
 
-Contoh message:
+**b. "Kenapa saya butuh SOL padahal bayarnya USDC?"** Ini penyebab kegagalan nomor satu bagi pemula. Katakan di depan, sebelum mereka mencoba:
+
+> Kamu butuh USDC untuk nominalnya, plus sedikit SOL untuk biaya jaringan. Keduanya di jaringan Devnet.
+
+Sertakan tautan faucet Devnet.
+
+**c. Salah jaringan.** Mengirim USDC mainnet ke alamat devnet, atau sebaliknya, adalah cara paling umum kehilangan uang dan **tidak bisa dibatalkan oleh siapa pun**. Tampilkan jaringan secara mencolok di dekat tombol bayar, bukan di catatan kaki:
+
+> **Solana Devnet** · pembayaran uji, tidak ada uang sungguhan yang berpindah.
+
+## 8.4 Yang wajib tampil di panel USDC
+
+Nominal persis, token USDC, jaringan, alamat penerima yang disingkat dengan tombol salin, QR code, tombol buka di wallet, status berjalan, dan peringatan bahwa mengirim nominal berbeda tidak akan menyelesaikan invoice.
+
+Jangan pernah menampilkan atau meminta seed phrase, private key, atau file keypair.
+
+---
+
+# 9. FASE 6 — DETEKSI DAN WEBHOOK
+
+Ada dua webhook di sistem ini sekarang, dan keduanya harus dibedakan dengan jelas:
 
 ```text
-Payment for landing page development
+POST /api/payments/webhook          ← PayPal, sudah ada
+POST /api/payments/webhook/solana   ← baru
 ```
 
-Setiap invoice harus mempunyai reference unik.
+Endpoint Solana harus:
 
-# FASE 6 — CURRENCY DAN USDC SETTLEMENT
-
-Invoice dapat menggunakan currency:
-
-```text
-USD
-EUR
-GBP
-SGD
-IDR
-```
-
-Untuk versi MVP wallet:
-
-* Payment crypto hanya menerima USDC.
-* Jika invoice currency USD, gunakan nilai invoice langsung.
-* Jika invoice currency selain USD, jangan membuat konversi secara diam-diam.
-
-Gunakan salah satu kebijakan eksplisit:
-
-Kebijakan yang disarankan untuk MVP:
-
-```text
-USDC payment only available for USD-denominated invoices.
-```
-
-Jika invoice bukan USD:
-
-* Nonaktifkan pilihan USDC.
-* Tampilkan pesan bahwa crypto payment hanya tersedia untuk invoice USD pada versi awal.
-
-Jangan menambahkan oracle atau automatic FX conversion pada tahap ini.
-
-# FASE 7 — PUBLIC INVOICE UX
-
-Tambahkan bagian:
-
-## Pay this invoice
-
-### Card or bank
-
-```text
-Pay securely with Stripe
-```
-
-### USDC
-
-```text
-Pay {amount} USDC on Solana
-For clients who already use crypto.
-```
-
-### Manual transfer
-
-```text
-View bank transfer instructions
-```
-
-Pada pilihan USDC tampilkan:
-
-* Amount.
-* Token: USDC.
-* Network: Solana Devnet.
-* Recipient wallet disingkat.
-* QR code.
-* Open in wallet button.
-* Copy payment link.
-* Waiting for payment status.
-* Test mode notice.
-
-Notice:
-
-> Solana Devnet test payment. No real money will be transferred.
-
-Tambahkan:
-
-> You need test USDC and a small amount of Devnet SOL for network fees.
-
-Jangan menampilkan seed phrase, private key, atau instruksi yang meminta data sensitif wallet.
-
-# FASE 8 — CRYPTO PAYMENT DETECTION
-
-Gunakan Helius webhook sebagai notifikasi cepat jika credential tersedia.
-
-Endpoint contoh:
-
-```text
-POST /api/webhooks/solana
-```
-
-Endpoint harus:
-
-1. Memverifikasi authorization secret.
+1. Memverifikasi authorization secret dengan perbandingan constant-time.
 2. Membatasi ukuran payload.
-3. Memvalidasi schema request.
-4. Mengambil transaction signature.
-5. Menyimpan webhook event.
-6. Menolak atau mengabaikan event duplikat.
-7. Tidak langsung mengubah invoice menjadi PAID.
-8. Menjalankan verification service.
+3. Memvalidasi bentuk request.
+4. Mencatat event ke `webhook_events` dengan `provider = 'solana'`, memakai `UNIQUE(provider_event_id)` yang sudah ada agar replay tidak menggandakan apa pun.
+5. **Tidak mengubah status apa pun langsung.** Ia hanya memanggil verifikasi.
 
-Jika Helius tidak tersedia, gunakan:
+Pelajaran mahal dari integrasi PayPal, jangan diulang: **isi webhook adalah petunjuk, bukan bukti.** Endpoint PayPal sempat menerima event palsu karena sandbox PayPal meloloskan tanda tangan apa pun. Perbaikannya adalah membaca ulang keadaan dari sumbernya. Untuk Solana ini bahkan lebih mudah — rantai adalah sumbernya, dan siapa pun boleh membacanya. Jadi: ambil signature dari webhook, lalu **selalu** verifikasi lewat RPC.
 
-* RPC WebSocket subscription.
-* Polling reconciliation job.
-* Manual check transaction endpoint untuk demo.
+Kalau webhook tidak tersedia, reconciliation job (Bab 12) tetap harus menemukan pembayaran. Sistem harus benar walaupun webhook tidak pernah datang sama sekali.
 
-Namun verifikasi final tetap harus memakai Solana RPC.
+---
 
-# FASE 9 — SERVER-SIDE TRANSACTION VERIFICATION
+# 10. FASE 7 — VERIFIKASI SERVER-SIDE
 
-Setelah mendapat transaction signature, backend harus mengambil transaksi melalui Solana RPC dan memverifikasi seluruh data berikut:
+Setelah mendapat signature, ambil transaksi dari RPC dan periksa **semua** ini. Satu saja gagal, tolak:
 
 ```text
-1. Transaction ditemukan
-2. Transaction tidak gagal
-3. Network sesuai
-4. Commitment sesuai kebijakan
-5. Token mint sama dengan USDC resmi
-6. Token decimals benar
-7. Recipient sama dengan wallet snapshot invoice
-8. Amount sama dengan expected amount
-9. Reference sama dengan payment reference invoice
-10. Signature belum pernah digunakan
-11. Transaksi terjadi setelah invoice dipublikasikan
-12. Invoice belum PAID
-13. Payment belum expired
+ 1. Transaksi ditemukan
+ 2. Transaksi tidak error
+ 3. Network sesuai yang diharapkan
+ 4. Commitment memenuhi kebijakan (Bab 11)
+ 5. Mint token sama persis dengan USDC resmi network itu
+ 6. Decimals benar
+ 7. Penerima sama dengan recipient_wallet yang dibekukan
+ 8. Nominal sama dengan expected_amount_minor
+ 9. Reference cocok dengan payment_reference
+10. Signature belum pernah dipakai (unique constraint)
+11. Transaksi terjadi setelah permintaan dibuat
+12. Permintaan belum kedaluwarsa
+13. Target belum terbayar (invoice belum PAID / paket belum diberikan)
 ```
 
-Jangan hanya memeriksa:
+Tidak cukup: ada signature, ada token bernama "USDC", ada transfer ke suatu wallet, klien kembali ke halaman sukses, klien mengirim screenshot.
 
-* Ada transaction signature.
-* Ada token bernama USDC.
-* Ada transfer ke suatu wallet.
-* Client kembali ke success page.
-* Client mengirim screenshot.
+Periksa perubahan saldo token atau parsed transfer instruction dengan benar. **Jangan percaya nama dan simbol token** — siapa pun bisa membuat token bernama USDC. Yang mengikat hanya alamat mint.
 
-Periksa token balance changes atau parsed token transfer dengan benar.
+## 10.1 Nominal kurang atau lebih
 
-Jangan mempercayai nama dan simbol token.
+* Kurang → tolak. Jangan menandai lunas sebagian. Katakan ke klien nominal yang benar.
+* Lebih → terima sebagai lunas, catat kelebihannya, dan tampilkan ke kedua pihak. Jangan diam-diam menyimpannya.
 
-Gunakan mint address resmi sesuai network.
+---
 
-# FASE 10 — COMMITMENT POLICY
-
-Gunakan state:
+# 11. FASE 8 — KEBIJAKAN COMMITMENT
 
 ```text
-AWAITING_PAYMENT
-DETECTED
-VERIFYING
-CONFIRMED
-FINALIZED
-FAILED
-EXPIRED
-REFUNDED
+awaiting_payment → detected → verifying → confirmed
+                                        ↘ failed
+                                        ↘ expired
 ```
 
-Kebijakan yang disarankan:
+Kebijakan:
 
 ```text
-Transaction confirmed:
-UI menampilkan Payment detected.
-
-Transaction finalized:
-Payment menjadi CONFIRMED.
-Invoice menjadi PAID.
+Transaksi confirmed  → UI menampilkan "Transaksi terdeteksi"
+Transaksi finalized  → payment CONFIRMED, invoice PAID / paket diberikan
 ```
 
-Untuk demo, berikan progress state yang jelas agar pengguna tidak mengira proses macet.
+Jangan menandai lunas pada status `processed`. Untuk demo, tampilkan progres agar tidak terlihat macet.
 
-Jangan menandai invoice PAID hanya pada status processed.
+---
 
-# FASE 11 — DATABASE TRANSACTION
+# 12. FASE 9 — PENULISAN DATABASE
 
-Setelah transaksi on-chain valid dan finalized, jalankan satu database transaction:
+Satu transaksi database, tidak boleh setengah jalan.
+
+**Arah A — invoice:**
 
 ```text
-CryptoPayment.status = CONFIRMED
-CryptoPayment.transaction_signature = signature
-CryptoPayment.confirmed_at = now
-Payment.status = CONFIRMED
-Payment.paid_at = now
-Invoice.status = PAID
-Timeline event = CRYPTO_PAYMENT_CONFIRMED
+crypto_payments.status = confirmed, signature, confirmed_at
+payments.status = succeeded, paid_at
+invoices.status = paid, paid_at
 ```
+
+**Arah B — paket:**
+
+```text
+crypto_payments.status = confirmed, signature, confirmed_at
+payments.status = succeeded, paid_at        (purpose = 'plan', user_id terisi)
+profiles.plan, plan_started_at, plan_expires_at
+```
+
+Untuk Arah B, kalau penulisan paket gagal padahal uang sudah masuk, **jangan menelan errornya**. Tandai baris untuk ditinjau operator dan munculkan di konsol admin. Uang sudah ada di wallet platform; pengguna berhak atas paketnya.
 
 Pastikan:
 
-* Unique signature constraint aktif.
-* Invoice tidak dapat dibayar dua kali.
-* Concurrent webhook tidak menggandakan update.
-* Concurrent RPC verification tidak menggandakan timeline.
-* Referral credit tidak diproses oleh payment handler.
+* Constraint unik signature aktif.
+* Invoice tidak bisa dibayar dua kali.
+* Webhook bersamaan tidak menggandakan update.
+* Kredit referral **tidak** diproses oleh handler pembayaran.
 
-# FASE 12 — PAYMENT DAN REFERRAL HARUS TERPISAH
+---
 
-Payment berhasil:
-
-```text
-Crypto transaction verified
-→ Payment CONFIRMED
-→ Invoice PAID
-```
-
-Referral berhasil:
+# 13. FASE 10 — PEMBAYARAN DAN REFERRAL TETAP TERPISAH
 
 ```text
-Client klik CTA
-→ client signup/login
-→ referral tervalidasi
-→ owner dan client menerima credit
+Pembayaran berhasil     : transaksi terverifikasi → invoice PAID
+Referral berhasil       : klien klik CTA → daftar → kredit diberikan
 ```
 
-Jangan memberikan referral reward hanya karena wallet melakukan pembayaran.
+Jangan memberikan kredit referral hanya karena sebuah wallet mengirim uang. Klien yang membayar belum tentu menjadi pengguna Involoop. Aturan ini sudah berlaku untuk PayPal; jangan dilanggar untuk crypto.
 
-Client yang membayar belum tentu menjadi pengguna Involoop.
+---
 
-# FASE 13 — RECONCILIATION JOB
+# 14. FASE 11 — RECONCILIATION JOB
 
-Webhook atau WebSocket dapat terlewat.
-
-Tambahkan scheduled job:
+Webhook bisa terlewat. Sistem harus tetap benar tanpanya.
 
 ```text
 Setiap 1–5 menit:
-- Cari crypto payment AWAITING_PAYMENT, DETECTED, atau VERIFYING
-- Cari transaction berdasarkan reference
-- Ambil transaksi dari RPC
-- Jalankan verification
-- Perbarui status
+  ambil crypto_payments berstatus awaiting_payment / detected / verifying
+  cari transaksi berdasarkan reference lewat RPC
+  jalankan verifikasi yang sama persis (Bab 10)
+  perbarui status
+  tandai expired yang melewati expires_at
 ```
 
-Job harus:
+Job harus idempotent, punya batas percobaan dan backoff, menyimpan `last_error`, dan tidak membanjiri RPC.
 
-* Idempotent.
-* Mempunyai retry limit.
-* Mempunyai backoff.
-* Tidak membebani RPC berlebihan.
-* Menandai payment expired sesuai aturan.
-* Menyimpan error terakhir.
+**Tambahan untuk Arah B:** cari juga pembayaran paket yang `succeeded` tapi paketnya belum diberikan. Itu antrean utang, dan harus terlihat di konsol admin.
 
-# FASE 14 — PAYMENT SUCCESS UI
+---
 
-Setelah final verification:
+# 15. FASE 12 — REFUND
+
+Tidak ada refund otomatis di MVP. Keduanya berbeda:
+
+**Arah A** — dana ada di wallet freelancer. Involoop tidak bisa dan tidak boleh menariknya. Refund dilakukan freelancer sebagai transaksi baru. Kalau signature refund diberikan, verifikasi pengirim, penerima, dan nominalnya, lalu simpan sebagai transaksi terpisah. **Jangan menghapus pembayaran aslinya** — tampilkan keduanya.
+
+**Arah B** — dana ada di wallet platform. Ini kewajiban Involoop. Sediakan aksi di konsol admin untuk menandai refund dan mencatat signature-nya. Untuk devnet cukup pencatatan; untuk mainnet ini butuh prosedur dan orang yang bertanggung jawab.
+
+---
+
+# 16. FASE 13 — KONTROL KEAMANAN
+
+* Rate limit dan authorization secret pada webhook, dibandingkan constant-time.
+* Verifikasi RPC untuk setiap klaim pembayaran.
+* Unique constraint pada signature dan event id.
+* Nonce sekali pakai dengan expiry untuk wallet signature.
+* Validasi input di semua route yang mengubah keadaan.
+* Allowlist mint USDC dan allowlist network.
+* Validasi timestamp transaksi.
+* Snapshot penerima, tidak pernah dibaca ulang dari profil saat verifikasi.
+* Nominal selalu dari server.
+* Audit log untuk perubahan wallet.
+
+Jangan pernah menulis ke log: seed phrase, private key, kredensial penuh, webhook secret, API key RPC, atau session token.
+
+**Satu pelajaran dari audit RLS minggu ini:** policy Postgres tidak bisa membatasi kolom. Kalau menambah kolom wallet ke `profiles`, pastikan tidak ada policy `for update` yang memungkinkan pengguna menulis kolom itu sendiri — karena mengubah `solana_wallet` sendiri berarti membelokkan uang klien orang lain. Saat ini `profiles` sudah read-only bagi browser (migrasi p8); jangan dilonggarkan.
+
+---
+
+# 17. FASE 14 — PENGUJIAN
+
+## Unit
+
+Validasi alamat wallet · verifikasi signature · expiry nonce · penolakan nonce ulang · pembuatan reference · validasi mint · konversi nominal · parsing transaksi · validasi penerima · validasi reference · keunikan signature · transisi status · otorisasi webhook · idempotensi webhook · idempotensi reconciliation.
+
+## Kasus tepi wajib
+
+Dua kolom, karena keduanya harus diuji terpisah:
+
+**Umum**
+1. Signature palsu
+2. Transaksi tidak ditemukan
+3. Transaksi gagal
+4. Belum finalized
+5. Token palsu bernama USDC
+6. Mint salah
+7. Nominal kurang
+8. Nominal lebih
+9. Penerima salah
+10. Reference salah
+11. Transaksi lebih tua dari permintaan
+12. Signature dipakai ulang di target lain
+13. Webhook otorisasi salah
+14. Webhook dikirim dua kali
+15. RPC timeout
+16. Webhook terlewat, reconciliation yang menemukan
+17. Permintaan kedaluwarsa dibayar
+
+**Arah A · invoice**
+18. Freelancer belum punya wallet
+19. Signature wallet tidak valid
+20. Nonce dipakai ulang / kedaluwarsa
+21. Invoice non-USD mencoba USDC
+22. Invoice sudah PAID dibayar lagi
+23. Invoice dihapus setelah permintaan dibuat
+24. Freelancer ganti wallet setelah invoice terbit → invoice lama tetap ke wallet lama
+25. Klien membuka URL pembayaran berulang kali
+
+**Arah B · paket**
+26. Pengguna belum login
+27. Paket dibayar dua kali
+28. Pembayaran masuk tapi pemberian paket gagal → muncul di antrean operator
+29. Paket sudah aktif lalu dibayar lagi → perpanjang, jangan hangus
+30. Wallet platform belum dikonfigurasi → opsi tidak muncul, bukan error
+
+**Regresi**
+31. PayPal invoice tetap bekerja
+32. PayPal paket tetap bekerja
+33. Kredit referral tidak diberikan dua kali
+34. Reset demo tidak menyentuh data non-demo
+
+---
+
+# 18. FASE 15 — DEMO
 
 ```text
-Payment confirmed
-
-500.00 USDC
-Solana Devnet
-Invoice INV-2026-001
-Transaction 4Fk...P9x
-Confirmed at ...
+Owner  : demo-owner@involoop.app
+Client : demo-client@involoop.app
+Sandi  : involoop-demo-2026
 ```
 
-Tambahkan:
+Pakai wallet Devnet khusus demo. Jangan memakai wallet pribadi. Jangan menyimpan private key demo di repository — tanda tangani lewat browser wallet.
+
+Alur demo maksimal lima menit, **tunjukkan kedua arah**:
 
 ```text
-View on Solana Explorer
+Arah A
+1. Owner connect wallet, tanda tangani pesan kepemilikan
+2. Buat invoice USD 5, aktifkan USDC
+3. Klien buka invoice tanpa login, pilih Pay with USDC
+4. Bayar dari wallet Devnet
+5. Status: terdeteksi → dikonfirmasi
+6. Invoice PAID, tautan explorer muncul
+
+Arah B
+7. Klien klik CTA referral, daftar
+8. Sebagai pengguna baru, beli paket Pro dengan USDC
+9. Paket aktif, kuota muncul di dashboard
+10. Konsol admin menampilkan kedua pembayaran
 ```
 
-Explorer URL harus sesuai network.
+---
 
-Setelah payment confirmation tampilkan CTA:
-
-```text
-Create an invoice like this
-Get free publishing credits
-```
-
-Success page hanya membaca status database.
-
-Success page tidak boleh mengubah payment atau invoice.
-
-# FASE 15 — REFUND MODEL
-
-Jangan membuat refund otomatis pada MVP.
-
-Karena dana langsung masuk ke wallet owner:
-
-```text
-Client wallet → owner wallet
-```
-
-Refund dilakukan oleh owner sebagai transaksi baru.
-
-Tambahkan status atau pencatatan:
-
-```text
-REFUND_REQUESTED
-REFUNDED_EXTERNALLY
-```
-
-Jika refund signature diberikan:
-
-* Verifikasi transaksi refund.
-* Pastikan sender adalah wallet owner.
-* Pastikan recipient adalah wallet client jika data tersedia.
-* Pastikan amount sesuai.
-* Simpan refund signature.
-* Jangan menghapus payment awal.
-* Tampilkan payment dan refund sebagai dua transaksi berbeda.
-
-# FASE 16 — SECURITY CONTROLS
-
-Implementasikan:
-
-* Rate limiting pada webhook.
-* Authorization secret untuk webhook.
-* RPC verification.
-* Unique event/signature constraints.
-* Nonce untuk wallet signature.
-* Nonce expiration.
-* Replay protection.
-* CSRF protection pada state-changing routes.
-* Input validation.
-* Audit log.
-* Wallet change notification.
-* Recipient snapshot.
-* Server-side amount validation.
-* Official USDC mint allowlist.
-* Supported network allowlist.
-* Transaction timestamp validation.
-* Constant-time secret comparison bila relevan.
-* Logging tanpa membocorkan secret.
-
-Jangan log:
-
-* Seed phrase.
-* Private key.
-* Full credential.
-* Webhook secret.
-* RPC API key.
-* Session token.
-
-# FASE 17 — EDGE CASE TESTING
-
-Uji minimal:
-
-1. Owner belum connect wallet.
-2. Wallet address tidak valid.
-3. Wallet signature tidak valid.
-4. Nonce digunakan ulang.
-5. Nonce expired.
-6. Invoice non-USD mencoba mengaktifkan USDC.
-7. Invoice amount nol.
-8. Invoice amount negatif.
-9. Invoice draft dibayar.
-10. Invoice expired dibayar.
-11. Invoice sudah PAID dibayar lagi.
-12. Transaction signature palsu.
-13. Transaction tidak ditemukan.
-14. Transaction gagal.
-15. Transaction belum finalized.
-16. Token palsu bernama USDC.
-17. USDC mint salah.
-18. Amount kurang.
-19. Amount lebih.
-20. Recipient salah.
-21. Reference salah.
-22. Transaction lama.
-23. Signature digunakan pada invoice lain.
-24. Webhook authorization salah.
-25. Webhook dikirim dua kali.
-26. RPC timeout.
-27. Helius webhook terlewat.
-28. Reconciliation menemukan payment.
-29. Owner mengganti wallet setelah invoice published.
-30. Client refresh success page.
-31. Client membuka payment URL berulang.
-32. Stripe tetap bekerja setelah perubahan.
-33. Referral credit tidak diberikan dua kali.
-34. Demo reset tidak mengubah user production.
-
-# FASE 18 — AUTOMATED TESTS
-
-Tambahkan unit test untuk:
-
-* Wallet address validation.
-* Signature verification.
-* Nonce expiration.
-* Nonce replay prevention.
-* Payment reference generation.
-* USDC mint validation.
-* Amount conversion.
-* Transaction parsing.
-* Recipient validation.
-* Reference validation.
-* Signature uniqueness.
-* State transition.
-* Webhook authorization.
-* Webhook idempotency.
-* Reconciliation idempotency.
-
-Tambahkan integration test untuk:
-
-* Connect wallet.
-* Publish USD invoice with USDC.
-* Generate Solana Pay request.
-* Detect transaction.
-* Verify transaction.
-* Mark invoice PAID.
-* Show explorer link.
-* Keep referral separate.
-* Stripe payment regression.
-
-Tambahkan end-to-end test menggunakan browser automation jika stack mendukung.
-
-# FASE 19 — DEMO ACCOUNT
-
-Gunakan akun:
-
-```text
-Owner:
-demo-owner@involoop.app
-
-Client:
-demo-client@involoop.app
-
-Password:
-involoop-demo-2026
-```
-
-Tambahkan demo wallet Devnet yang aman.
-
-Jangan menggunakan wallet pribadi.
-
-Jangan menyimpan private key demo di repository.
-
-Gunakan browser wallet untuk menandatangani transaksi demo.
-
-Tambahkan reset demo yang hanya menghapus:
-
-* Demo crypto payments.
-* Demo invoices.
-* Demo referral events.
-* Demo analytics.
-* Demo credit ledger.
-
-Jangan menghapus data non-demo.
-
-# FASE 20 — DEMO FLOW
-
-Siapkan demo maksimal lima menit:
-
-## Owner
-
-1. Login.
-2. Buka Payment Settings.
-3. Connect Solana wallet.
-4. Tandatangani ownership message.
-5. Buat invoice USD 5.
-6. Aktifkan Stripe dan USDC.
-7. Publish.
-8. Salin public link.
-
-## Client
-
-1. Buka invoice tanpa login.
-2. Lihat Stripe dan USDC option.
-3. Pilih Pay with USDC.
-4. Scan QR atau buka wallet.
-5. Konfirmasi transaksi Devnet.
-6. Lihat status Payment detected.
-7. Tunggu status Payment confirmed.
-8. Lihat explorer transaction.
-9. Klik referral CTA.
-10. Login sebagai demo client.
-
-## Owner kembali
-
-1. Invoice PAID.
-2. Payment method USDC.
-3. Signature tersimpan.
-4. Event timeline lengkap.
-5. Referral conversion muncul.
-6. Owner mendapat credit.
-7. Client mendapat bonus credit.
-
-# FASE 21 — README
-
-Tambahkan dokumentasi:
-
-1. Crypto payment overview.
-2. Non-custodial architecture.
-3. Wallet connection.
-4. Solana Pay request.
-5. USDC Devnet configuration.
-6. Helius webhook configuration.
-7. RPC configuration.
-8. Environment variables.
-9. Security guarantees.
-10. Known limitations.
-11. Demo instructions.
-12. Mainnet migration checklist.
-
-Environment variable contoh tanpa nilai:
+# 19. ENVIRONMENT
 
 ```text
 SOLANA_NETWORK=
 SOLANA_RPC_URL=
 SOLANA_USDC_MINT=
-HELIUS_API_KEY=
-HELIUS_WEBHOOK_SECRET=
+SOLANA_PLATFORM_WALLET=
+SOLANA_WEBHOOK_SECRET=
 NEXT_PUBLIC_SOLANA_NETWORK=
+NEXT_PUBLIC_SOLANA_RPC_URL=
 ```
 
-Jangan menampilkan nilai sebenarnya.
+`SOLANA_PLATFORM_WALLET` hanya untuk Arah B. Validasi sebagai public key yang sah saat aplikasi boot; kalau tidak valid, matikan Arah B dan katakan di log — jangan biarkan orang membayar ke alamat yang salah.
 
-# MAINNET MIGRATION GATE
+Jangan menampilkan nilai sebenarnya di output mana pun.
 
-Jangan mengaktifkan Solana Mainnet sebelum:
+---
 
-* Semua automated test lulus.
-* Devnet E2E lulus berulang.
-* USDC mainnet mint diverifikasi.
-* Production RPC tersedia.
-* Webhook security diaudit.
-* Terms dan crypto payment disclaimer tersedia.
-* Refund policy tersedia.
-* Wallet change security tersedia.
-* Legal review dilakukan.
-* Monitoring dan alerting tersedia.
+# 20. GERBANG MAINNET
 
-# OUTPUT YANG WAJIB DIBERIKAN
+Jangan aktifkan mainnet sebelum semuanya terpenuhi:
 
-Setelah selesai, berikan laporan:
+* Seluruh automated test lulus.
+* E2E Devnet lulus berulang untuk **kedua** arah.
+* Mint USDC mainnet diverifikasi terhadap sumber resmi.
+* RPC produksi berbayar tersedia.
+* Keamanan webhook diaudit.
+* **Kustodi wallet platform diputuskan secara eksplisit**: siapa memegang kunci, di mana, siapa yang bisa memindahkan dana, dan apa yang terjadi kalau orang itu tidak ada. Ini keputusan Arah B dan tidak boleh dilewati.
+* Prosedur refund untuk kedua arah tertulis.
+* Disclaimer crypto ada di Terms.
+* Monitoring dan alerting aktif.
+* Review legal — menerima crypto sebagai pembayaran punya konsekuensi regulasi yang berbeda per yurisdiksi.
 
-## A. Executive Summary
+---
 
-* Apakah wallet connection bekerja?
-* Apakah Solana Pay request bekerja?
-* Apakah transaksi USDC terdeteksi?
-* Apakah transaksi diverifikasi server-side?
-* Apakah invoice menjadi PAID?
-* Apakah Stripe tetap bekerja?
-* Apakah referral loop tetap bekerja?
+# 21. LAPORAN YANG WAJIB DIBERIKAN
 
-## B. Architecture
+**A. Ringkasan** — untuk kedua arah terpisah: wallet terhubung? permintaan terbuat? transaksi terdeteksi? terverifikasi server-side? invoice PAID / paket diberikan? PayPal masih bekerja? referral masih terpisah?
 
-Tampilkan alur:
+**B. Arsitektur**
 
 ```text
-Client wallet
-→ Solana
-→ Owner wallet
-→ Helius notification
-→ RPC verification
-→ Involoop database
+Arah A: wallet klien → Solana → wallet freelancer → webhook → verifikasi RPC → database
+Arah B: wallet pengguna → Solana → wallet platform → webhook → verifikasi RPC → database → paket
 ```
 
-## C. Files Changed
+**C. File yang berubah** — nama, tujuan, dampak.
 
-* Nama file.
-* Tujuan perubahan.
-* Dampak.
+**D. Perubahan database** — migrasi, constraint, index, perubahan status.
 
-## D. Database Changes
+**E. Hasil test** — perintah yang dijalankan, lulus, gagal, blocked.
 
-* Migration.
-* Unique constraints.
-* Index.
-* State changes.
+**F. Hasil keamanan** — penanganan private key, replay nonce, otorisasi webhook, verifikasi RPC, penolakan USDC palsu, penolakan nominal kurang, penolakan signature ganda.
 
-## E. Test Results
+**G. Langkah demo** — maksimal lima menit, kedua arah.
 
-* Command yang dijalankan.
-* Passed.
-* Failed.
-* Blocked.
+**H. Risiko tersisa** — keterbatasan devnet, ketergantungan RPC, phishing wallet, keterbatasan refund, risiko salah jaringan, keterbatasan off-ramp, kustodi wallet platform, pertimbangan regulasi.
 
-## F. Security Results
-
-* Private key handling.
-* Nonce replay.
-* Webhook authorization.
-* RPC verification.
-* Fake USDC rejection.
-* Underpayment rejection.
-* Duplicate signature rejection.
-
-## G. Demo Steps
-
-Berikan alur demo maksimal lima menit.
-
-## H. Remaining Risks
-
-* Devnet limitation.
-* RPC dependency.
-* Wallet phishing.
-* Refund limitation.
-* Wrong-network risk.
-* Off-ramp limitation.
-* Regulatory considerations.
-
-Jangan menyatakan berhasil sebelum test benar-benar dijalankan.
-
-Jika ada bagian yang blocked, jelaskan secara spesifik apa yang kurang dan jangan membuat hasil palsu.
-
-
-https://www.alchemy.com/ => rpc backend
-https://faucet.solana.com/ => testnet
+Jangan menyatakan berhasil sebelum test benar-benar dijalankan. Kalau ada yang blocked, sebutkan persis apa yang kurang dan jangan mengarang hasil.
