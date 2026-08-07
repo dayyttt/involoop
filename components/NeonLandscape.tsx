@@ -103,16 +103,7 @@ const fragmentShader = /* glsl */ `
     float core = smoothstep(0.8, 0.0, distance(p, vec2(0.86 * uAspect, 0.72)));
     field += core * 0.15;
 
-    // Value moving left to right.
-    float sweep = smoothstep(0.78, 1.0, sin((p.x * 0.8 - uTime * 0.14) * 3.14159));
-    field += sweep * 0.05;
 
-    // The ledger: ruled lines, fading in toward the top so they read as a
-    // surface receding rather than as wallpaper.
-    vec2 g = vec2(p.x * 13.0 - uTime * 0.12, p.y * 9.0);
-    vec2 gf = abs(fract(g) - 0.5);
-    float lines = smoothstep(0.47, 0.5, max(gf.x, gf.y));
-    float grid = lines * 0.045 * smoothstep(0.05, 0.7, uv.y);
 
     // These constants were solved for, not guessed: the curve puts the dim
     // majority of the frame near 6% luminance, mid tones around 16%, and only
@@ -121,14 +112,17 @@ const fragmentShader = /* glsl */ `
     float t = clamp((field - 0.42) * 2.6, 0.0, 1.0);
     vec3 color = uBase;
     color = mix(color, uInk, smoothstep(0.05, 0.85, t) * 0.90);
-    color = mix(color, uWarm, smoothstep(0.80, 1.05, t) * 0.50);
-    color += ring * 0.30 + grid;
+    color = mix(color, uWarm, smoothstep(0.88, 1.10, t) * 0.30);
+    color += ring * 0.28;
 
     // The headline needs clean ground, and the band below needs no seam: the
     // field clears to the left and dissolves at the bottom.
-    float alpha = smoothstep(0.04, 0.52, uv.x) * smoothstep(0.0, 0.28, uv.y);
+    // Confined to the open right, well clear of the type. A full-bleed wash
+    // behind a text-heavy hero always fights the words: white on a faint red
+    // haze is exactly the combination that makes eyes work.
+    float alpha = smoothstep(0.46, 0.92, uv.x) * smoothstep(0.05, 0.40, uv.y);
 
-    gl_FragColor = vec4(color, alpha * 0.9);
+    gl_FragColor = vec4(color, alpha * 0.62);
   }
 `;
 
@@ -171,8 +165,8 @@ export default function NeonLandscape() {
       uPulseAge: { value: -1 },
       uPulseOrigin: { value: new THREE.Vector2(0.75, 0.55) },
       uBase: { value: new THREE.Color(0x120d16) },
-      uInk: { value: new THREE.Color(0xbc2f74) },
-      uWarm: { value: new THREE.Color(0xffa257) },
+      uInk: { value: new THREE.Color(0x8f3a7a) },
+      uWarm: { value: new THREE.Color(0xd98a5a) },
     };
 
     const material = new THREE.ShaderMaterial({
