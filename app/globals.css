@@ -277,14 +277,33 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .muted-band { padding: 112px 0; background: rgba(33,26,37,.42); }
 .section-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
 .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 42px; }
-.feature-card { display: flex; flex-direction: column; min-height: 292px; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(33,26,37,.7); transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.feature-card { position: relative; display: flex; flex-direction: column; min-height: 276px; padding: 26px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(33,26,37,.7); transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
 .feature-card:hover { transform: translateY(var(--lift-card)); border-color: var(--primary); }
 .feature-card-active { border-color: rgba(241,74,148,.7); background: linear-gradient(145deg, rgba(241,74,148,.1), rgba(33,26,37,.75)); }
-.feature-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 6px; color: #fff; background: var(--surface); font: 800 11px var(--font-jakarta), sans-serif; }
-.feature-card-active .feature-icon { background: var(--primary); }
-.feature-card h3 { margin-top: 26px; font-size: 18px; }
-.feature-icon { transition: background var(--dur) var(--ease), color var(--dur) var(--ease); }
-.feature-card:hover .feature-icon, .feature-card:focus-within .feature-icon { background: var(--gradient); }
+/* An outlined numeral in the corner, not a rounded box with a number in it.
+   The badge is the single most template-looking component on any feature grid,
+   and it also implied these six were a sequence — the five-step rail is the
+   sequence; these are just six things the product does. Set as an outline it
+   reads as typography holding the corner of the card, and it leaves the flow
+   entirely so the title starts at the top. */
+/* Scoped to the card so it outranks `.card-spotlight > *`, which sets
+   position: relative on every child and is declared later in this file. */
+.feature-card .feature-icon {
+  position: absolute; top: 14px; right: 20px;
+  color: rgba(255,255,255,.05);
+  -webkit-text-stroke: 1px rgba(255,255,255,.13);
+  font: 800 56px var(--font-jakarta), sans-serif;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+.feature-card h3 { margin-top: 0; padding-right: 72px; font-size: 18px; }
+.feature-card .feature-icon { transition: color var(--dur) var(--ease), -webkit-text-stroke-color var(--dur) var(--ease); }
+.feature-card:hover .feature-icon, .feature-card:focus-within .feature-icon {
+  color: rgba(241,74,148,.10);
+  -webkit-text-stroke-color: rgba(241,74,148,.55);
+}
 /* The 0fr → 1fr row is the whole trick: it animates height without anyone
    having to measure anything in JavaScript. */
 .feature-more { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows var(--dur) var(--ease), opacity var(--dur) var(--ease); }
