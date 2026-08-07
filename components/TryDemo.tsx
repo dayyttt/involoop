@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { formatMoney, formatDate } from "@/lib/money";
 import { landingText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 import { saveDraft } from "@/lib/draft";
+import { pulseFrom } from "@/lib/hero-pulse";
 
 interface Parsed {
   client_name: string;
@@ -44,6 +45,7 @@ export default function TryDemo() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Parsed | null>(null);
   const reduced = useReducedMotion();
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // The result is the one moment worth animating properly: the invoice is
   // written line by line, in reading order, the way it was just dictated.
@@ -73,6 +75,8 @@ export default function TryDemo() {
         setError(data.error ?? t("demo.failed"));
       } else {
         setResult(data.parsed);
+        // Let the hero backdrop answer: a wave leaves this card once.
+        pulseFrom(cardRef.current);
       }
     } catch {
       setError(t("demo.failed"));
@@ -97,7 +101,7 @@ export default function TryDemo() {
   }
 
   return (
-    <div className="try-demo card">
+    <div className="try-demo card" ref={cardRef}>
       <h2 className="try-demo-title">{t("demo.title")}</h2>
       <p className="try-demo-sub">{t("demo.sub")}</p>
 

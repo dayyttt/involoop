@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { HERO_PULSE, type HeroPulseDetail } from "@/lib/hero-pulse";
 
 // Decorative WebGL backdrop for the hero.
 //
@@ -75,6 +76,18 @@ export default function NeonLandscape() {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
 
+    // ---- Ripple ----
+    // Fired when the demo card finishes composing an invoice. The backdrop
+    // stops being wallpaper for a moment and answers the thing that just
+    // happened: a wave leaves the card and crosses the mesh once.
+    const RIPPLE_LIFE = 1.6; // seconds
+    const RIPPLE_SPEED = 22; // world units per second: crosses the visible mesh (~34 units) within its life
+    const RIPPLE_BAND = 2.4; // thickness of the wave front
+    const RIPPLE_AMP = 2.2; // just under the resting wave's 2.5, so it lifts the surface without breaking it
+    let rippleStart = -Infinity;
+    let rippleX = 0;
+    let rippleZ = 0;
+
     const resize = () => {
       const w = el.clientWidth || 1;
       const h = el.clientHeight || 1;
@@ -94,12 +107,29 @@ export default function NeonLandscape() {
       const t = clock.getElapsedTime();
       const p = geo.attributes.position as THREE.BufferAttribute;
       const array = p.array as Float32Array;
+      // Age of the current ripple, if one is still travelling.
+      const age = t - rippleStart;
+      const rippling = age >= 0 && age < RIPPLE_LIFE;
+      const front = age * RIPPLE_SPEED;
+      const fade = rippling ? 1 - age / RIPPLE_LIFE : 0;
+
       for (let i = 0; i < p.count; i++) {
         const x = baseX[i];
         const z = baseZ[i];
-        array[i * 3 + 1] =
+        let y =
           Math.sin(x * 0.35 + t * 0.6) * Math.cos(z * 0.4 + t * 0.5) * 1.7 +
           Math.sin((x + z) * 0.25 + t * 0.4) * 0.8;
+
+        if (rippling) {
+          // One gaussian ring expanding from the card, fading as it goes.
+          const dx = x - rippleX;
+          const dz = z - rippleZ;
+          const offset = Math.sqrt(dx * dx + dz * dz) - front;
+          const falloff = Math.exp(-(offset * offset) / (2 * RIPPLE_BAND * RIPPLE_BAND));
+          y += Math.cos(offset * 0.9) * falloff * fade * RIPPLE_AMP;
+        }
+
+        array[i * 3 + 1] = y;
       }
       p.needsUpdate = true;
 
@@ -123,6 +153,17 @@ export default function NeonLandscape() {
       cancelAnimationFrame(raf);
     };
 
+    const onPulse = (event: Event) => {
+      const detail = (event as CustomEvent<HeroPulseDetail>).detail;
+      // Viewport fractions → world coordinates on the plane. The camera is
+      // fixed, so a linear map is close enough for a decorative wave.
+      rippleX = ((detail?.x ?? 0.75) - 0.5) * SIZE * 0.9;
+      rippleZ = ((detail?.y ?? 0.45) - 0.5) * SIZE * 0.75;
+      rippleStart = clock.getElapsedTime();
+      start(); // in case the hero had scrolled out and the loop was paused
+    };
+    window.addEventListener(HERO_PULSE, onPulse);
+
     // Only animate while the hero is actually on screen.
     const io = new IntersectionObserver(
       ([entry]) => (entry.isIntersecting ? start() : stop()),
@@ -135,6 +176,7 @@ export default function NeonLandscape() {
       io.disconnect();
       ro.disconnect();
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener(HERO_PULSE, onPulse);
       geo.dispose();
       material.dispose();
       renderer.dispose();
