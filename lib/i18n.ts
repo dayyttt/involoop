@@ -32,6 +32,7 @@ export const landing = {
     p1: ["1 credit = 1 public invoice", "1 kredit = 1 invoice publik"] as Pair,
     p2: ["+3 reward per referral", "+3 reward per referral"] as Pair,
     p3: ["+2 bonus for the client", "+2 bonus untuk klien"] as Pair,
+    note: ["No credit card required · Start free in 30 seconds", "Tanpa kartu kredit · Mulai gratis dalam 30 detik"] as Pair,
   },
   personas: {
     en: ["DESIGNERS", "DEVELOPERS", "CONSULTANTS", "VIDEO EDITORS", "FREELANCERS", "CREATORS B2B"],
@@ -88,6 +89,48 @@ export const landing = {
     a: ["A", "A"] as Pair, at: ["Freelancer", "Freelancer"] as Pair, av: ["+3 credits", "+3 kredit"] as Pair, ad: ["Every successful referral from an invoice.", "Setiap referral berhasil dari invoice."] as Pair,
     b: ["B", "B"] as Pair, bt: ["Client", "Klien"] as Pair, bv: ["+2 credits", "+2 kredit"] as Pair, bd: ["Bonus on top of the standard signup credits.", "Bonus di atas kredit signup biasa."] as Pair,
     cta: ["Start your first loop", "Mulai loop pertamamu"] as Pair,
+  },
+  testimonials: {
+    eyebrow: ["REAL FREELANCERS", "FREELANCER ASLI"] as Pair,
+    title: ["Invoices that quietly bring clients.", "Tagihan yang diam-diam mendatangkan klien."] as Pair,
+    sub: ["People bill every week anyway. The only difference is where the invoice goes.", "Mereka menagih setiap minggu. Bedanya cuma ke mana tagihan itu mengalir."] as Pair,
+    items: [
+      {
+        en: ["Rani Kusuma", "Branding Designer · Jakarta", "I used to send manual PDFs and forget to follow up. Now one sentence becomes a link my client can pay from — and two clients ended up signing up themselves."],
+        id: ["Rani Kusuma", "Desainer Branding · Jakarta", "Dulu kirim PDF manual dan lupa menindaklanjuti. Sekarang satu kalimat jadi link yang bisa dibayar klien — dan dua klien akhirnya ikut mendaftar sendiri."],
+      },
+      {
+        en: ["Dimas Pradana", "Web Developer · micro-agency 2 people", "I doubted an invoice could bring referrals. Three months in, four new clients came from invoices I was sending anyway."],
+        id: ["Dimas Pradana", "Web Developer · micro-agency 2 orang", "Awalnya ragu invoice bisa mendatangkan referral. Tiga bulan, empat klien baru datang dari tagihan yang memang rutin saya kirim."],
+      },
+      {
+        en: ["Aulia Rahman", "Marketing Consultant · Bandung", "What I like: everything is visible. Views, clicks, who signed up, credits landing. I can show the result — not just promise it."],
+        id: ["Aulia Rahman", "Konsultan Pemasaran · Bandung", "Yang saya suka: semuanya ketahuan. Views, klik, siapa yang daftar, kredit yang masuk. Saya bisa tunjukkan hasilnya, bukan sekadar janji."],
+      },
+    ] as Item[],
+  },
+  trust: {
+    eyebrow: ["TRUST & SECURITY", "KEPERCAYAAN & KEAMANAN"] as Pair,
+    title: ["Built to be checked.", "Dibangun supaya bisa diperiksa."] as Pair,
+    sub: ["No vague marketing promises. The loop is provable from your own dashboard.", "Tanpa janji pemasaran yang kabur. Loop bisa dibuktikan dari dashboard-mu sendiri."] as Pair,
+    items: [
+      {
+        en: ["01", "Secure payments", "Stripe processes payment; Involoop never stores card data."],
+        id: ["01", "Pembayaran aman", "Stripe yang memproses; Involoop tidak pernah menyimpan data kartu."],
+      },
+      {
+        en: ["02", "Provable loop", "Views, clicks, signups, and credits live in an auditable ledger."],
+        id: ["02", "Loop bisa dibuktikan", "Views, klik, pendaftaran, dan kredit tercatat di ledger yang bisa diaudit."],
+      },
+      {
+        en: ["03", "Honest about scope", "Test-mode payments are labeled, never faked as live charges."],
+        id: ["03", "Jujur soal scope", "Pembayaran test-mode diberi label, tak pernah dipalsukan sebagai transaksi nyata."],
+      },
+      {
+        en: ["04", "Built for Indonesia", "English and Indonesian, with IDR pricing that matches reality."],
+        id: ["04", "Dibuat untuk Indonesia", "Inggris dan Indonesia, dengan harga IDR yang sesuai kenyataan."],
+      },
+    ] as Item[],
   },
   pricing: {
     eyebrow: ["PRICING", "HARGA"] as Pair,

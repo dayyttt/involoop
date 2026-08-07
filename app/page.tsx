@@ -42,6 +42,8 @@ export default function Home() {
 
   const features = landingItems(lang, "features.items");
   const processSteps = landingItems(lang, "process.steps");
+  const testimonials = landingItems(lang, "testimonials.items");
+  const trustItems = landingItems(lang, "trust.items");
   const personas = lang === "en" ? landing.personas.en : landing.personas.id;
 
   return (
@@ -100,6 +102,7 @@ export default function Home() {
                 <b>{t("hero.p3")}</b>
               </span>
             </div>
+            <p className="hero-note">{t("hero.note")}</p>
           </div>
         </div>
         <div className="trust-strip">
@@ -223,6 +226,28 @@ export default function Home() {
         </div>
       </section>
 
+      <section id="testimonials" className="site-shell section-space">
+        <div className="process-head">
+          <p className="section-eyebrow">{t("testimonials.eyebrow")}</p>
+          <h2>{t("testimonials.title")}</h2>
+          <p className="body-copy">{t("testimonials.sub")}</p>
+        </div>
+        <div className="testimonial-grid">
+          {testimonials.map(([name, role, quote]) => (
+            <article className="testimonial" key={name}>
+              <p>“{quote}”</p>
+              <div className="testimonial-author">
+                <span className="t-avatar">{name[0]}</span>
+                <div>
+                  <div className="t-name">{name}</div>
+                  <div className="t-role">{role}</div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section id="pricing" className="site-shell section-space">
         <div className="process-head">
           <p className="section-eyebrow">{t("pricing.eyebrow")}</p>
@@ -259,6 +284,24 @@ export default function Home() {
           </div>
         </div>
         <p className="hint" style={{ textAlign: "center", marginTop: 28 }}>{t("pricing.note")}</p>
+      </section>
+
+      <section id="trust" className="section-space muted-band">
+        <div className="site-shell">
+          <div className="process-head" style={{ maxWidth: 640, marginBottom: 0 }}>
+            <p className="section-eyebrow">{t("trust.eyebrow")}</p>
+            <h2>{t("trust.title")}</h2>
+            <p className="body-copy">{t("trust.sub")}</p>
+          </div>
+          <div className="trust-grid">
+            {trustItems.map(([num, title, text]) => (
+              <div className="trust-item" key={num}>
+                <strong>{title}</strong>
+                <p>{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="site-shell section-space final-cta">
