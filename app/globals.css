@@ -115,13 +115,17 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .mobile-nav a { padding: 14px 4px; border-bottom: 1px solid var(--line); color: var(--text); font-size: 15px; font-weight: 700; text-decoration: none; }
 .mobile-nav a:last-child { border-bottom: 0; }
 
-.agency-hero { position: relative; overflow: hidden; min-height: 740px; display: flex; align-items: center; padding-top: 80px; }
+/* align-items: flex-start, not center. Centring inside a 740px floor meant the
+   gap under the fixed-height header was set by leftover space rather than by
+   padding, so half of every spacing change was swallowed. Now the distance
+   below the header is exactly the header height plus the inner padding. */
+.agency-hero { position: relative; overflow: hidden; min-height: 660px; display: flex; align-items: flex-start; padding-top: 80px; }
 .neon-landscape { position: absolute; inset: 0; z-index: 0; }
 .neon-landscape canvas { display: block; width: 100% !important; height: 100% !important; }
 .hero-shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(12,8,14,.96) 0%, rgba(12,8,14,.8) 46%, rgba(12,8,14,.25) 84%), linear-gradient(0deg, var(--bg) 0%, transparent 34%); }
 /* align-items: start, not center: if the copy column ever changes height, a
    centred grid would slide the demo card up and down with it. */
-.agency-hero-inner { position: relative; z-index: 2; padding: 40px 0 96px; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start; }
+.agency-hero-inner { position: relative; z-index: 2; padding: 76px 0 104px; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start; }
 @media (min-width: 1000px) {
   .agency-hero-inner { grid-template-columns: 1.02fr 0.98fr; gap: 56px; }
 }
