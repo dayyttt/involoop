@@ -720,6 +720,12 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 .test-badge { margin: 10px auto 0; display: inline-block; padding: 4px 10px; border: 1px solid rgba(244,189,85,.4); border-radius: 999px; background: rgba(244,189,85,.1); color: var(--warn); font-size: 11px; font-weight: 700; text-align: center; }
 .centered { padding: 140px 20px 40px; text-align: center; }
 
+/* A miniature of the invoice header, so the name is edited where it lands
+   rather than somewhere abstract called "settings". */
+.letterhead { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border: 1px dashed var(--line-2); border-radius: var(--radius); background: rgba(255,255,255,.02); }
+.letterhead strong { color: #fff; font-size: 19px; font-weight: 800; letter-spacing: -0.02em; }
+@media (max-width: 640px) { .dash-profile { display: none; } }
+
 /* ---- Legal documents ---- */
 .legal-doc .legal-intro { margin: 18px 0 8px; color: var(--text); font-size: 15px; line-height: 1.8; }
 .legal-doc section { margin-top: 30px; }

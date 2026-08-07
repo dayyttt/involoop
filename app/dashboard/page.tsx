@@ -447,6 +447,9 @@ export default function Dashboard() {
           <Link href="/dashboard/new-invoice" className="btn btn-primary">
             {t("nav.createInvoice")}
           </Link>
+          <Link href="/dashboard/profile" className="btn btn-ghost dash-profile">
+            {t("profile.open")}
+          </Link>
           <LangToggle />
           <button onClick={handleLogout} className="btn btn-ghost dash-logout">
             {t("nav.logout")}
