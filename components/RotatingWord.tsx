@@ -44,9 +44,13 @@ export default function RotatingWord({
       <span className="rot-word-sizer" aria-hidden>
         {longest}
       </span>
-      {/* initial={false}: the first phrase is part of the headline, so it must
-          be painted straight away instead of starting at opacity 0. */}
-      <AnimatePresence mode="wait" initial={false}>
+      {/* No mode="wait": waiting for the old phrase to leave before the new one
+          arrives left the headline reading "Your next invoice is" with nothing
+          after it for almost half a second, every rotation. The phrases are
+          stacked on the sizer, so they can simply cross-fade.
+          initial={false}: the first phrase is part of the headline the server
+          sends, so it must be painted straight away, not faded in. */}
+      <AnimatePresence initial={false}>
         <motion.span
           key={words[index]}
           className={`rot-word-phrase ${wordClass}`}

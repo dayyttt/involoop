@@ -7,7 +7,7 @@ import { formatMoney, formatDate } from "@/lib/money";
 import { landingText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 import { saveDraft } from "@/lib/draft";
-import { pulseFrom } from "@/lib/hero-pulse";
+import { heroState, pulseFrom } from "@/lib/hero-pulse";
 
 interface Parsed {
   client_name: string;
@@ -64,6 +64,7 @@ export default function TryDemo() {
     if (!text.trim() || loading) return;
     setLoading(true);
     setError(null);
+    heroState({ busy: 1 });
     try {
       const res = await fetch("/api/demo/parse", {
         method: "POST",
@@ -75,19 +76,23 @@ export default function TryDemo() {
         setError(data.error ?? t("demo.failed"));
       } else {
         setResult(data.parsed);
-        // Let the hero backdrop answer: a wave leaves this card once.
+        // Let the hero backdrop answer: a wave leaves this card once, then the
+        // surface settles so the invoice itself is what holds attention.
         pulseFrom(cardRef.current);
+        heroState({ attention: 0.35 });
       }
     } catch {
       setError(t("demo.failed"));
     }
     setLoading(false);
+    heroState({ busy: 0 });
   }
 
   function reset() {
     setResult(null);
     setError(null);
     setText("");
+    heroState({ attention: 0, busy: 0 });
   }
 
   // Handed to /dashboard/new-invoice after signup so the first real invoice
@@ -159,8 +164,13 @@ export default function TryDemo() {
             rows={2}
             maxLength={220}
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              heroState({ attention: 1 });
+            }}
             onKeyDown={onKeyDown}
+            onFocus={() => heroState({ attention: 1 })}
+            onBlur={() => heroState({ attention: text.trim() ? 0.55 : 0 })}
             placeholder={t("demo.placeholder")}
           />
           <div className="try-demo-examples">
@@ -171,7 +181,10 @@ export default function TryDemo() {
                 type="button"
                 className="chip"
                 title={example.text}
-                onClick={() => setText(example.text)}
+                onClick={() => {
+                  setText(example.text);
+                  heroState({ attention: 1 });
+                }}
               >
                 {example.label}
               </button>

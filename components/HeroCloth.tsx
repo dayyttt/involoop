@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { HERO_PULSE, type HeroPulseDetail } from "@/lib/hero-pulse";
+import { HERO_PULSE, HERO_STATE, type HeroPulseDetail, type HeroStateDetail } from "@/lib/hero-pulse";
 
 // The hero backdrop: sheets of cloth in mid-air, which for an invoicing product
 // is the right subject — documents in motion, not embers or glass blobs.
@@ -69,11 +69,13 @@ export default function HeroCloth() {
           uMouse: { value: new THREE.Vector2(0, 0) },
           uStrength: { value: 0 },
           uTime: { value: 0 },
+          uAttention: { value: 0 },
+          uBusy: { value: 0 },
           uPulseAge: { value: -1 },
           uPulseOrigin: { value: new THREE.Vector2(0.7, 0.5) },
           uShadow: { value: new THREE.Color(0x0e0b11) },
-          uMid: { value: new THREE.Color(0x412a41) },
-          uHigh: { value: new THREE.Color(0xb07f9c) },
+          uMid: { value: new THREE.Color(0x4a2f49) },
+          uHigh: { value: new THREE.Color(0xc48fab) },
         };
 
         const material = new THREE.ShaderMaterial({
@@ -95,6 +97,8 @@ export default function HeroCloth() {
             uniform vec2 uMouse;
             uniform float uStrength;
             uniform float uTime;
+            uniform float uAttention;
+            uniform float uBusy;
             uniform float uPulseAge;
             uniform vec2 uPulseOrigin;
             uniform vec3 uShadow;
@@ -120,10 +124,13 @@ export default function HeroCloth() {
               // Depth from brightness, then displace the sample by it. Near
               // folds travel further than the far backdrop: parallax.
               float depth = luma(texture2D(uTex, uv).rgb);
-              vec2 shifted = uv + uMouse * uStrength * (depth - 0.30) * 0.05;
+              // uMouse already blends the pointer with an ambient drift, so the
+              // displacement is unconditional: the cloth is never fully still.
+              vec2 shifted = uv + uMouse * (depth - 0.30) * 0.055;
 
               // A slow breath, so the cloth is never completely still.
-              shifted.y += sin(uTime * 0.22 + uv.x * 2.0) * 0.0016;
+              shifted.y += sin(uTime * 0.20 + uv.x * 2.0) * 0.0038;
+              shifted.x += cos(uTime * 0.14 + uv.y * 1.6) * 0.0026;
 
               float ring = 0.0;
               if (uPulseAge > 0.0 && uPulseAge < ${PULSE_LIFE.toFixed(1)}) {
@@ -137,8 +144,18 @@ export default function HeroCloth() {
 
               // Duotone: the source is cool blue-grey, the product is not.
               vec3 color = mix(uShadow, uMid, smoothstep(0.08, 0.55, lum));
-              color = mix(color, uHigh, smoothstep(0.66, 1.02, lum) * 0.85);
-              color += ring * 0.22;
+              // Attention lowers the threshold at which the folds catch light, so
+              // the cloth brightens while someone is writing rather than
+              // flashing at them.
+              float lightFloor = mix(0.60, 0.50, uAttention);
+              color = mix(color, uHigh, smoothstep(lightFloor, 0.99, lum) * 0.95);
+              color += lum * uAttention * 0.10;
+
+              // While the AI composes, a slow band travels across the cloth:
+              // visible work, not a spinner in the corner.
+              float scan = smoothstep(0.86, 1.0, sin((shifted.x * 2.6 - uTime * 1.5) * 3.14159));
+              color += scan * uBusy * 0.16 * smoothstep(0.1, 0.6, lum);
+              color += ring * 0.26;
 
               // Clear of the headline, and dissolved at the edges so the
               // section below meets no seam.
@@ -157,15 +174,26 @@ export default function HeroCloth() {
         let targetX = 0;
         let targetY = 0;
         let targetStrength = 0;
+        let lastMove = -Infinity;
+        let attention = 0;
+        let busy = 0;
         const onPointerMove = (event: PointerEvent) => {
           const rect = el.getBoundingClientRect();
           targetX = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1;
           targetY = 1 - ((event.clientY - rect.top) / Math.max(rect.height, 1)) * 2;
           targetStrength = 1;
+          lastMove = performance.now();
         };
         const onPointerLeave = () => {
           targetStrength = 0;
         };
+        const onState = (event: Event) => {
+          const detail = (event as CustomEvent<HeroStateDetail>).detail ?? {};
+          if (typeof detail.attention === "number") attention = detail.attention;
+          if (typeof detail.busy === "number") busy = detail.busy;
+          start();
+        };
+        window.addEventListener(HERO_STATE, onState);
         window.addEventListener("pointermove", onPointerMove, { passive: true });
         window.addEventListener("pointerleave", onPointerLeave);
 
@@ -187,9 +215,24 @@ export default function HeroCloth() {
         const tick = () => {
           const t = clock.getElapsedTime();
           uniforms.uTime.value = t;
-          uniforms.uMouse.value.x += (targetX - uniforms.uMouse.value.x) * 0.05;
-          uniforms.uMouse.value.y += (targetY - uniforms.uMouse.value.y) * 0.05;
-          uniforms.uStrength.value += (targetStrength - uniforms.uStrength.value) * 0.05;
+
+          // After a couple of seconds without the pointer, hand the cloth back
+          // to its own slow drift, so a visitor who is reading still sees it
+          // move. Two sines of different periods keep the path from looping
+          // visibly.
+          if (performance.now() - lastMove > 2200) targetStrength = 0;
+          uniforms.uStrength.value += (targetStrength - uniforms.uStrength.value) * 0.03;
+
+          const s = uniforms.uStrength.value;
+          const driftX = Math.sin(t * 0.15) * 0.62 + Math.sin(t * 0.083 + 1.3) * 0.26;
+          const driftY = Math.cos(t * 0.117) * 0.5;
+          const wantX = targetX * s + driftX * (1 - s);
+          const wantY = targetY * s + driftY * (1 - s);
+          uniforms.uMouse.value.x += (wantX - uniforms.uMouse.value.x) * 0.04;
+          uniforms.uMouse.value.y += (wantY - uniforms.uMouse.value.y) * 0.04;
+
+          uniforms.uAttention.value += (attention - uniforms.uAttention.value) * 0.06;
+          uniforms.uBusy.value += (busy - uniforms.uBusy.value) * 0.08;
 
           const age = t - pulseStart;
           uniforms.uPulseAge.value = age >= 0 && age < PULSE_LIFE ? age : -1;
@@ -235,6 +278,7 @@ export default function HeroCloth() {
           window.removeEventListener("pointermove", onPointerMove);
           window.removeEventListener("pointerleave", onPointerLeave);
           window.removeEventListener(HERO_PULSE, onPulse);
+          window.removeEventListener(HERO_STATE, onState);
           texture.dispose();
           quad.geometry.dispose();
           material.dispose();

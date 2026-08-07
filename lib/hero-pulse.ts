@@ -11,6 +11,23 @@ export interface HeroPulseDetail {
   y: number;
 }
 
+// Ongoing state, as opposed to the one-shot pulse above: the backdrop leans in
+// while someone is writing their sentence, and works visibly while the AI is
+// composing. That turns the decoration into feedback — the surface is listening.
+export const HERO_STATE = "involoop:hero-state";
+
+export interface HeroStateDetail {
+  /** 0–1. Someone is focused on the demo box. */
+  attention?: number;
+  /** 0–1. The AI is composing right now. */
+  busy?: number;
+}
+
+export function heroState(detail: HeroStateDetail) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<HeroStateDetail>(HERO_STATE, { detail }));
+}
+
 // `el` is the element the pulse should appear to come from — the demo card, so
 // the ripple starts where the invoice just appeared.
 export function pulseFrom(el: HTMLElement | null) {
