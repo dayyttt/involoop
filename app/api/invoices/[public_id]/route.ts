@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { apiError } from "@/lib/api-lang";
 import { SUPPORTED_CURRENCIES } from "@/lib/money";
 import { paypalConfigured, paypalSupportsCurrency } from "@/lib/paypal";
+import { solanaConfigured } from "@/lib/solana";
 
 // A view counter must never be cached.
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export async function GET(
   const { data: invoice, error } = await supabase
     .from("invoices")
     .select(
-      "public_id, number, client_name, description, amount, currency, amount_minor, status, due_date, cta_message, views, created_at, owner:profiles(full_name)"
+      "public_id, number, client_name, description, amount, currency, amount_minor, status, due_date, cta_message, views, created_at, owner:profiles(full_name, solana_wallet, solana_wallet_verified_at)"
     )
     .eq("public_id", params.public_id)
     .single();
@@ -39,6 +40,11 @@ export async function GET(
       ...invoice,
       sender_name: owner?.full_name ?? "Freelancer",
       paypal_enabled: paypalConfigured() && paypalSupportsCurrency(invoice.currency),
+      crypto_enabled:
+        solanaConfigured() &&
+        invoice.currency === "USD" &&
+        !!owner?.solana_wallet &&
+        !!owner?.solana_wallet_verified_at,
     },
   });
   res.headers.set("Cache-Control", "no-store, max-age=0");

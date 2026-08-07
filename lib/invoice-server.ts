@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { paypalConfigured, paypalSupportsCurrency } from "@/lib/paypal";
+import { solanaConfigured } from "@/lib/solana";
 
 export interface PublicInvoice {
   public_id: string;
@@ -16,6 +17,7 @@ export interface PublicInvoice {
   paid_at: string | null;
   sender_name: string;
   paypal_enabled: boolean;
+  crypto_enabled: boolean;
 }
 
 // Server-side read of a public invoice. Wrapped in React's cache so a single
@@ -28,7 +30,7 @@ export const getPublicInvoice = cache(async (publicId: string): Promise<PublicIn
   const { data, error } = await supabase
     .from("invoices")
     .select(
-      "public_id, number, client_name, description, amount, currency, status, due_date, cta_message, created_at, paid_at, owner:profiles(full_name)"
+      "public_id, number, client_name, description, amount, currency, status, due_date, cta_message, created_at, paid_at, owner:profiles(full_name, solana_wallet, solana_wallet_verified_at)"
     )
     .eq("public_id", publicId)
     .single();
@@ -53,5 +55,14 @@ export const getPublicInvoice = cache(async (publicId: string): Promise<PublicIn
     // so the button only appears when this specific invoice could actually be
     // paid with it. Everything else falls to the bank transfer path.
     paypal_enabled: paypalConfigured() && paypalSupportsCurrency(data.currency),
+    // Three things must all be true, and none of them are the client's doing:
+    // the platform is configured, the invoice is in USD, and the freelancer has
+    // proved they control a wallet. If any is false the option simply is not
+    // there — a client should never be shown a payment method that cannot work.
+    crypto_enabled:
+      solanaConfigured() &&
+      data.currency === "USD" &&
+      !!owner?.solana_wallet &&
+      !!owner?.solana_wallet_verified_at,
   };
 });

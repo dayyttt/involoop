@@ -8,6 +8,8 @@ import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
 import type { PublicInvoice } from "@/lib/invoice-server";
 import PayPalButtons from "@/components/PayPalButtons";
+import CryptoPayPanel from "@/components/CryptoPayPanel";
+import { cryptoLabels } from "@/lib/crypto-labels";
 
 // Receives the invoice already resolved on the server: no loading shell, no
 // blank first paint for a client opening the link on mobile data.
@@ -20,6 +22,7 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
   const [invoice, setInvoice] = useState<PublicInvoice>(initial);
   const [submitting, setSubmitting] = useState(false);
   const paidOrderRef = useRef<string | null>(null);
+  const [payWith, setPayWith] = useState<"card" | "usdc">("card");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -190,7 +193,27 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                   <span>{money}</span>
                 </div>
                 <div className="pay-options">
-                  {invoice.paypal_enabled ? (
+                  {payWith === "usdc" ? (
+                    <>
+                      <CryptoPayPanel
+                        create={async () => {
+                          const res = await fetch("/api/payments/crypto", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ public_id: publicId, lang }),
+                          });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error ?? t("invoice.checkoutFailed"));
+                          return data;
+                        }}
+                        labels={cryptoLabels(lang)}
+                        onConfirmed={() => setInvoice((prev) => ({ ...prev, status: "paid" }))}
+                      />
+                      <button type="button" className="link-btn" onClick={() => setPayWith("card")}>
+                        {t("invoice.payUsdcBack")}
+                      </button>
+                    </>
+                  ) : invoice.paypal_enabled ? (
                     <>
                       <PayPalButtons
                         currency={invoice.currency}
@@ -210,6 +233,17 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                       <p className="hint" style={{ textAlign: "center", margin: 0 }}>
                         {t("invoice.payHint")}
                       </p>
+
+                      {/* Offered, not pushed. Most clients opening an invoice do
+                          not have a wallet and do not want one; the ones who do
+                          will find this. */}
+                      {invoice.crypto_enabled && (
+                        <button type="button" className="crypto-switch" onClick={() => setPayWith("usdc")}>
+                          <strong>{t("invoice.payUsdc")}</strong>
+                          <span className="hint">{t("invoice.payUsdcSub")}</span>
+                        </button>
+                      )}
+
                       <div className="pay-divider">{t("invoice.orManual")}</div>
                     </>
                   ) : (
