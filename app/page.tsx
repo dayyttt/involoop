@@ -145,8 +145,16 @@ export default function Home() {
                 {t("hero.cta3")}
               </Link>
             </div>
-            <p className="hero-points hero-enter hero-enter-4">{t("hero.points")}</p>
-            <p className="hero-note hero-enter hero-enter-4">{t("hero.note")}</p>
+            {/* One paragraph, not three spans: separators are text bound to the
+                preceding word with a non-breaking space, so a wrap can never
+                leave a dot stranded at the start of a line. */}
+            <p className="hero-points hero-enter hero-enter-4">
+              <b>{t("hero.p1s")}</b> {t("hero.p1r")}
+              {"\u00a0· "}
+              <b>{t("hero.p2s")}</b> {t("hero.p2r")}
+              {"\u00a0· "}
+              <b>{t("hero.p3s")}</b>
+            </p>
           </div>
           <div className="agency-hero-demo hero-enter hero-enter-5">
             <TryDemo />

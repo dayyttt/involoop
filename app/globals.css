@@ -182,8 +182,11 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
 /* One sentence, not three spans with generated separators: when the row wrapped,
    a separator dot ended up alone at the start of the second line. */
-.hero-points { max-width: 560px; margin: 20px 0 0; color: var(--text-2); font-size: 13px; font-weight: 600; line-height: 1.7; }
-.hero-note { margin-top: 14px; color: var(--muted); font-size: 12.5px; }
+/* The facts row. Numbers carry the weight so the line is scannable without
+   being read; the rest stays quiet. One row replaced two stacked grey lines
+   that repeated the paragraph above them. */
+.hero-points { max-width: 560px; margin: 22px 0 0; color: var(--text-2); font-size: 13.5px; font-weight: 500; line-height: 1.8; }
+.hero-points b { color: #fff; font-weight: 800; }
 
 /* ---- Hero live demo (one sentence → invoice, no account) ---- */
 .agency-hero-demo { width: 100%; }

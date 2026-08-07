@@ -35,18 +35,24 @@ export const landing = {
     rotPrefix: ["Your next invoice is", "Invoice berikutnya"] as Pair,
     rotWords: ["free.", "one sentence away.", "covered by a referral."] as [string, string, string],
     rotWordsId: ["gratis.", "cukup satu kalimat.", "ditanggung referral."] as [string, string, string],
+    // Short on purpose: the numbers moved to the scannable row below, so this
+    // sentence only has to land the idea.
     sub: [
-      "Write one sentence, get a payment link you can send anywhere. You start with 3 free invoices, and every client who joins through your invoice gives you 3 more.",
-      "Tulis satu kalimat, dapat link tagihan yang bisa dikirim ke mana saja. Kamu mulai dengan 3 invoice gratis, dan setiap klien yang ikut lewat invoicemu menambah 3 lagi.",
+      "Write one sentence, get a payment link you can send anywhere.",
+      "Tulis satu kalimat, dapat link tagihan yang bisa dikirim ke mana saja.",
     ] as Pair,
     cta1: ["Create your first invoice →", "Buat invoice pertama →"] as Pair,
     cta2: ["Sign in", "Masuk"] as Pair,
     cta3: ["View live sample", "Lihat contoh invoice"] as Pair,
-    points: [
-      "3 free invoices to start · +3 more every time a client joins · 1 credit = 1 invoice",
-      "3 invoice gratis untuk mulai · +3 lagi tiap ada klien yang ikut · 1 kredit = 1 invoice",
-    ] as Pair,
-    note: ["Free to start. No credit card. Your first invoice takes about a minute.", "Gratis untuk mulai. Tanpa kartu kredit. Invoice pertama selesai sekitar satu menit."] as Pair,
+    // One row, three facts, numbers emphasised so the eye catches them without
+    // reading. The old version repeated the paragraph above it and then said
+    // "free" a third time in a second grey line underneath.
+    p1s: ["3 invoices", "3 invoice"] as Pair,
+    p1r: ["free to start", "gratis untuk mulai"] as Pair,
+    p2s: ["+3", "+3"] as Pair,
+    p2r: ["each time a client joins", "tiap ada klien yang ikut"] as Pair,
+    p3s: ["No credit card", "Tanpa kartu kredit"] as Pair,
+    p3r: ["", ""] as Pair,
   },
   demo: {
     title: ["Try it right here. No account needed.", "Coba langsung di sini. Tanpa daftar."] as Pair,
