@@ -76,7 +76,7 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .text-rotate-word { display: inline-flex; }
 .text-rotate-element { display: inline-block; }
 .text-rotate-space { white-space: pre; }
-.hero-h1-rotate { color: transparent; background: var(--gradient); -webkit-background-clip: text; background-clip: text; }
+.hero-h1-rotate { min-width: 5.8em; overflow: hidden; color: transparent; background: var(--gradient); -webkit-background-clip: text; background-clip: text; }
 .agency-hero-copy > p:not(.section-eyebrow):not(.hero-h1):not(.hero-note) { max-width: 620px; margin: 26px 0 0; color: var(--text-2); font-size: 16px; line-height: 1.8; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
 .hero-points { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }

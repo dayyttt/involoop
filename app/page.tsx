@@ -95,8 +95,13 @@ export default function Home() {
               <RotatingText
                 texts={lang === "id" ? landing.hero.rotWordsId : landing.hero.rotWords}
                 mainClassName="hero-h1-rotate"
-                rotationInterval={2200}
-                staggerDuration={0.02}
+                rotationInterval={2400}
+                splitBy="words"
+                animatePresenceMode="sync"
+                staggerDuration={0}
+                transition={{ duration: 0.36, ease: "easeInOut" }}
+                initial={{ y: "35%", opacity: 0 }}
+                exit={{ y: "-35%", opacity: 0 }}
               />
             </div>
             <p>{t("hero.sub")}</p>

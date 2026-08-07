@@ -150,7 +150,7 @@ const RotatingText = forwardRef<RotatingTextRef, RotatingTextProps>((props, ref)
         {texts[currentTextIndex]}
       </span>
       <AnimatePresence mode={animatePresenceMode} initial={animatePresenceInitial}>
-        <motion.span key={currentTextIndex} layout aria-hidden="true">
+        <motion.span key={currentTextIndex} aria-hidden="true">
           {elements.map((wordObj, wordIndex, array) => {
             const previousCharsCount = array.slice(0, wordIndex).reduce((sum, word) => sum + word.char.length, 0);
             return (
