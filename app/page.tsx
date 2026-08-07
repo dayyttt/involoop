@@ -118,7 +118,10 @@ export default function Home() {
             <p className="hero-note">{t("hero.note")}</p>
           </div>
         </div>
-        <div className="trust-strip">
+      </section>
+
+      <section className="channel-band">
+        <div className="site-shell">
           <ChannelMarquee />
         </div>
       </section>
