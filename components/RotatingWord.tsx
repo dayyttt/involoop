@@ -15,19 +15,32 @@ export default function RotatingWord({
   wordClass?: string;
 }) {
   const [index, setIndex] = useState(0);
+  const [rotated, setRotated] = useState(false);
 
   useEffect(() => {
-    const id = setInterval(() => setIndex((prev) => (prev + 1) % words.length), interval);
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (query.matches) return;
+    const id = setInterval(() => {
+      setRotated(true);
+      setIndex((prev) => (prev + 1) % words.length);
+    }, interval);
     return () => clearInterval(id);
   }, [words.length, interval]);
 
+  // No aria-live: announcing a new phrase every couple of seconds turns the
+  // headline into noise for screen readers. The current phrase is read once,
+  // as part of the sentence around it.
   return (
-    <span className="rot-word" aria-live="polite">
-      <AnimatePresence mode="wait">
+    <span className="rot-word">
+      {/* initial={false}: the first phrase is part of the headline, so it must
+          be painted straight away instead of starting at opacity 0. */}
+      <AnimatePresence mode="wait" initial={false}>
         <motion.span
           key={words[index]}
           className={wordClass}
-          initial={{ opacity: 0, filter: "blur(5px)" }}
+          // The first phrase is part of the headline the server sends, so it
+          // must not start hidden. Only later phrases fade in.
+          initial={rotated ? { opacity: 0, filter: "blur(5px)" } : false}
           animate={{ opacity: 1, filter: "blur(0px)" }}
           exit={{ opacity: 0, filter: "blur(5px)" }}
           transition={{ duration: 0.45, ease: "easeOut" }}

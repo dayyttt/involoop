@@ -25,7 +25,7 @@ export async function GET(
     .single();
 
   if (error || !invoice) {
-    return NextResponse.json({ error: "Invoice tidak ditemukan." }, { status: 404 });
+    return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
   }
 
   const owner = Array.isArray(invoice.owner) ? invoice.owner[0] : invoice.owner;

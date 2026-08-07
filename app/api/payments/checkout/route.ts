@@ -1,19 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { getStripe, stripeConfigured } from "@/lib/stripe";
+import { apiError } from "@/lib/api-lang";
 
 // Create a Stripe Checkout Session for a public invoice. Funds settle to the
 // OWNER's connected account (destination charge), never to Involoop's balance.
 // The amount is always read from the database, never from the client.
 // Expects: { public_id: string }
 export async function POST(req: NextRequest) {
+  let lang: unknown = "en";
   try {
-    const { public_id } = await req.json();
+    const body = await req.json();
+    const { public_id } = body;
+    lang = body.lang;
     if (!public_id) return NextResponse.json({ error: "public_id is required" }, { status: 400 });
 
     if (!stripeConfigured()) {
       return NextResponse.json(
-        { error: "Pembayaran Stripe belum aktif untuk proyek ini." },
+        { error: apiError(lang, "Card payment is not enabled for this project yet.", "Pembayaran Stripe belum aktif untuk proyek ini.") },
         { status: 503 }
       );
     }
@@ -25,11 +29,14 @@ export async function POST(req: NextRequest) {
       .eq("public_id", public_id)
       .single();
     if (error || !invoice) {
-      return NextResponse.json({ error: "Invoice tidak ditemukan." }, { status: 404 });
+      return NextResponse.json(
+        { error: apiError(lang, "Invoice not found.", "Invoice tidak ditemukan.") },
+        { status: 404 }
+      );
     }
     if (invoice.status !== "unpaid" && invoice.status !== "payment_pending") {
       return NextResponse.json(
-        { error: "Invoice sudah diproses." },
+        { error: apiError(lang, "This invoice has already been processed.", "Invoice sudah diproses.") },
         { status: 409 }
       );
     }
@@ -107,7 +114,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error("checkout error", err);
     return NextResponse.json(
-      { error: "Gagal membuat sesi pembayaran. Coba lagi." },
+      { error: apiError(lang, "Could not create the payment session. Try again.", "Gagal membuat sesi pembayaran. Coba lagi.") },
       { status: 500 }
     );
   }

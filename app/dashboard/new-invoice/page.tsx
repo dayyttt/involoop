@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { formatMoney } from "@/lib/money";
-import { appText, useLang } from "@/lib/i18n";
+import { appText } from "@/lib/i18n";
+import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
 
 const SAMPLE = "Tagih PT Kreatif Digital Rp2.500.000 untuk pengembangan landing page, jatuh tempo 12 Agustus 2026.";
@@ -213,8 +214,9 @@ export default function NewInvoice() {
               <div className="card-panel">
                 <form onSubmit={handleAI} style={{ display: "flex", flexDirection: "column" }}>
                   <div className="field">
-                    <label>{t("newInvoice.sentenceLabel")}</label>
+                    <label htmlFor="billing-sentence">{t("newInvoice.sentenceLabel")}</label>
                     <textarea
+                      id="billing-sentence"
                       className="input"
                       value={rawText}
                       onChange={(e) => setRawText(e.target.value)}
@@ -223,14 +225,16 @@ export default function NewInvoice() {
                     />
                   </div>
                   <div className="chip-row">
+                    <span className="hint">{t("newInvoice.useSample")}</span>
                     {SAMPLES.map((s) => (
                       <button
                         key={s}
                         type="button"
                         onClick={() => setRawText(s)}
                         className="chip"
+                        title={s}
                       >
-                        {t("newInvoice.useSample")}
+                        {s.length > 40 ? `${s.slice(0, 40)}…` : s}
                       </button>
                     ))}
                   </div>
@@ -276,9 +280,10 @@ export default function NewInvoice() {
                   )}
                   <form onSubmit={handlePublish} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <div className="field">
-                      <label>{t("newInvoice.clientName")}</label>
+                      <label htmlFor="client-name">{t("newInvoice.clientName")}</label>
                       <input
                         className="input"
+                        id="client-name"
                         value={form.client_name}
                         onChange={(e) => setField("client_name", e.target.value)}
                         placeholder={t("newInvoice.clientPlaceholder")}
@@ -286,9 +291,10 @@ export default function NewInvoice() {
                       />
                     </div>
                     <div className="field">
-                      <label>{t("newInvoice.description")}</label>
+                      <label htmlFor="invoice-description">{t("newInvoice.description")}</label>
                       <input
                         className="input"
+                        id="invoice-description"
                         value={form.description}
                         onChange={(e) => setField("description", e.target.value)}
                         placeholder={t("newInvoice.descriptionPlaceholder")}
@@ -297,9 +303,10 @@ export default function NewInvoice() {
                     </div>
                     <div className="form-row">
                       <div className="field">
-                        <label>{t("newInvoice.amount")}</label>
+                        <label htmlFor="invoice-amount">{t("newInvoice.amount")}</label>
                         <input
                           className="input"
+                          id="invoice-amount"
                           value={form.amount}
                           onChange={(e) => setField("amount", e.target.value)}
                           placeholder="50"
@@ -307,9 +314,10 @@ export default function NewInvoice() {
                         />
                       </div>
                       <div className="field">
-                        <label>{t("newInvoice.currency")}</label>
+                        <label htmlFor="invoice-currency">{t("newInvoice.currency")}</label>
                         <select
                           className="input"
+                          id="invoice-currency"
                           value={form.currency}
                           onChange={(e) => setField("currency", e.target.value)}
                         >
@@ -322,18 +330,20 @@ export default function NewInvoice() {
                       </div>
                     </div>
                     <div className="field">
-                      <label>{t("newInvoice.dueDate")}</label>
+                      <label htmlFor="invoice-due">{t("newInvoice.dueDate")}</label>
                       <input
                         className="input"
                         type="date"
-                        value={form.due_date}
+                        id="invoice-due"
+                          value={form.due_date}
                         onChange={(e) => setField("due_date", e.target.value)}
                       />
                     </div>
                     <div className="field">
-                      <label>{t("newInvoice.ctaLabel")}</label>
+                      <label htmlFor="invoice-cta">{t("newInvoice.ctaLabel")}</label>
                       <input
                         className="input"
+                        id="invoice-cta"
                         value={form.cta_message}
                         onChange={(e) => setField("cta_message", e.target.value)}
                         placeholder={t("newInvoice.ctaPlaceholder")}

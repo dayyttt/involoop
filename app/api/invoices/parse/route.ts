@@ -8,9 +8,11 @@ import { apiError } from "@/lib/api-lang";
 // never writes to the database.
 // Expects: { raw_text: string, lang?: "en" | "id" }
 export async function POST(req: NextRequest) {
+  let lang: unknown = "en";
   try {
     const body = await req.json();
-    const { raw_text, lang } = body;
+    const { raw_text } = body;
+    lang = body.lang;
     if (!raw_text || typeof raw_text !== "string") {
       return NextResponse.json(
         { error: apiError(lang, "Write your billing sentence first.", "Tulis kalimat tagihan dulu.") },
@@ -23,7 +25,10 @@ export async function POST(req: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: "Kamu belum login." }, { status: 401 });
+      return NextResponse.json(
+        { error: apiError(lang, "You are not signed in.", "Kamu belum login.") },
+        { status: 401 }
+      );
     }
 
     let parsed;
@@ -65,7 +70,7 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     console.error("invoice parse error", err);
     return NextResponse.json(
-      { error: "Terjadi kesalahan saat menyusun invoice. Coba lagi." },
+      { error: apiError(lang, "Something went wrong composing the invoice. Try again.", "Terjadi kesalahan saat menyusun invoice. Coba lagi.") },
       { status: 500 }
     );
   }

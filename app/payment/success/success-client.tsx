@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { formatMoney, formatDate } from "@/lib/money";
-import { appText, useLang } from "@/lib/i18n";
+import { appText } from "@/lib/i18n";
+import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
 
 export default function PaymentSuccess({ sessionId }: { sessionId: string | null }) {

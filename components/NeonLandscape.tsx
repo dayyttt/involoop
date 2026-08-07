@@ -3,17 +3,33 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
+// Decorative WebGL backdrop for the hero.
+//
+// It opts itself out where it would cost more than it gives: phones (small
+// screens run the whole page on one thermal budget) and readers who asked for
+// reduced motion. When it does run it pauses as soon as the hero leaves the
+// viewport, so scrolling the rest of the page costs nothing.
 export default function NeonLandscape() {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    if (typeof window === "undefined") return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const smallScreen = window.matchMedia("(max-width: 900px)").matches;
+    if (reducedMotion || smallScreen) return;
 
     const canvas = document.createElement("canvas");
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "low-power" });
+    } catch {
+      return; // No WebGL: the gradient shade underneath is a fine fallback.
+    }
     el.appendChild(canvas);
-
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setClearColor(0x0c080e);
 
     const scene = new THREE.Scene();
@@ -24,7 +40,7 @@ export default function NeonLandscape() {
     camera.lookAt(0, 0, -3);
 
     const SIZE = 40;
-    const SEG = 140;
+    const SEG = 96; // 9.4k vertices instead of 19.9k: same look, half the CPU.
     const geo = new THREE.PlaneGeometry(SIZE, SIZE, SEG, SEG);
     geo.rotateX(-Math.PI / 2);
 
@@ -40,6 +56,14 @@ export default function NeonLandscape() {
       colors[i * 3 + 2] = c.b;
     }
     geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+    // Cache the flat grid once; the wave only needs x/z, which never change.
+    const baseX = new Float32Array(pos.count);
+    const baseZ = new Float32Array(pos.count);
+    for (let i = 0; i < pos.count; i++) {
+      baseX[i] = pos.getX(i);
+      baseZ[i] = pos.getZ(i);
+    }
 
     const material = new THREE.MeshBasicMaterial({ wireframe: true, vertexColors: true });
     const mesh = new THREE.Mesh(geo, material);
@@ -63,17 +87,19 @@ export default function NeonLandscape() {
     ro.observe(el);
 
     let raf = 0;
+    let running = false;
     const clock = new THREE.Clock();
+
     const tick = () => {
       const t = clock.getElapsedTime();
       const p = geo.attributes.position as THREE.BufferAttribute;
+      const array = p.array as Float32Array;
       for (let i = 0; i < p.count; i++) {
-        const x = p.getX(i);
-        const z = p.getZ(i);
-        const y =
+        const x = baseX[i];
+        const z = baseZ[i];
+        array[i * 3 + 1] =
           Math.sin(x * 0.35 + t * 0.6) * Math.cos(z * 0.4 + t * 0.5) * 1.7 +
           Math.sin((x + z) * 0.25 + t * 0.4) * 0.8;
-        p.setY(i, y);
       }
       p.needsUpdate = true;
 
@@ -84,16 +110,35 @@ export default function NeonLandscape() {
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+
+    const start = () => {
+      if (running) return;
+      running = true;
+      clock.getDelta();
+      raf = requestAnimationFrame(tick);
+    };
+    const stop = () => {
+      if (!running) return;
+      running = false;
+      cancelAnimationFrame(raf);
+    };
+
+    // Only animate while the hero is actually on screen.
+    const io = new IntersectionObserver(
+      ([entry]) => (entry.isIntersecting ? start() : stop()),
+      { threshold: 0 }
+    );
+    io.observe(el);
 
     return () => {
-      cancelAnimationFrame(raf);
+      stop();
+      io.disconnect();
       ro.disconnect();
       window.removeEventListener("scroll", onScroll);
       geo.dispose();
       material.dispose();
       renderer.dispose();
-      el.removeChild(canvas);
+      if (canvas.parentNode === el) el.removeChild(canvas);
     };
   }, []);
 

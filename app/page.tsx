@@ -1,48 +1,54 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import NeonLandscape from "@/components/NeonLandscape";
 import ChannelMarquee from "@/components/ChannelMarquee";
-import BlurText from "@/components/reactbits/BlurText";
 import SpotlightCard from "@/components/reactbits/SpotlightCard";
 import CountUp from "@/components/reactbits/CountUp";
 import RotatingWord from "@/components/RotatingWord";
 import LoopFlow from "@/components/LoopFlow";
+import TryDemo from "@/components/TryDemo";
 import { createClient } from "@/lib/supabase-browser";
-import { landing, getInitialLang, setLangCookie, landingText, landingItems, type Lang } from "@/lib/i18n";
+import { landing, landingText, landingItems } from "@/lib/i18n";
+import { useLang, useSetLang } from "@/components/LangProvider";
+
+// The WebGL hero is decoration: it must never block first paint, and it is not
+// worth 348 KB on a phone, so it loads after hydration and opts itself out on
+// small screens and for reduced-motion users.
+const NeonLandscape = dynamic(() => import("@/components/NeonLandscape"), { ssr: false });
 
 export default function Home() {
-  const [lang, setLang] = useState<Lang>(getInitialLang());
+  const lang = useLang();
+  const setLang = useSetLang();
   const t = (key: string) => landingText(lang, key);
   const router = useRouter();
-
-  const toggleLang = () => {
-    const next: Lang = lang === "en" ? "id" : "en";
-    setLangCookie(next);
-    setLang(next);
-  };
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
 
   async function handleUpgrade(plan: "starter" | "pro") {
+    setUpgradeError(null);
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      router.push(`/login?plan=${plan}`);
+      // A visitor clicking a price is almost always new: send them to signup,
+      // carrying the plan so checkout opens right after the account exists.
+      router.push(`/signup?plan=${plan}`);
       return;
     }
     const res = await fetch("/api/payments/upgrade", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({ plan, lang }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok && data.url) {
       window.location.href = data.url;
     } else {
-      alert(data.error ?? "Upgrade failed");
+      setUpgradeError(data.error ?? "Upgrade failed");
     }
   }
 
@@ -51,6 +57,16 @@ export default function Home() {
   const testimonials = landingItems(lang, "testimonials.items");
   const trustItems = landingItems(lang, "trust.items");
   const howSteps = landingItems(lang, "how.items");
+  const faqItems = landingItems(lang, "faq.items");
+
+  const navLinks = [
+    ["#how", t("nav.process")],
+    ["#why", t("nav.why")],
+    ["#features", t("nav.features")],
+    ["#reward", t("nav.reward")],
+    ["#pricing", t("nav.pricing")],
+    ["#faq", t("nav.faq")],
+  ];
 
   return (
     <main className="landing">
@@ -60,21 +76,50 @@ export default function Home() {
             Invo<span className="brand-accent">loop</span>
           </Link>
           <nav className="site-nav" aria-label="Main navigation">
-            <a href="#why">{t("nav.why")}</a>
-            <a href="#features">{t("nav.features")}</a>
-            <a href="#process">{t("nav.process")}</a>
-            <a href="#reward">{t("nav.reward")}</a>
-            <a href="#pricing">{t("nav.pricing")}</a>
+            {navLinks.map(([href, label]) => (
+              <a key={href} href={href}>
+                {label}
+              </a>
+            ))}
           </nav>
           <div className="header-actions">
-            <button className="lang-switch" onClick={toggleLang}>
+            <button
+              className="lang-switch"
+              onClick={() => setLang(lang === "en" ? "id" : "en")}
+              aria-label={lang === "en" ? "Ganti ke Bahasa Indonesia" : "Switch to English"}
+              lang={lang === "en" ? "id" : "en"}
+            >
               {lang === "en" ? "ID" : "EN"}
             </button>
             <Link href="/signup" className="btn btn-primary">
               {t("nav.getStarted")}
             </Link>
+            <button
+              type="button"
+              className="menu-toggle"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-nav"
+              aria-label={menuOpen ? t("nav.closeMenu") : t("nav.openMenu")}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              <span className={menuOpen ? "menu-icon menu-icon-open" : "menu-icon"} aria-hidden />
+            </button>
           </div>
         </div>
+        {menuOpen && (
+          <nav id="mobile-nav" className="mobile-nav" aria-label="Mobile navigation">
+            <div className="site-shell">
+              {navLinks.map(([href, label]) => (
+                <a key={href} href={href} onClick={() => setMenuOpen(false)}>
+                  {label}
+                </a>
+              ))}
+              <Link href="/login" onClick={() => setMenuOpen(false)}>
+                {t("footer.login")}
+              </Link>
+            </div>
+          </nav>
+        )}
       </header>
 
       <section id="home" className="agency-hero">
@@ -82,20 +127,15 @@ export default function Home() {
         <div className="hero-shade" />
         <div className="site-shell agency-hero-inner">
           <div className="agency-hero-copy">
-            <BlurText
-              text={`${t("hero.h1a")} `}
-              delay={120}
-              stepDuration={0.32}
-              className="hero-h1"
-            />
-            <div className="hero-h1" style={{ display: "flex", flexWrap: "wrap", gap: "0.18em" }}>
+            <h1 className="hero-h1 hero-reveal">{t("hero.h1a")}</h1>
+            <p className="hero-h1 hero-h1-rot">
               <span>{t("hero.rotPrefix")} </span>
               <RotatingWord
-                words={lang === "id" ? landing.hero.rotWordsId : landing.hero.rotWords}
+                words={lang === "id" ? [...landing.hero.rotWordsId] : [...landing.hero.rotWords]}
                 wordClass="hero-word-gradient"
               />
-            </div>
-            <p>{t("hero.sub")}</p>
+            </p>
+            <p className="hero-sub">{t("hero.sub")}</p>
             <div className="hero-actions">
               <Link href="/signup" className="btn btn-primary btn-lg">
                 {t("hero.cta1")}
@@ -105,24 +145,21 @@ export default function Home() {
               </Link>
             </div>
             <div className="hero-points">
-              <span>
-                <b>{t("hero.p1")}</b>
-              </span>
-              <span>
-                <b>{t("hero.p2")}</b>
-              </span>
-              <span>
-                <b>{t("hero.p3")}</b>
-              </span>
+              <span>{t("hero.p1")}</span>
+              <span>{t("hero.p2")}</span>
+              <span>{t("hero.p3")}</span>
             </div>
             <p className="hero-note">{t("hero.note")}</p>
+          </div>
+          <div className="agency-hero-demo">
+            <TryDemo />
           </div>
         </div>
       </section>
 
       <section className="channel-band">
         <div className="site-shell">
-          <ChannelMarquee />
+          <ChannelMarquee label={t("marquee.label")} />
         </div>
       </section>
 
@@ -145,26 +182,28 @@ export default function Home() {
         <div className="section-image invoice-mock">
           <div className="mock-head">
             <span className="mono">INV-2026-009</span>
-            <span className="mock-status">UNPAID</span>
+            <span className="mock-status">{lang === "id" ? "BELUM DIBAYAR" : "UNPAID"}</span>
           </div>
           <div className="mock-block">
-            <span className="mock-label">FROM</span>
+            <span className="mock-label">{lang === "id" ? "DARI" : "FROM"}</span>
             <strong>Budi Santoso</strong>
           </div>
           <div className="mock-block">
-            <span className="mock-label">TO</span>
+            <span className="mock-label">{lang === "id" ? "UNTUK" : "TO"}</span>
             <strong>Acme Studio</strong>
           </div>
           <div className="mock-line">
-            <span>Landing page design</span>
-            <b className="money">$50.00</b>
+            <span>{lang === "id" ? "Desain landing page" : "Landing page design"}</span>
+            <b className="money">Rp 2.500.000</b>
           </div>
           <div className="mock-pay">
-            <span className="btn btn-primary mock-btn">Pay securely</span>
+            <span className="btn btn-primary mock-btn">{lang === "id" ? "Bayar sekarang" : "Pay securely"}</span>
             <span className="mock-test">Stripe Test Mode</span>
           </div>
           <div className="mock-cta">
-            <span>Create your own invoice, free →</span>
+            <span>
+              {lang === "id" ? "Buat invoicemu sendiri, gratis →" : "Create your own invoice, free →"}
+            </span>
           </div>
         </div>
         <div>
@@ -275,6 +314,7 @@ export default function Home() {
         <div className="process-head">
           <h2>{t("pricing.title")}</h2>
           <p className="body-copy">{t("pricing.sub")}</p>
+          <p className="credit-line">{t("pricing.creditLine")}</p>
         </div>
         <div className="pricing-grid">
           <div className="plan">
@@ -289,6 +329,7 @@ export default function Home() {
           <div className="plan plan-featured">
             <h3 className="plan-name">{t("pricing.starter")}</h3>
             <div className="plan-price">{t("pricing.starterPrice")}<span>{t("pricing.starterWhen")}</span></div>
+            {t("pricing.starterApprox") && <p className="plan-approx">{t("pricing.starterApprox")}</p>}
             <p className="plan-desc">{t("pricing.starterDesc")}</p>
             <ul className="plan-features">
               <li>{t("pricing.s1")}</li><li>{t("pricing.s2")}</li><li>{t("pricing.s3")}</li>
@@ -298,6 +339,7 @@ export default function Home() {
           <div className="plan">
             <h3 className="plan-name">{t("pricing.pro")}</h3>
             <div className="plan-price">{t("pricing.proPrice")}<span>{t("pricing.proWhen")}</span></div>
+            {t("pricing.proApprox") && <p className="plan-approx">{t("pricing.proApprox")}</p>}
             <p className="plan-desc">{t("pricing.proDesc")}</p>
             <ul className="plan-features">
               <li>{t("pricing.p1")}</li><li>{t("pricing.p2")}</li><li>{t("pricing.p3")}</li>
@@ -305,7 +347,25 @@ export default function Home() {
             <button onClick={() => handleUpgrade("pro")} className="btn btn-ghost" style={{ width: "100%" }}>{t("pricing.ctaUpgrade")}</button>
           </div>
         </div>
+        {upgradeError && <p className="error" style={{ textAlign: "center" }}>{upgradeError}</p>}
         <p className="hint" style={{ textAlign: "center", marginTop: 28 }}>{t("pricing.note")}</p>
+      </section>
+
+      <section id="faq" className="site-shell section-space">
+        <div className="process-head">
+          <h2>{t("faq.title")}</h2>
+        </div>
+        <div className="faq-list">
+          {faqItems.map(([num, question, answer]) => (
+            <details className="faq-item" key={num}>
+              <summary>
+                <span>{question}</span>
+                <span className="faq-mark" aria-hidden />
+              </summary>
+              <p>{answer}</p>
+            </details>
+          ))}
+        </div>
       </section>
 
       <section id="trust" className="section-space muted-band">
@@ -339,19 +399,21 @@ export default function Home() {
           <nav>
             <a href="#why">{t("nav.why")}</a>
             <a href="#features">{t("nav.features")}</a>
-            <a href="#process">{t("nav.process")}</a>
+            <a href="#how">{t("nav.process")}</a>
+            <a href="#faq">{t("nav.faq")}</a>
             <Link href="/login">{t("footer.login")}</Link>
           </nav>
           <nav className="footer-legal">
-            <a href="#privacy">{t("footer.privacy")}</a>
-            <a href="#terms">{t("footer.terms")}</a>
+            <Link href="/privacy">{t("footer.privacy")}</Link>
+            <Link href="/terms">{t("footer.terms")}</Link>
             <a href="#payments">{t("footer.payments")}</a>
             <a href="https://github.com/dayyttt/involoop" target="_blank" rel="noreferrer">{t("footer.github")}</a>
             <a href="mailto:hello@involoop.vercel.app">{t("footer.contact")}</a>
           </nav>
           <p className="footer-disclaimer" id="payments">
-            Payments are processed by third-party providers. Involoop does not
-            store full payment card details.
+            {lang === "id"
+              ? "Pembayaran diproses oleh penyedia pihak ketiga (Stripe). Involoop tidak menyimpan data kartu."
+              : "Payments are processed by third-party providers (Stripe). Involoop does not store full payment card details."}
           </p>
           <div className="footer-bottom">
             <span>© 2026 Involoop.</span>

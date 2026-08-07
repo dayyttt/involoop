@@ -9,9 +9,13 @@ export interface ParsedInvoice {
   cta_message: string;
 }
 
-function buildSystemPrompt(lang: string): string {
+function buildSystemPrompt(lang: string, today: string): string {
   const ctaLang = lang === "id" ? "Indonesian" : "English";
-  return `You turn one freelancer sentence into a structured invoice, in Indonesian or English context.
+  return `Today's date is ${today}. Resolve every relative due date ("in 2 weeks",
+"jatuh tempo seminggu", "end of the month") against that date, and never return a
+due date in the past. If no due date is mentioned, return null.
+
+You turn one freelancer sentence into a structured invoice, in Indonesian or English context.
 You also write ONE short, warm, context-aware referral line (max 20 words, written in ${ctaLang})
 that will be shown to the CLIENT on the payment page, inviting them to try Involoop themselves IF their business
 also needs to bill customers. Tailor the line to the type of work described. Never sound like generic ad copy.
@@ -37,6 +41,8 @@ export async function parseInvoiceFromText(input: string, lang = "en"): Promise<
     throw new Error("AI not configured");
   }
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const res = await fetch(`${baseURL}/messages`, {
     method: "POST",
     headers: {
@@ -49,7 +55,7 @@ export async function parseInvoiceFromText(input: string, lang = "en"): Promise<
       model,
       max_tokens: 2000,
       stream: false,
-      system: buildSystemPrompt(lang),
+      system: buildSystemPrompt(lang, today),
       messages: [{ role: "user", content: input }],
     }),
     signal: AbortSignal.timeout(50000),
@@ -109,6 +115,17 @@ export async function parseInvoiceFromText(input: string, lang = "en"): Promise<
   const CURRENCIES = ["USD", "EUR", "GBP", "SGD", "IDR"];
   if (!parsed.currency || !CURRENCIES.includes(parsed.currency)) {
     parsed.currency = "IDR";
+  }
+
+  // A model with an older knowledge cutoff can answer "due in two weeks" with a
+  // date from a previous year. A due date far in the past is always a parsing
+  // error, and a wrong date on an invoice is worse than no date at all.
+  if (parsed.due_date) {
+    const due = new Date(parsed.due_date);
+    const floor = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    if (Number.isNaN(due.getTime()) || due < floor) {
+      parsed.due_date = null;
+    }
   }
 
   return parsed;

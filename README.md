@@ -38,16 +38,34 @@ idempotent ledger, not only as a balance.
 ## Main features
 
 - Natural-language invoice generation via Claude + manual fallback.
-- Public invoice page; no client login required.
+- Login-free demo of that step on the landing page: a visitor watches one
+  sentence become an invoice before deciding to sign up (rate-limited, never
+  writes to the database).
+- Public invoice page; no client login required. Server-rendered with a
+  generated Open Graph card, so a link pasted into WhatsApp previews the
+  sender, amount, and status instead of a generic site title.
 - Multicurrency: USD, EUR, GBP, SGD, IDR. Money stored as integer minor units.
 - Stripe sandbox Checkout + verified webhook + permanent Vercel endpoint.
 - Manual transfer fallback: client confirms → owner verifies.
 - Referral attribution survives refresh via query + cookie.
 - Two-way reward: owner +3, client +2 on top of 3 initial credits.
-- Dashboard: invoice views, CTA clicks, signups, conversion, paid invoices,
-  credits earned, referral rows, and auditable credit ledger.
-- English default + EN|ID language switcher.
+- Dashboard: money owed and received per currency first, then the distribution
+  metrics (views, CTA clicks, signups, conversion, credits earned), referral
+  rows, and an auditable credit ledger.
+- English default + EN|ID switcher, resolved on the server from a cookie, so
+  there is no language flash and `<html lang>` is always honest.
+- Privacy Policy and Terms pages describing what is actually stored, what
+  credits are, and that payments run in Stripe test mode.
 - Demo-only workspace reset.
+
+## Accessibility and performance notes
+
+- Button fills are darkened relative to the brand accents so white label text
+  clears WCAG AA (4.9:1 and 5.2:1, up from 3.4:1 and 2.2:1).
+- The hero headline is a real `<h1>`, server-rendered visible; nothing that
+  matters starts at `opacity: 0`.
+- The three.js backdrop is dynamically imported, skipped on small screens and
+  for `prefers-reduced-motion`, and paused once the hero scrolls away.
 
 ## Tech stack
 
@@ -68,6 +86,8 @@ app/
   dashboard/new-invoice          AI + manual multicurrency invoice
   invoice/[id]                   Public invoice / payment / referral surface
   payment/success                Verified Stripe payment summary + CTA
+  privacy|terms                  Server-rendered legal documents (EN|ID)
+  api/demo/parse                 Public, rate-limited sentence → invoice preview
   api/signup                     Auth user → finalize_signup RPC
   api/invoices/create            AI/manual → publish_invoice RPC
   api/invoices/view              Atomic public view counter

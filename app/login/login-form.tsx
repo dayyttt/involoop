@@ -1,86 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { appText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 
-const REF_COOKIE = "ref_invoice";
-
-export default function SignupForm({ refInvoice, plan }: { refInvoice: string | null; plan: "starter" | "pro" | null }) {
-  const router = useRouter();
+export default function LoginForm({ plan }: { plan: "starter" | "pro" | null }) {
   const supabase = createClient();
+  const router = useRouter();
   const lang = useLang();
   const t = (k: string) => appText(lang, k);
 
-  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Persist the referral in a cookie so it survives a refresh even if the URL
-  // query is lost, and so the OAuth callback can restore attribution.
-  useEffect(() => {
-    if (refInvoice) {
-      document.cookie = `${REF_COOKIE}=${refInvoice}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-    }
-  }, [refInvoice]);
-
-  function getRefFromCookie() {
-    const match = document.cookie.match(/(?:^|;\s*)ref_invoice=([^;]+)/);
-    return match ? match[1] : null;
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    if (password.length < 6) {
-      setError(t("signup.shortPassword"));
-      setLoading(false);
-      return;
-    }
-
-    const ref = refInvoice ?? getRefFromCookie();
-    const normalizedEmail = email.trim().toLowerCase();
-
-    const res = await fetch("/api/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: normalizedEmail,
-        password,
-        full_name: fullName,
-        ref_invoice_public_id: ref ?? undefined,
-        lang,
-      }),
-    });
-
-    const data = await res.json();
-    setLoading(false);
-
-    if (!res.ok) {
-      setError(data.error ?? t("signup.signupFail"));
-      return;
-    }
-
-    // Sign in immediately so the new user lands straight in their dashboard.
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
+      email,
       password,
     });
 
     if (signInError) {
-      setError(t("signup.createdSignIn"));
-      router.push("/login");
+      setLoading(false);
+      setError(t("login.wrongCreds"));
       return;
     }
-
-    document.cookie = `${REF_COOKIE}=; path=/; max-age=0`;
 
     if (plan) {
       const res = await fetch("/api/payments/upgrade", {
@@ -94,18 +46,13 @@ export default function SignupForm({ refInvoice, plan }: { refInvoice: string | 
         return;
       }
     }
-
     router.push("/dashboard");
   }
 
-  async function handleOAuth() {
+  async function handleOAuth(provider: "google" | "github") {
     setError(null);
-    const ref = refInvoice ?? getRefFromCookie();
-    if (ref) {
-      document.cookie = `${REF_COOKIE}=${ref}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
-    }
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
+      provider,
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (oauthError) {
@@ -116,69 +63,55 @@ export default function SignupForm({ refInvoice, plan }: { refInvoice: string | 
   return (
     <main className="auth-shell">
       <div className="card">
-        <h1>{t("signup.title")}</h1>
-        <p className="sub">{t("signup.sub")}</p>
-        {plan && (
+        <h1>{t("login.title")}</h1>
+        <p className="sub">{t("login.sub")}</p>
+        {plan ? (
           <p className="note-box">
             {plan === "starter" ? "Starter $3" : "Pro $8/month"} · {t("login.payAfter")}
           </p>
-        )}
-        {refInvoice && (
-          <p className="note-box">
-            {t("signup.invited")}
-          </p>
-        )}
+        ) : null}
         <div className="oauth-row">
-          <button type="button" className="btn btn-ghost" onClick={handleOAuth}>
-            <GoogleIcon /> {t("signup.continueGoogle")}
+          <button type="button" className="btn btn-ghost" onClick={() => handleOAuth("google")}>
+            <GoogleIcon /> {t("login.continueGoogle")}
           </button>
         </div>
-        <div className="divider"><span>{t("signup.orEmail")}</span></div>
+        <div className="divider"><span>{t("login.orEmail")}</span></div>
         <form
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: 14 }}
         >
           <div className="field">
-            <label htmlFor="fullName">{t("signup.fullName")}</label>
-            <input
-              id="fullName"
-              className="input"
-              placeholder={t("signup.fullNamePlaceholder")}
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="email">{t("signup.email")}</label>
+            <label htmlFor="email">{t("login.email")}</label>
             <input
               id="email"
               className="input"
               type="email"
-              placeholder={t("signup.emailPlaceholder")}
+              placeholder={t("login.emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
           <div className="field">
-            <label htmlFor="password">{t("signup.password")}</label>
+            <label htmlFor="password">{t("login.password")}</label>
             <input
               id="password"
               className="input"
               type="password"
-              placeholder={t("signup.passwordPlaceholder")}
+              placeholder={t("login.passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? t("signup.signingUp") : t("signup.createAccount")}
+            {loading ? t("login.signingIn") : t("login.signIn")}
           </button>
         </form>
         {error && <p className="error">{error}</p>}
         <p className="hint" style={{ marginTop: 16 }}>
-          {t("signup.haveAccount")} <Link href="/login">{t("signup.signIn")}</Link>.
+          {t("login.noAccount")}{" "}
+          <Link href={plan ? `/signup?plan=${plan}` : "/signup"}>{t("login.createOne")}</Link>.
         </p>
       </div>
     </main>

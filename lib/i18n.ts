@@ -17,25 +17,63 @@ type Pair = readonly [string, string];
 type Item = { en: readonly [string, string, string]; id: readonly [string, string, string] };
 
 export const landing = {
-  nav: { why: ["Why", "Kenapa"] as Pair, features: ["Features", "Fitur"] as Pair, process: ["How it works", "Cara kerja"] as Pair, reward: ["Reward", "Reward"] as Pair, pricing: ["Pricing", "Harga"] as Pair, getStarted: ["Start free", "Mulai gratis"] as Pair },
+  nav: {
+    why: ["Why", "Kenapa"] as Pair,
+    features: ["Features", "Fitur"] as Pair,
+    process: ["How it works", "Cara kerja"] as Pair,
+    reward: ["Reward", "Reward"] as Pair,
+    pricing: ["Pricing", "Harga"] as Pair,
+    faq: ["FAQ", "FAQ"] as Pair,
+    getStarted: ["Start free", "Mulai gratis"] as Pair,
+    openMenu: ["Open menu", "Buka menu"] as Pair,
+    closeMenu: ["Close menu", "Tutup menu"] as Pair,
+  },
   hero: {
     badge: ["Distribution-first invoicing", "Distribution-first invoicing"] as Pair,
     h1a: ["Create invoices in seconds.", "Buat invoice dalam hitungan detik."] as Pair,
-    h1b: ["Earn your next invoice for free.", "Dapatkan invoice berikutnya secara gratis."] as Pair,
-    rotPrefix: ["Earn your next invoice for", "Dapatkan invoice berikutnya secara"] as Pair,
-    rotWords: ["free.", "paid.", "spreading."] as [string, string, string],
-    rotWordsId: ["gratis.", "terbayar.", "menyebar."] as [string, string, string],
+    h1b: ["Your next invoice is free.", "Invoice berikutnya gratis."] as Pair,
+    rotPrefix: ["Your next invoice is", "Invoice berikutnya"] as Pair,
+    rotWords: ["free.", "one sentence away.", "covered by a referral."] as [string, string, string],
+    rotWordsId: ["gratis.", "cukup satu kalimat.", "ditanggung referral."] as [string, string, string],
     sub: [
-      "Turn a single sentence into a shareable invoice, accept payment, and earn credits when another professional joins through your invoice.",
-      "Tulis tagihan dalam satu kalimat, kirim lewat link, dan dapatkan kredit saat klien bisnismu ikut menggunakan Involoop.",
+      "Write one sentence, get a payment link you can send anywhere. You start with 3 free invoices, and every client who joins through your invoice gives you 3 more.",
+      "Tulis satu kalimat, dapat link tagihan yang bisa dikirim ke mana saja. Kamu mulai dengan 3 invoice gratis, dan setiap klien yang ikut lewat invoicemu menambah 3 lagi.",
     ] as Pair,
     cta1: ["Create your first invoice →", "Buat invoice pertama →"] as Pair,
     cta2: ["Sign in", "Masuk"] as Pair,
     cta3: ["View live sample", "Lihat contoh invoice"] as Pair,
-    p1: ["Start with 3 free invoices", "Mulai dengan 3 invoice gratis"] as Pair,
-    p2: ["Each referral pays for your next one", "Setiap referral menanggung invoice berikutnya"] as Pair,
-    p3: ["The client who joins earns credits too", "Klien yang bergabung juga dapat kredit"] as Pair,
-    note: ["Start free. No credit card. Send an invoice in a couple of minutes.", "Gratis untuk mulai. Tanpa kartu kredit. Kirim invoice dalam hitungan menit."] as Pair,
+    p1: ["3 free invoices to start", "3 invoice gratis untuk mulai"] as Pair,
+    p2: ["+3 more every time a client joins", "+3 lagi tiap ada klien yang ikut"] as Pair,
+    p3: ["1 credit = 1 invoice. No subscription needed.", "1 kredit = 1 invoice. Tanpa langganan."] as Pair,
+    note: ["Free to start. No credit card. Your first invoice takes about a minute.", "Gratis untuk mulai. Tanpa kartu kredit. Invoice pertama selesai sekitar satu menit."] as Pair,
+  },
+  demo: {
+    title: ["Try it right here. No account needed.", "Coba langsung di sini. Tanpa daftar."] as Pair,
+    sub: [
+      "Type how you would say it out loud. The AI turns it into a real invoice.",
+      "Ketik seperti kamu ngomong sehari-hari. AI yang menyusun jadi invoice.",
+    ] as Pair,
+    placeholder: [
+      "e.g. bill Rina 2 million for a logo design, due in 2 weeks",
+      "cth. tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu",
+    ] as Pair,
+    run: ["See the invoice →", "Lihat invoicenya →"] as Pair,
+    running: ["Composing…", "Menyusun…"] as Pair,
+    tryThis: ["Try:", "Coba:"] as Pair,
+    resultLabel: ["THIS IS WHAT YOUR CLIENT WOULD SEE", "INI YANG DILIHAT KLIENMU"] as Pair,
+    to: ["TO", "UNTUK"] as Pair,
+    due: ["Due", "Jatuh tempo"] as Pair,
+    ctaLine: ["Referral line written for this job:", "Ajakan yang ditulis untuk pekerjaan ini:"] as Pair,
+    publish: ["Publish this invoice free →", "Terbitkan invoice ini gratis →"] as Pair,
+    again: ["Try another sentence", "Coba kalimat lain"] as Pair,
+    failed: [
+      "Could not read that sentence. Try mentioning who, what, and how much.",
+      "Kalimatnya belum terbaca. Sebutkan siapa, jasa apa, dan berapa nominalnya.",
+    ] as Pair,
+    limit: [
+      "Demo limit reached. Create a free account to keep going.",
+      "Batas demo tercapai. Buat akun gratis untuk lanjut.",
+    ] as Pair,
   },
   marquee: {
     label: ["Shared through the channels you already use", "Dikirim lewat channel yang sudah kamu pakai"] as Pair,
@@ -76,9 +114,9 @@ export const landing = {
       "You already invoice other businesses every week. That is a relevant audience at a high-value moment, and it has never been used as a growth channel.",
       "Freelancer sudah rutin mengirim invoice ke bisnis dan profesional lain. Itu audiens relevan di momen bernilai tinggi yang belum dipakai sebagai jalur pertumbuhan.",
     ] as Pair,
-    m1: ["3", "3"] as Pair, m1l: ["Free credits", "Kredit awal"] as Pair,
-    m2: ["+3", "+3"] as Pair, m2l: ["For the referrer", "Untuk referrer"] as Pair,
-    m3: ["+2", "+2"] as Pair, m3l: ["For the client", "Untuk klien"] as Pair,
+    m1: ["3", "3"] as Pair, m1l: ["Invoices when you start", "Invoice saat mulai"] as Pair,
+    m2: ["+3", "+3"] as Pair, m2l: ["For you, per client who joins", "Untukmu, tiap klien ikut"] as Pair,
+    m3: ["+2", "+2"] as Pair, m3l: ["Bonus for that client", "Bonus untuk klien itu"] as Pair,
     cta: ["Try it now →", "Coba sekarang →"] as Pair,
   },
   features: {
@@ -109,7 +147,7 @@ export const landing = {
   reward: {
     eyebrow: ["TWO-WAY REWARDS", "REWARD DUA ARAH"] as Pair,
     title: ["Both sides win. The loop runs itself.", "Kedua pihak menang. Loop lanjut sendiri."] as Pair,
-    lead: ["No change to how freelancers work. Rewards only appear when a referral actually signs up.", "Freelancer tidak perlu mengubah cara kerja. Reward muncul hanya ketika referral benar-benar selesai mendaftar."] as Pair,
+    lead: ["1 credit = 1 invoice you can publish. Credits only move when a client actually finishes signing up.", "1 kredit = 1 invoice yang bisa kamu terbitkan. Kredit hanya bergerak saat klien benar-benar selesai mendaftar."] as Pair,
     a: ["A", "A"] as Pair, at: ["Freelancer", "Freelancer"] as Pair, ad: ["Every successful referral from an invoice.", "Setiap referral berhasil dari invoice."] as Pair,
     b: ["B", "B"] as Pair, bt: ["Client", "Klien"] as Pair, bd: ["Bonus on top of the standard signup credits.", "Bonus di atas kredit signup biasa."] as Pair,
     creditsWord: ["credits", "kredit"] as Pair,
@@ -161,14 +199,49 @@ export const landing = {
     eyebrow: ["PRICING", "HARGA"] as Pair,
     title: ["Start free. Pay only when you need more.", "Mulai gratis. Bayar hanya saat butuh lebih."] as Pair,
     sub: ["Start with three invoices on us. Need more? Buy a plan or earn them when a client joins through your invoice.", "Tiga invoice pertama gratis. Butuh lebih? Beli paket atau dapatkan tambahan saat klien bergabung lewat invoicemu."] as Pair,
-    free: ["Free", "Gratis"] as Pair, freePrice: ["$0", "Rp 0"] as Pair, freeDesc: ["Start billing at no cost.", "Mulai menagih tanpa biaya."] as Pair,
-    f1: ["3 public invoices", "3 invoice publik"] as Pair, f2: ["+3 credits per referral", "+3 kredit per referral"] as Pair, f3: ["Public link + referral CTA", "Link publik + CTA referral"] as Pair,
-    starter: ["Starter", "Starter"] as Pair, starterPrice: ["$3", "Rp 29.000"] as Pair, starterWhen: [" one-time", " sekali"] as Pair, starterDesc: ["For freelancers billing weekly.", "Untuk freelancer aktif menagih tiap minggu."] as Pair,
-    s1: ["10 public invoices", "10 invoice publik"] as Pair, s2: ["Stripe payment", "Pembayaran Stripe"] as Pair, s3: ["Basic analytics", "Analitik dasar"] as Pair,
-    pro: ["Pro", "Pro"] as Pair, proPrice: ["$8", "Rp 79.000"] as Pair, proWhen: ["/month", "/bulan"] as Pair, proDesc: ["For micro-agencies and high volume.", "Untuk micro-agency dan volume tinggi."] as Pair,
-    p1: ["50 public invoices", "50 invoice publik"] as Pair, p2: ["Advanced analytics", "Analitik lanjutan"] as Pair, p3: ["Custom branding", "Branding khusus"] as Pair,
+    free: ["Free", "Gratis"] as Pair, freePrice: ["$0", "$0"] as Pair, freeDesc: ["Start billing at no cost.", "Mulai menagih tanpa biaya."] as Pair,
+    f1: ["3 invoices (3 credits)", "3 invoice (3 kredit)"] as Pair, f2: ["+3 credits per client who joins", "+3 kredit tiap klien ikut"] as Pair, f3: ["Public link + referral CTA", "Link publik + CTA referral"] as Pair,
+    starter: ["Starter", "Starter"] as Pair, starterPrice: ["$3", "$3"] as Pair, starterWhen: [" one-time", " sekali bayar"] as Pair, starterDesc: ["For freelancers billing weekly.", "Untuk freelancer aktif menagih tiap minggu."] as Pair,
+    starterApprox: ["", "≈ Rp 49.000"] as Pair,
+    s1: ["10 invoices (10 credits)", "10 invoice (10 kredit)"] as Pair, s2: ["Stripe payment", "Pembayaran Stripe"] as Pair, s3: ["Basic analytics", "Analitik dasar"] as Pair,
+    pro: ["Pro", "Pro"] as Pair, proPrice: ["$8", "$8"] as Pair, proWhen: ["/month", "/bulan"] as Pair, proDesc: ["For micro-agencies and high volume.", "Untuk micro-agency dan volume tinggi."] as Pair,
+    proApprox: ["", "≈ Rp 131.000"] as Pair,
+    p1: ["50 invoices (50 credits)", "50 invoice (50 kredit)"] as Pair, p2: ["Advanced analytics", "Analitik lanjutan"] as Pair, p3: ["Custom branding", "Branding khusus"] as Pair,
     ctaStart: ["Start", "Mulai"] as Pair, ctaContact: ["Contact us", "Hubungi kami"] as Pair, ctaUpgrade: ["Upgrade", "Upgrade"] as Pair,
-    note: ["Payments run in Stripe test mode, no real money is charged.", "Pembayaran berjalan di Stripe Test Mode, tidak ada uang asli yang ditarik."] as Pair,
+    creditLine: ["1 credit = 1 published invoice.", "1 kredit = 1 invoice yang diterbitkan."] as Pair,
+    note: [
+      "Plans are billed in USD through Stripe; the rupiah figure is an estimate. Payments currently run in Stripe test mode, so no real money is charged.",
+      "Paket ditagih dalam USD lewat Stripe; angka rupiah adalah perkiraan. Saat ini pembayaran berjalan di Stripe Test Mode, jadi tidak ada uang asli yang ditarik.",
+    ] as Pair,
+  },
+  faq: {
+    title: ["Questions people actually ask.", "Pertanyaan yang sering ditanyakan."] as Pair,
+    items: [
+      {
+        en: ["01", "What exactly is a credit?", "One credit publishes one invoice. You get 3 when you sign up, so your first 3 invoices cost nothing. Credits never expire."],
+        id: ["01", "Kredit itu apa sih?", "Satu kredit dipakai untuk menerbitkan satu invoice. Kamu dapat 3 saat daftar, jadi 3 invoice pertama gratis. Kredit tidak hangus."],
+      },
+      {
+        en: ["02", "Does my client need an account?", "No. They open the link, see the invoice, and pay. Nothing to install, nothing to sign up for."],
+        id: ["02", "Klien saya harus punya akun?", "Tidak. Klien tinggal buka link, lihat tagihannya, lalu bayar. Tidak perlu install atau daftar apa pun."],
+      },
+      {
+        en: ["03", "How do I actually get more credits?", "Each invoice carries a small invitation. If your client signs up through it, you get +3 credits and they get +2 on top of their own 3."],
+        id: ["03", "Cara nambah kreditnya gimana?", "Tiap invoice membawa ajakan kecil. Kalau klienmu mendaftar lewat situ, kamu dapat +3 kredit dan dia dapat +2 di atas 3 kredit miliknya."],
+      },
+      {
+        en: ["04", "Where does the money land?", "Straight into your own Stripe account, which you connect from the dashboard. Involoop never holds your money and never stores card details."],
+        id: ["04", "Uangnya masuk ke mana?", "Langsung ke akun Stripe milikmu, yang kamu hubungkan dari dashboard. Involoop tidak pernah menahan uangmu dan tidak menyimpan data kartu."],
+      },
+      {
+        en: ["05", "Can I still use bank transfer?", "Yes. Every invoice offers a manual transfer option: your client confirms they sent it, and you verify it from your dashboard."],
+        id: ["05", "Masih bisa transfer bank?", "Bisa. Setiap invoice punya opsi transfer manual: klien konfirmasi sudah transfer, lalu kamu verifikasi dari dashboard."],
+      },
+      {
+        en: ["06", "Is this real money right now?", "Not yet. Payments run in Stripe test mode while we finish verification, and every payment screen says so plainly."],
+        id: ["06", "Sekarang uangnya beneran?", "Belum. Pembayaran masih berjalan di Stripe Test Mode selama proses verifikasi, dan tiap halaman pembayaran menyebutkannya terang-terangan."],
+      },
+    ] as Item[],
   },
   finalCta: {
     eyebrow: ["READY TO BILL?", "SIAP MENAGIH?"] as Pair,
@@ -290,8 +363,8 @@ export const app = {
     sendWhatsapp: ["Send via WA", "Kirim WA"] as T,
     referralSection: ["Referral program", "Program referral"] as T,
     referralCodeHint: [
-      "This code is used when a friend signs up through your invoice link, each successful referral earns +5 credits.",
-      "Kode ini dipakai saat temanmu mendaftar lewat link invoicemu, setiap referral sukses memberi +5 kredit.",
+      "Nothing to share manually: every invoice link already carries your referral. When a client signs up through one, you get +3 credits and they get +2. This code is only your internal reference.",
+      "Tidak perlu dibagikan manual: tiap link invoice sudah membawa referralmu. Saat klien mendaftar lewat link itu, kamu dapat +3 kredit dan dia dapat +2. Kode ini hanya referensi internalmu.",
     ] as T,
     referralEmpty: [
       "No referrals yet. The CTA on each invoice invites your clients to join.",
@@ -337,6 +410,26 @@ export const app = {
     filterUnpaid: ["Unpaid", "Belum bayar"] as T,
     filterAwaiting: ["Awaiting", "Menunggu"] as T,
     filterPaid: ["Paid", "Lunas"] as T,
+    moneyTitle: ["Your money", "Uang kamu"] as T,
+    moneyOutstanding: ["Waiting to be paid", "Menunggu dibayar"] as T,
+    moneyReceived: ["Received", "Sudah diterima"] as T,
+    moneyBilled: ["Billed in total", "Total ditagihkan"] as T,
+    moneyEmpty: ["Publish an invoice and the totals show up here.", "Terbitkan invoice, totalnya akan muncul di sini."] as T,
+    growthTitle: ["Your loop", "Loop kamu"] as T,
+    setupTitle: ["Finish one step so clients can pay you", "Selesaikan satu langkah agar klien bisa membayar"] as T,
+    setupBody: [
+      "Connect Stripe and every invoice you send gets a Pay button. Until then, clients can only confirm a manual transfer.",
+      "Hubungkan Stripe supaya tiap invoice punya tombol Bayar. Sebelum itu, klien hanya bisa konfirmasi transfer manual.",
+    ] as T,
+    setupDone: ["Clients can pay your invoices online.", "Klien sudah bisa membayar invoicemu secara online."] as T,
+    signIn: ["Sign in", "Masuk"] as T,
+    signUp: ["Create a free account", "Buat akun gratis"] as T,
+  },
+  legal: {
+    updated: ["Last updated", "Terakhir diperbarui"] as T,
+    back: ["← Back to Involoop", "← Kembali ke Involoop"] as T,
+    privacyTitle: ["Privacy Policy", "Kebijakan Privasi"] as T,
+    termsTitle: ["Terms of Service", "Ketentuan Layanan"] as T,
   },
   newInvoice: {
     title: ["Create invoice", "Buat invoice"] as T,
@@ -352,7 +445,7 @@ export const app = {
       "e.g. bill Rina 2 million for a logo design, due in 2 weeks",
       "contoh: tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu",
     ] as T,
-    useSample: ["Use sample →", "Pakai contoh →"] as T,
+    useSample: ["Try one of these:", "Coba salah satu:"] as T,
     composing: ["Composing invoice…", "Menyusun invoice…"] as T,
     createWithAI: ["Create invoice with AI", "Buat invoice dengan AI"] as T,
     fillManual: ["Fill manually instead", "Isi manual saja"] as T,
@@ -413,6 +506,18 @@ export const app = {
       "Transfer ke rekening yang disepakati dengan {sender}, lalu konfirmasi di bawah.",
     ] as T,
     confirmTransfer: ["I have completed the transfer", "Saya sudah transfer"] as T,
+    confirmTransferAsk: [
+      "Confirm that you already sent the transfer? The sender will be asked to verify it.",
+      "Konfirmasi bahwa kamu sudah mengirim transfer? Pengirim akan diminta memverifikasinya.",
+    ] as T,
+    awaitingHint: [
+      "The sender has been notified and will confirm once the money lands.",
+      "Pengirim sudah diberi tahu dan akan mengonfirmasi begitu dananya masuk.",
+    ] as T,
+    testBadge: [
+      "Stripe Test Mode · no real money will be charged",
+      "Stripe Test Mode · tidak ada uang asli yang ditarik",
+    ] as T,
     sending: ["Sending confirmation…", "Mengirim konfirmasi…"] as T,
     checkoutFailed: ["Could not create payment session.", "Gagal membuat sesi pembayaran."] as T,
     confirmFailed: ["Something went wrong. Try again.", "Terjadi kesalahan. Coba lagi."] as T,
@@ -456,12 +561,6 @@ export function appText(lang: Lang, key: string, vars?: Record<string, string>):
   return val.replace(/\{(\w+)\}/g, (m, k) => vars[k] ?? m);
 }
 
-import { useEffect, useState } from "react";
-
-export function useLang(): Lang {
-  const [lang, setLang] = useState<Lang>("en");
-  useEffect(() => {
-    setLang(getInitialLang());
-  }, []);
-  return lang;
-}
+// `useLang` now lives in components/LangProvider.tsx: the language is resolved
+// on the server from the cookie and passed down, so no page has to guess it
+// after hydration.

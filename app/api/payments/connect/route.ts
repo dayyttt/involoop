@@ -21,7 +21,11 @@ export async function POST(req: NextRequest) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Kamu belum login." }, { status: 401 });
+    if (!user)
+      return NextResponse.json(
+        { error: apiError(lang, "You are not signed in.", "Kamu belum login.") },
+        { status: 401 }
+      );
 
     const admin = createAdminClient();
     const { data: profile } = await admin

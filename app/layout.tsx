@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { LangProvider } from "@/components/LangProvider";
+import { LANG_COOKIE, type Lang } from "@/lib/i18n";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -25,9 +28,16 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Resolve the language on the server so <html lang> is honest and the first
+  // paint is already in the reader's language.
+  const cookieLang = cookies().get(LANG_COOKIE)?.value;
+  const lang: Lang = cookieLang === "id" ? "id" : "en";
+
   return (
-    <html lang="id" className={fonts}>
-      <body>{children}</body>
+    <html lang={lang} className={fonts}>
+      <body>
+        <LangProvider initialLang={lang}>{children}</LangProvider>
+      </body>
     </html>
   );
 }

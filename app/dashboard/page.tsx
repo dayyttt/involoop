@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase-browser";
 import { formatMoney } from "@/lib/money";
-import { appText, useLang } from "@/lib/i18n";
+import { appText } from "@/lib/i18n";
+import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
 
 interface Invoice {
@@ -212,13 +213,37 @@ export default function Dashboard() {
           </>
         ) : (
           <>
-            {t("dashboard.notLoggedIn")} <Link href="/signup">{t("common.retry")}</Link>.
+            <p>{t("dashboard.notLoggedIn")}</p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
+              <Link href="/signup" className="btn btn-primary">
+                {t("dashboard.signUp")}
+              </Link>
+              <Link href="/login" className="btn btn-ghost">
+                {t("dashboard.signIn")}
+              </Link>
+            </div>
           </>
         )}
       </main>
     );
 
   const { profile, invoices, ledger, referrals, stats } = data;
+
+  // What a freelancer opens a dashboard for: how much is still owed and how
+  // much has landed. Grouped per currency because one account can bill in IDR
+  // and USD in the same week, and adding those together would be a lie.
+  const byCurrency = invoices.reduce<Record<string, { billed: number; received: number; outstanding: number }>>(
+    (acc, inv) => {
+      const bucket = (acc[inv.currency] ??= { billed: 0, received: 0, outstanding: 0 });
+      bucket.billed += inv.amount;
+      if (inv.status === "paid") bucket.received += inv.amount;
+      else if (inv.status !== "failed" && inv.status !== "refunded") bucket.outstanding += inv.amount;
+      return acc;
+    },
+    {}
+  );
+  const currencies = Object.keys(byCurrency).sort((a, b) => byCurrency[b].billed - byCurrency[a].billed);
+  const stripeConnected = profile.stripe_status === "connected";
 
   const FILTERS: { key: "all" | "unpaid" | "awaiting" | "paid"; label: string }[] = [
     { key: "all", label: t("dashboard.filterAll") },
@@ -265,7 +290,56 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        <div className="stat-grid" style={{ marginTop: 20 }}>
+        {!stripeConnected && (
+          <div className="setup-banner">
+            <div>
+              <strong>{t("dashboard.setupTitle")}</strong>
+              <p>{t("dashboard.setupBody")}</p>
+            </div>
+            <button className="btn btn-primary" onClick={handleConnectStripe} disabled={connecting}>
+              {connecting ? (
+                <>
+                  <Spinner /> {t("dashboard.connecting")}
+                </>
+              ) : (
+                t("dashboard.connectStripe")
+              )}
+            </button>
+          </div>
+        )}
+
+        <h2 className="section-title">{t("dashboard.moneyTitle")}</h2>
+        {currencies.length === 0 ? (
+          <p className="empty" style={{ marginBottom: 8 }}>{t("dashboard.moneyEmpty")}</p>
+        ) : (
+          <div className="money-grid">
+            {currencies.map((currency) => (
+              <div className="money-card" key={currency}>
+                <span className="stat-label">
+                  {t("dashboard.moneyOutstanding")} · {currency}
+                </span>
+                <div className="stat-value money">
+                  {formatMoney(byCurrency[currency].outstanding, currency, lang === "id" ? "id-ID" : "en-US")}
+                </div>
+                <div className="money-sub">
+                  <span>
+                    {t("dashboard.moneyReceived")}:{" "}
+                    <b className="text-ok">
+                      {formatMoney(byCurrency[currency].received, currency, lang === "id" ? "id-ID" : "en-US")}
+                    </b>
+                  </span>
+                  <span>
+                    {t("dashboard.moneyBilled")}:{" "}
+                    <b>{formatMoney(byCurrency[currency].billed, currency, lang === "id" ? "id-ID" : "en-US")}</b>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <h2 className="section-title">{t("dashboard.growthTitle")}</h2>
+        <div className="stat-grid">
           <Stat label={t("dashboard.credit")} value={profile.free_invoice_credits.toString()} />
           <Stat label={t("dashboard.views")} value={stats.total_views.toString()} />
           <Stat label={t("dashboard.clicks")} value={stats.total_clicks.toString()} />
@@ -499,9 +573,10 @@ export default function Dashboard() {
               </div>
               <div className="settings-row">
                 <span>{t("dashboard.defaultCurrency")}</span>
-                <strong>USD</strong>
+                <strong>{currencies[0] ?? "IDR"}</strong>
               </div>
             </div>
+            {stripeConnected && <p className="hint">{t("dashboard.setupDone")}</p>}
             <p className="test-badge" style={{ marginTop: 14 }}>
               {t("dashboard.stripeTestBadge")}
             </p>

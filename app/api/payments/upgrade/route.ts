@@ -35,7 +35,10 @@ export async function POST(req: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: "Kamu belum login." }, { status: 401 });
+      return NextResponse.json(
+        { error: apiError(lang, "You are not signed in.", "Kamu belum login.") },
+        { status: 401 }
+      );
     }
 
     const stripe = getStripe()!;
