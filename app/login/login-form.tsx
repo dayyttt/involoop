@@ -57,6 +57,14 @@ export default function LoginForm({
 
   async function handleOAuth(provider: "google" | "github") {
     setError(null);
+    // This page promises "sign in to create your invoice" when `next` is set,
+    // and the password path keeps that promise. The OAuth path used to drop it
+    // on the floor. `next` cannot ride along in redirectTo — Supabase matches
+    // that URL against its allow list — so it travels in a cookie, the same
+    // way referral attribution already survives the trip to Google.
+    if (next) {
+      document.cookie = `oauth_next=${encodeURIComponent(next)}; path=/; max-age=600; SameSite=Lax`;
+    }
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: `${window.location.origin}/auth/callback` },

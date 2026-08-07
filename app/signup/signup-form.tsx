@@ -114,6 +114,9 @@ export default function SignupForm({
     if (ref) {
       document.cookie = `${REF_COOKIE}=${ref}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
     }
+    if (next) {
+      document.cookie = `oauth_next=${encodeURIComponent(next)}; path=/; max-age=600; SameSite=Lax`;
+    }
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },

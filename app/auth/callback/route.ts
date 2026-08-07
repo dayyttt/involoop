@@ -7,10 +7,22 @@ export const dynamic = "force-dynamic";
 // OAuth callback (PKCE). Exchanges the code, then ensures the user has a
 // profile + initial credits. If the visitor came from a referral CTA, the
 // ref_invoice cookie restores attribution so the loop still rewards the owner.
+// Only ever a path on this site. Anything else — an absolute URL, or the
+// protocol-relative "//host" form — is discarded rather than redirected to.
+function safeNext(value: string | undefined, fallback: string): string {
+  if (!value) return fallback;
+  const decoded = decodeURIComponent(value);
+  if (!decoded.startsWith("/") || decoded.startsWith("//")) return fallback;
+  return decoded;
+}
+
 export async function GET(req: NextRequest) {
   const base = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   const code = req.nextUrl.searchParams.get("code");
-  const next = req.nextUrl.searchParams.get("next") || "/dashboard";
+  // Where the person was actually heading before they were asked to sign in.
+  // Carried in a cookie because Supabase validates redirectTo against its
+  // allow list, so a query string on that URL is not safe to rely on.
+  const wanted = req.cookies.get("oauth_next")?.value;
 
   if (!code) {
     return NextResponse.redirect(`${base}/login?error=oauth_failed`);
@@ -46,11 +58,16 @@ export async function GET(req: NextRequest) {
           null,
         p_ref_invoice_public_id: ref,
       });
-      const res = NextResponse.redirect(`${base}${next}`);
+      // A brand new account came here to send an invoice, not to read a
+      // dashboard of zeroes — the same landing the email signup path picks.
+      const res = NextResponse.redirect(`${base}${safeNext(wanted, "/dashboard/new-invoice")}`);
       res.cookies.set("ref_invoice", "", { path: "/", maxAge: 0 });
+      res.cookies.set("oauth_next", "", { path: "/", maxAge: 0 });
       return res;
     }
   }
 
-  return NextResponse.redirect(`${base}${next}`);
+  const res = NextResponse.redirect(`${base}${safeNext(wanted, "/dashboard")}`);
+  res.cookies.set("oauth_next", "", { path: "/", maxAge: 0 });
+  return res;
 }
