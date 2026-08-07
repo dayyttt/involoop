@@ -412,24 +412,19 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 @media (max-width: 480px) { .trust-grid { grid-template-columns: 1fr; } }
 
 .final-cta { position: relative; display: flex; align-items: center; gap: 32px; border-top: 1px solid var(--line); }
-.final-cta-copy { flex: 1; position: relative; z-index: 1; }
+.final-cta-copy { flex: 1; }
 .final-cta-copy p { color: var(--text-2); margin-bottom: 0; }
-/* The closing image sits behind the words rather than beside them: the shader
-   already dissolves its edges, so the overlap has no seam to give it away, and
-   the wallet can be large enough to register without stealing a column.
-   pointer-events: none keeps the text selectable — PayLoop tracks the pointer
-   on window and tests the rect itself, so it loses nothing. */
-.final-cta-visual { position: absolute; left: -24px; top: 50%; width: 470px; height: 352px; transform: translateY(-50%); z-index: 0; perspective: 900px; pointer-events: none; }
-/* The headline starts over the wallet's right third, so the object passes
-   behind the words instead of merely stopping next to them. */
-@media (min-width: 900px) { .final-cta-copy { padding-left: 268px; } }
+/* Its own column beside the words, not behind them — large enough to register,
+   with clear air between it and the headline. pointer-events: none because
+   PayLoop tracks the pointer on window and tests its own rect, so the layer
+   never needs to swallow a click. */
+.final-cta-visual { flex: none; width: 330px; height: 248px; margin-left: -18px; perspective: 900px; pointer-events: none; }
 .payloop { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; will-change: transform; }
 .payloop-poster { width: 100%; height: 100%; object-fit: contain; transition: opacity var(--dur-slow) var(--ease); }
 .payloop-canvas { position: absolute; inset: 0; display: block; width: 100% !important; height: 100% !important; }
 .payloop-shaded .payloop-poster { opacity: 0; }
-/* Below the split it goes back to being its own element, above the words. */
 @media (max-width: 899px) {
-  .final-cta-visual { position: static; transform: none; width: 240px; height: 180px; margin-bottom: 4px; }
+  .final-cta-visual { width: 240px; height: 180px; margin: 0 0 4px; }
 }
 
 /* ---- Pricing ---- */
