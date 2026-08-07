@@ -1397,3 +1397,63 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 .wallet-current { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,255,255,.02); }
 .wallet-address { font-size: 12px; word-break: break-all; color: var(--text); }
 .wallet-warning { margin: 0; padding: 11px 13px; border-left: 2px solid var(--success); border-radius: 0 6px 6px 0; background: var(--success-soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2); }
+
+/* ---------------------------------------------------------------------------
+   USDC payment
+   Built for someone who has never done this. The network is the first thing
+   read, the amount is copyable, and the progress says words rather than
+   spinning — a spinner with no explanation is how somebody decides the payment
+   is stuck and sends it twice.
+--------------------------------------------------------------------------- */
+.crypto-panel { display: flex; flex-direction: column; gap: 14px; }
+
+.crypto-network {
+  padding: 9px 12px; border-radius: 6px;
+  background: rgba(255,255,255,.04); border: 1px solid var(--line);
+  font-size: 12.5px; color: var(--text-2); text-align: center;
+}
+.crypto-network.is-test { border-color: rgba(244,189,85,.35); background: var(--warn-soft); color: var(--warn); }
+.crypto-network strong { color: inherit; }
+
+/* White plate behind the code on purpose: a camera reads dark-on-light far
+   more reliably than a code tinted to match a dark page. */
+.crypto-qr { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.crypto-qr img { border-radius: 8px; background: #fff; }
+.crypto-qr .hint { margin: 0; text-align: center; }
+
+.crypto-rows { display: grid; gap: 8px; }
+.crypto-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
+.crypto-row > span { color: var(--text-2); }
+.crypto-copy {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+  border: 0; background: none; color: var(--text); cursor: pointer; font: inherit; text-align: right;
+}
+.crypto-copy strong { font-size: 15px; }
+.crypto-copy .mono { font-size: 12px; }
+.crypto-copy:hover strong, .crypto-copy:hover .mono { color: var(--primary); }
+.crypto-note { margin: 0; font-size: 12px; }
+
+.crypto-progress { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; border-top: 1px solid var(--line); }
+.crypto-progress span { font-size: 12px; color: var(--muted); padding-left: 16px; position: relative; }
+.crypto-progress span::before {
+  content: ""; position: absolute; left: 0; top: 5px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--line-2);
+}
+.crypto-progress .is-active { color: var(--text); }
+.crypto-progress .is-active::before { background: var(--primary); }
+.crypto-progress .is-done::before { background: var(--success); }
+
+.crypto-done { align-items: center; text-align: center; gap: 8px; padding: 16px 0; }
+.crypto-done strong { color: var(--success); font-size: 16px; }
+
+/* The way into crypto: available, findable, and not competing with the button
+   most people actually want. */
+.crypto-switch {
+  display: flex; flex-direction: column; gap: 2px; width: 100%;
+  padding: 12px 14px; border: 1px dashed var(--line-2); border-radius: var(--radius);
+  background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease);
+}
+.crypto-switch:hover { border-color: var(--primary); }
+.crypto-switch strong { font-size: 13.5px; }
+.crypto-switch .hint { margin: 0; }

@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase-admin";
 import {
   buildSolanaPayUrl,
@@ -29,6 +30,8 @@ const REQUEST_TTL_MINUTES = 30;
 export interface CryptoRequest {
   reference: string;
   url: string;
+  /** Data URI. Generated here so the browser does not need a QR library. */
+  qr: string;
   amount: string;
   amountMinor: number;
   recipient: string;
@@ -144,8 +147,17 @@ async function findLiveRequest(match: {
   const { data } = await query.order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (!data) return null;
 
+  const reuseUrl = buildSolanaPayUrl({
+    recipient: data.recipient_wallet,
+    amountMinor: Number(data.expected_amount_minor),
+    mint: data.token_mint,
+    reference: data.payment_reference,
+    label: "Involoop",
+    message: "Involoop payment",
+  });
   return {
     reference: data.payment_reference,
+    qr: await renderQr(reuseUrl),
     url: buildSolanaPayUrl({
       recipient: data.recipient_wallet,
       amountMinor: Number(data.expected_amount_minor),
@@ -227,10 +239,20 @@ async function createRequest(input: {
       .eq("status", "unpaid");
   }
 
+  const url = buildSolanaPayUrl({
+    recipient: input.recipient,
+    amountMinor: input.amountMinor,
+    mint,
+    reference,
+    label: input.label,
+    message: input.message,
+  });
+
   return {
     ok: true,
     request: {
       reference,
+      qr: await renderQr(url),
       url: buildSolanaPayUrl({
         recipient: input.recipient,
         amountMinor: input.amountMinor,
@@ -380,4 +402,22 @@ async function bumpAttempts(id: string): Promise<number | null> {
   const admin = createAdminClient();
   const { data } = await admin.from("crypto_payments").select("attempts").eq("id", id).maybeSingle();
   return (data?.attempts ?? 0) + 1;
+}
+
+/**
+ * The payment as a QR a phone wallet can scan. Dark on light on purpose: a
+ * camera reads that far more reliably than a low-contrast code styled to match
+ * the page, and a code that will not scan is worse than an ugly one.
+ */
+async function renderQr(url: string): Promise<string> {
+  try {
+    return await QRCode.toDataURL(url, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 260,
+      color: { dark: "#1b1420", light: "#ffffff" },
+    });
+  } catch {
+    return "";
+  }
 }

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import PayPalButtons from "@/components/PayPalButtons";
+import CryptoPayPanel from "@/components/CryptoPayPanel";
+import { cryptoLabels } from "@/lib/crypto-labels";
 import { appText, type Lang } from "@/lib/i18n";
 
 export type UpgradePlan = "starter" | "pro";
@@ -31,12 +33,14 @@ export default function UpgradeModal({
   const t = (k: string) => appText(lang, k);
   const reduced = useReducedMotion();
   const [error, setError] = useState<string | null>(null);
+  const [method, setMethod] = useState<"paypal" | "usdc">("paypal");
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocus = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!plan) return;
     setError(null);
+    setMethod("paypal");
     restoreFocus.current = document.activeElement as HTMLElement;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -120,17 +124,49 @@ export default function UpgradeModal({
                 </span>
               </div>
 
-              <PayPalButtons
-                currency="USD"
-                lang={lang}
-                createOrder={createPlanOrder}
-                onApproved={() => onPaid(plan)}
-                onError={(message) => setError(message)}
-                labelLoading={t("invoice.payLoading")}
-                labelUnavailable={t("invoice.payUnavailable")}
-                labelDeclined={t("invoice.payDeclined")}
-                labelPending={t("invoice.payPending")}
-              />
+              {method === "paypal" ? (
+                <>
+                  <PayPalButtons
+                    currency="USD"
+                    lang={lang}
+                    createOrder={createPlanOrder}
+                    onApproved={() => onPaid(plan)}
+                    onError={(message) => setError(message)}
+                    labelLoading={t("invoice.payLoading")}
+                    labelUnavailable={t("invoice.payUnavailable")}
+                    labelDeclined={t("invoice.payDeclined")}
+                    labelPending={t("invoice.payPending")}
+                  />
+
+                  {/* Crypto is offered, never pushed. Most people buying an $8
+                      plan will pay by card, and making them scroll past a
+                      blockchain to do it would be a worse product. */}
+                  <button type="button" className="crypto-switch" onClick={() => setMethod("usdc")}>
+                    <strong>{t("dashboard.payUsdc")}</strong>
+                    <span className="hint">{t("dashboard.payUsdcSub")}</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <CryptoPayPanel
+                    create={async () => {
+                      const res = await fetch("/api/payments/crypto", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ purpose: "plan", plan, lang }),
+                      });
+                      const body = await res.json();
+                      if (!res.ok) throw new Error(body.error ?? t("dashboard.upgradeFailed"));
+                      return body;
+                    }}
+                    labels={cryptoLabels(lang)}
+                    onConfirmed={() => onPaid(plan)}
+                  />
+                  <button type="button" className="link-btn" onClick={() => setMethod("paypal")}>
+                    {t("dashboard.payUsdcBack")}
+                  </button>
+                </>
+              )}
 
               {error && <p className="error" style={{ margin: 0 }}>{error}</p>}
               <p className="test-badge" style={{ margin: 0, textAlign: "center" }}>

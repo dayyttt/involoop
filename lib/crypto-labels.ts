@@ -1,0 +1,29 @@
+import { appText, type Lang } from "@/lib/i18n";
+import type { CryptoLabels } from "@/components/CryptoPayPanel";
+
+// One place the crypto panel's wording is assembled, because both directions
+// show the same panel and copy that drifts apart is copy that starts lying in
+// one of them.
+export function cryptoLabels(lang: Lang): CryptoLabels {
+  const t = (k: string) => appText(lang, k);
+  return {
+    loading: t("invoice.cryptoLoading"),
+    amountLabel: t("invoice.cryptoAmount"),
+    networkLabel: t("invoice.cryptoNetwork"),
+    recipientLabel: t("invoice.cryptoRecipient"),
+    openWallet: t("invoice.cryptoOpen"),
+    copyAmount: t("invoice.cryptoCopyAmount"),
+    copyAddress: t("invoice.cryptoCopyAddress"),
+    copied: t("invoice.cryptoCopied"),
+    scanHint: t("invoice.cryptoScan"),
+    feesHint: t("invoice.cryptoFees"),
+    exactHint: t("invoice.cryptoExact"),
+    waiting: t("invoice.cryptoWaiting"),
+    detected: t("invoice.cryptoDetected"),
+    verifying: t("invoice.cryptoVerifying"),
+    confirmed: t("invoice.cryptoConfirmed"),
+    expired: t("invoice.cryptoExpired"),
+    retry: t("invoice.cryptoRetry"),
+    viewTx: t("invoice.cryptoViewTx"),
+  };
+}
