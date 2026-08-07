@@ -155,8 +155,8 @@ export const landing = {
   },
   pricing: {
     eyebrow: ["PRICING", "HARGA"] as Pair,
-    title: ["One credit, one public invoice.", "Satu kredit, satu invoice publik."] as Pair,
-    sub: ["1 credit = 1 public invoice. Credits come from referrals, so billing cost can pay for itself through distribution.", "1 kredit = 1 invoice publik. Kredit didapat dari referral, sehingga biaya menagih bisa terbayar dari distribusi."] as Pair,
+    title: ["Start free. Pay only when you need more.", "Mulai gratis. Bayar hanya saat butuh lebih."] as Pair,
+    sub: ["Start with three invoices on us. Need more? Buy a plan or earn them when a client joins through your invoice.", "Tiga invoice pertama gratis. Butuh lebih? Beli paket atau dapatkan tambahan saat klien bergabung lewat invoicemu."] as Pair,
     free: ["Free", "Gratis"] as Pair, freePrice: ["$0", "Rp 0"] as Pair, freeDesc: ["Start billing at no cost.", "Mulai menagih tanpa biaya."] as Pair,
     f1: ["3 public invoices", "3 invoice publik"] as Pair, f2: ["+3 credits per referral", "+3 kredit per referral"] as Pair, f3: ["Public link + referral CTA", "Link publik + CTA referral"] as Pair,
     starter: ["Starter", "Starter"] as Pair, starterPrice: ["$3", "Rp 29.000"] as Pair, starterWhen: [" one-time", " sekali"] as Pair, starterDesc: ["For freelancers billing weekly.", "Untuk freelancer aktif menagih tiap minggu."] as Pair,
