@@ -22,6 +22,9 @@ export const landing = {
     badge: ["Distribution-first invoicing", "Distribution-first invoicing"] as Pair,
     h1a: ["Create invoices in seconds.", "Buat invoice dalam hitungan detik."] as Pair,
     h1b: ["Earn your next invoice for free.", "Dapatkan invoice berikutnya secara gratis."] as Pair,
+    rotPrefix: ["Earn your next invoice for", "Dapatkan invoice berikutnya secara"] as Pair,
+    rotWords: ["free.", "paid.", "spreading."] as [string, string, string],
+    rotWordsId: ["gratis.", "terbayar.", "menyebar."] as [string, string, string],
     sub: [
       "Turn a single sentence into a shareable invoice, accept payment, and earn credits when another professional joins through your invoice.",
       "Tulis tagihan dalam satu kalimat, kirim lewat link, dan dapatkan kredit saat klien bisnismu ikut menggunakan Involoop.",

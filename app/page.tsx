@@ -9,6 +9,7 @@ import BlurText from "@/components/reactbits/BlurText";
 import Magnet from "@/components/reactbits/Magnet";
 import SpotlightCard from "@/components/reactbits/SpotlightCard";
 import CountUp from "@/components/reactbits/CountUp";
+import RotatingText from "@/components/reactbits/RotatingText";
 import { createClient } from "@/lib/supabase-browser";
 import { landing, getInitialLang, setLangCookie, landingText, landingItems, type Lang } from "@/lib/i18n";
 
@@ -88,12 +89,15 @@ export default function Home() {
               stepDuration={0.32}
               className="hero-h1"
             />
-            <BlurText
-              text={t("hero.h1b")}
-              delay={120}
-              stepDuration={0.32}
-              className="hero-h1 gradient-text"
-            />
+            <div className="hero-h1" style={{ display: "flex", flexWrap: "wrap", gap: "0.18em" }}>
+              <span>{t("hero.rotPrefix")} </span>
+              <RotatingText
+                texts={lang === "id" ? landing.hero.rotWordsId : landing.hero.rotWords}
+                mainClassName="hero-h1-rotate"
+                rotationInterval={2200}
+                staggerDuration={0.02}
+              />
+            </div>
             <p>{t("hero.sub")}</p>
             <div className="hero-actions">
               <Magnet magnetStrength={4} padding={60}>
