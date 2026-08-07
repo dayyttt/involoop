@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseInvoiceFromText } from "@/lib/claude";
 import { apiError } from "@/lib/api-lang";
+import { currencyFromCookie } from "@/lib/currency-region";
 
 // Public, login-free preview of the one-sentence → invoice step. This is the
 // product's whole "aha" moment, so it has to be reachable before anyone signs
@@ -57,7 +58,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const parsed = await parseInvoiceFromText(raw_text.slice(0, MAX_INPUT), lang === "id" ? "id" : "en", today);
+    const parsed = await parseInvoiceFromText(
+      raw_text.slice(0, MAX_INPUT),
+      lang === "id" ? "id" : "en",
+      today,
+      currencyFromCookie(req.headers.get("cookie")) ?? "USD"
+    );
     if (!parsed.client_name || !parsed.description || !(parsed.amount > 0)) {
       throw new Error("incomplete parse");
     }

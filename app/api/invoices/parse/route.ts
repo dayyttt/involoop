@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { parseInvoiceFromText } from "@/lib/claude";
 import { apiError } from "@/lib/api-lang";
+import { currencyFromCookie } from "@/lib/currency-region";
 
 // Preview-only AI parse: turns a sentence into structured invoice fields so
 // the owner can review and edit BEFORE publishing. Never deducts credits and
@@ -33,7 +34,12 @@ export async function POST(req: NextRequest) {
 
     let parsed;
     try {
-      parsed = await parseInvoiceFromText(raw_text, lang === "id" ? "id" : "en", today);
+      parsed = await parseInvoiceFromText(
+        raw_text,
+        lang === "id" ? "id" : "en",
+        today,
+        currencyFromCookie(req.headers.get("cookie")) ?? "USD"
+      );
     } catch (err: any) {
       console.error("AI parse error", err);
       return NextResponse.json(

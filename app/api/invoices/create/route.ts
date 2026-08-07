@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase-admin";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { parseInvoiceFromText } from "@/lib/claude";
 import { apiError } from "@/lib/api-lang";
+import { currencyFromCookie } from "@/lib/currency-region";
 import { SUPPORTED_CURRENCIES } from "@/lib/money";
 
 // Expects: { raw_text: string } or { manual: true, ...fields }, lang?: "en" | "id"
@@ -47,7 +48,12 @@ export async function POST(req: NextRequest) {
       );
     } else {
       try {
-        parsed = await parseInvoiceFromText(raw_text, lang === "id" ? "id" : "en", today);
+        parsed = await parseInvoiceFromText(
+          raw_text,
+          lang === "id" ? "id" : "en",
+          today,
+          currencyFromCookie(req.headers.get("cookie")) ?? "USD"
+        );
       } catch (err: any) {
         console.error("AI parse error", err);
         return NextResponse.json(

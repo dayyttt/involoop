@@ -8,6 +8,7 @@ import { appText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
 import { takeDraft } from "@/lib/draft";
+import { currencyFromCookie } from "@/lib/currency-region";
 
 const SAMPLE = "Tagih PT Kreatif Digital Rp2.500.000 untuk pengembangan landing page, jatuh tempo 12 Agustus 2026.";
 
@@ -36,7 +37,7 @@ const EMPTY_FORM: FormState = {
   client_name: "",
   description: "",
   amount: "",
-  currency: "IDR",
+  currency: "USD",
   due_date: "",
   cta_message: "",
 };
@@ -58,6 +59,12 @@ export default function NewInvoice() {
   const [credits, setCredits] = useState<number | null>(null);
 
   // Pick up the sentence written in the landing-page demo, if there was one.
+  // Country first, so a form opened before any invoice exists is already right.
+  useEffect(() => {
+    const geo = currencyFromCookie(document.cookie);
+    if (geo) setForm((f) => ({ ...f, currency: geo }));
+  }, []);
+
   useEffect(() => {
     const draft = takeDraft();
     if (draft) {
@@ -76,9 +83,10 @@ export default function NewInvoice() {
         // Start in whatever currency this person last billed in. Defaulting
         // everyone to IDR is only right for one country, and this product is
         // not only used in one country.
+        // What they actually billed in last beats what their country suggests.
         const last = data?.invoices?.[0]?.currency;
         if (last && (SUPPORTED_CURRENCIES as readonly string[]).includes(last)) {
-          setForm((f) => (f.currency === "IDR" ? { ...f, currency: last } : f));
+          setForm((f) => ({ ...f, currency: last }));
         }
       })
       .catch(() => {});

@@ -11,7 +11,7 @@ export interface ParsedInvoice {
   cta_message: string;
 }
 
-function buildSystemPrompt(lang: string, today: string): string {
+function buildSystemPrompt(lang: string, today: string, fallbackCurrency: string): string {
   const ctaLang = lang === "id" ? "Indonesian" : "English";
   return `Today's date is ${today}. Resolve every relative due date ("in 2 weeks",
 "jatuh tempo seminggu", "end of the month") against that date, and never return a
@@ -30,7 +30,7 @@ Detect the currency from the amount given:
   "₱", "peso", "PHP"           -> PHP
   "$", "USD"                   -> USD
   "€" EUR, "£" GBP
-Default to IDR when no currency symbol is present.
+When no currency symbol or word is present at all, default to ${fallbackCurrency}.
 
 Respond ONLY with valid JSON, no markdown fences, matching this shape:
 {
@@ -46,7 +46,8 @@ Respond ONLY with valid JSON, no markdown fences, matching this shape:
 export async function parseInvoiceFromText(
   input: string,
   lang = "en",
-  clientToday?: string
+  clientToday?: string,
+  fallbackCurrency = "USD"
 ): Promise<ParsedInvoice> {
   const apiKey = process.env.AI_API_KEY;
   const model = process.env.AI_MODEL ?? "broday";
@@ -57,6 +58,10 @@ export async function parseInvoiceFromText(
   // The caller supplies its own date when it can. A server on UTC is already
   // a day ahead for anyone east of it and a day behind for anyone west, so
   // "due in two weeks" would land a day out for most of the world.
+  const fallback = (SUPPORTED_CURRENCIES as readonly string[]).includes(fallbackCurrency)
+    ? fallbackCurrency
+    : "USD";
+
   const today = /^\d{4}-\d{2}-\d{2}$/.test(clientToday ?? "")
     ? (clientToday as string)
     : new Date().toISOString().slice(0, 10);
@@ -73,7 +78,7 @@ export async function parseInvoiceFromText(
       model,
       max_tokens: 2000,
       stream: false,
-      system: buildSystemPrompt(lang, today),
+      system: buildSystemPrompt(lang, today, fallback),
       messages: [{ role: "user", content: input }],
     }),
     signal: AbortSignal.timeout(50000),
@@ -131,7 +136,7 @@ export async function parseInvoiceFromText(
   }
 
   if (!parsed.currency || !(SUPPORTED_CURRENCIES as readonly string[]).includes(parsed.currency)) {
-    parsed.currency = "IDR";
+    parsed.currency = fallback;
   }
 
   // A model with an older knowledge cutoff can answer "due in two weeks" with a

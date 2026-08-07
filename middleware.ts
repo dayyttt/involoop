@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { CURRENCY_COOKIE, currencyForCountry } from "@/lib/currency-region";
 
 // Everything under /dashboard needs an account. Without this the pages loaded
 // for anyone: the dashboard rendered an error where its numbers should be, and
@@ -8,6 +9,22 @@ import { NextResponse, type NextRequest } from "next/server";
 // arrives before the work does.
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } });
+
+  // Resolve the visitor's currency from where they are, once, and remember it.
+  // Vercel puts the country on every request, so this costs nothing and means
+  // an American writing "bill Acme 500" gets USD instead of rupiah.
+  if (!request.cookies.get(CURRENCY_COOKIE)) {
+    const country = request.headers.get("x-vercel-ip-country") ?? request.geo?.country;
+    response.cookies.set(CURRENCY_COOKIE, currencyForCountry(country), {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  }
+
+  // Only the app pages need a session; the landing and the shared invoice
+  // pages must stay open to anyone.
+  if (!request.nextUrl.pathname.startsWith("/dashboard")) return response;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,5 +61,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/", "/dashboard/:path*"],
 };
