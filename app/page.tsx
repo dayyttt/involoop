@@ -117,9 +117,8 @@ export default function Home() {
           <h2>{t("how.title")}</h2>
         </div>
         <div className="plain-steps">
-          {howSteps.map(([num, title, text], index) => (
+          {howSteps.map(([num, title, text]) => (
             <div className="plain-step" key={num}>
-              {index > 0 && <span className="plain-arrow">→</span>}
               <span className="plain-num">{num}</span>
               <h3>{title}</h3>
               <p>{text}</p>
