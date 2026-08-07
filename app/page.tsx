@@ -164,7 +164,7 @@ export default function Home() {
             <span className="mock-test">Stripe Test Mode</span>
           </div>
           <div className="mock-cta">
-            <span>Create an invoice like this · free →</span>
+            <span>Create your own invoice, free →</span>
           </div>
         </div>
         <div>
@@ -337,16 +337,16 @@ export default function Home() {
         <div className="site-shell footer-inner">
           <Link href="#home" className="brand">Invo<span className="brand-accent">loop</span></Link>
           <nav>
-            <a href="#why">{t("nav.why")}</a><span>◆</span>
-            <a href="#features">{t("nav.features")}</a><span>◆</span>
-            <a href="#process">{t("nav.process")}</a><span>◆</span>
+            <a href="#why">{t("nav.why")}</a>
+            <a href="#features">{t("nav.features")}</a>
+            <a href="#process">{t("nav.process")}</a>
             <Link href="/login">{t("footer.login")}</Link>
           </nav>
           <nav className="footer-legal">
-            <a href="#privacy">{t("footer.privacy")}</a><span>◆</span>
-            <a href="#terms">{t("footer.terms")}</a><span>◆</span>
-            <a href="#payments">{t("footer.payments")}</a><span>◆</span>
-            <a href="https://github.com/dayyttt/involoop" target="_blank" rel="noreferrer">{t("footer.github")}</a><span>◆</span>
+            <a href="#privacy">{t("footer.privacy")}</a>
+            <a href="#terms">{t("footer.terms")}</a>
+            <a href="#payments">{t("footer.payments")}</a>
+            <a href="https://github.com/dayyttt/involoop" target="_blank" rel="noreferrer">{t("footer.github")}</a>
             <a href="mailto:hello@involoop.vercel.app">{t("footer.contact")}</a>
           </nav>
           <p className="footer-disclaimer" id="payments">
