@@ -15,10 +15,10 @@ import { createClient } from "@/lib/supabase-browser";
 import { landing, landingText, landingItems } from "@/lib/i18n";
 import { useLang, useSetLang } from "@/components/LangProvider";
 
-// The WebGL hero is decoration: it must never block first paint, and it is not
-// worth 348 KB on a phone, so it loads after hydration and opts itself out on
-// small screens and for reduced-motion users.
-const NeonLandscape = dynamic(() => import("@/components/NeonLandscape"), { ssr: false });
+// The backdrop is an image first — it renders everywhere, including on phones
+// and without JavaScript. The component layers a depth shader over it only
+// where that is welcome, and loads three.js itself at that point.
+const HeroCloth = dynamic(() => import("@/components/HeroCloth"), { ssr: false });
 
 export default function Home() {
   const lang = useLang();
@@ -124,7 +124,7 @@ export default function Home() {
       </header>
 
       <section id="home" className="agency-hero">
-        <NeonLandscape />
+        <HeroCloth />
         <div className="hero-shade" />
         <div className="site-shell agency-hero-inner">
           <div className="agency-hero-copy">

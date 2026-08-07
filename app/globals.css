@@ -134,6 +134,20 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .agency-hero { position: relative; overflow: hidden; min-height: 660px; display: flex; align-items: flex-start; padding-top: 80px; }
 .neon-landscape { position: absolute; inset: 0; z-index: 0; }
 .neon-landscape canvas { display: block; width: 100% !important; height: 100% !important; }
+
+/* ---- Hero image backdrop ----
+   The picture is the baseline and is styled to match the shader's duotone as
+   closely as CSS allows, so phones and no-JS visitors get the same look rather
+   than a raw cool-grey stock photo. */
+.hero-cloth { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.hero-cloth-img {
+  width: 100%; height: 100%; object-fit: cover; object-position: 62% 45%;
+  filter: grayscale(1) brightness(.34) contrast(1.1) sepia(.3) hue-rotate(268deg) saturate(1.7);
+  transition: opacity var(--dur-slow) var(--ease);
+}
+.hero-cloth-canvas { position: absolute; inset: 0; display: block; width: 100% !important; height: 100% !important; }
+/* Once the shader is drawing the same picture, the plain one steps aside. */
+.hero-cloth-shaded .hero-cloth-img { opacity: 0; }
 /* Keeps the headline readable over the particle field while letting more of it
    through on the right, where the field is the point. */
 .hero-shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(12,8,14,.88) 0%, rgba(12,8,14,.42) 38%, rgba(12,8,14,0) 68%), linear-gradient(0deg, var(--bg) 0%, transparent 24%); }
