@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import NeonLandscape from "@/components/NeonLandscape";
 import ChannelMarquee from "@/components/ChannelMarquee";
+import BlurText from "@/components/reactbits/BlurText";
+import Magnet from "@/components/reactbits/Magnet";
+import SpotlightCard from "@/components/reactbits/SpotlightCard";
+import CountUp from "@/components/reactbits/CountUp";
 import { createClient } from "@/lib/supabase-browser";
 import { landing, getInitialLang, setLangCookie, landingText, landingItems, type Lang } from "@/lib/i18n";
 
@@ -78,16 +82,25 @@ export default function Home() {
         <div className="site-shell agency-hero-inner">
           <div className="agency-hero-copy">
             <span className="section-eyebrow">{t("hero.badge")}</span>
-            <h1>
-              {t("hero.h1a")}
-              <br />
-              <span className="gradient-text">{t("hero.h1b")}</span>
-            </h1>
+            <BlurText
+              text={`${t("hero.h1a")} `}
+              delay={120}
+              stepDuration={0.32}
+              className="hero-h1"
+            />
+            <BlurText
+              text={t("hero.h1b")}
+              delay={120}
+              stepDuration={0.32}
+              className="hero-h1 gradient-text"
+            />
             <p>{t("hero.sub")}</p>
             <div className="hero-actions">
-              <Link href="/signup" className="btn btn-primary btn-lg">
-                {t("hero.cta1")}
-              </Link>
+              <Magnet magnetStrength={4} padding={60}>
+                <Link href="/signup" className="btn btn-primary btn-lg">
+                  {t("hero.cta1")}
+                </Link>
+              </Magnet>
               <Link href="/invoice/484a9577f2" className="btn btn-ghost btn-lg">
                 {t("hero.cta3")}
               </Link>
@@ -164,9 +177,9 @@ export default function Home() {
           <p className="body-copy">{t("why.body1")}</p>
           <p className="body-copy">{t("why.body2")}</p>
           <div className="metric-row">
-            <div><strong>{t("why.m1")}</strong><span>{t("why.m1l")}</span></div>
-            <div><strong>{t("why.m2")}</strong><span>{t("why.m2l")}</span></div>
-            <div><strong>{t("why.m3")}</strong><span>{t("why.m3l")}</span></div>
+            <div><strong><CountUp to={3} duration={1.6} /></strong><span>{t("why.m1l")}</span></div>
+            <div><strong>+<CountUp to={3} duration={1.6} /></strong><span>{t("why.m2l")}</span></div>
+            <div><strong>+<CountUp to={2} duration={1.6} /></strong><span>{t("why.m3l")}</span></div>
           </div>
           <Link href="/signup" className="btn btn-primary">{t("why.cta")}</Link>
         </div>
@@ -185,12 +198,15 @@ export default function Home() {
             {features.map((f, index) => {
               const [num, title, text] = f;
               return (
-                <article className={`feature-card${index === 1 ? " feature-card-active" : ""}`} key={num}>
+                <SpotlightCard
+                  className={`feature-card${index === 1 ? " feature-card-active" : ""}`}
+                  key={num}
+                >
                   <span className="feature-icon">{num}</span>
                   <h3>{title}</h3>
                   <p>{text}</p>
                   <Link href="/signup">{t("features.tryCta")}</Link>
-                </article>
+                </SpotlightCard>
               );
             })}
           </div>
@@ -282,7 +298,9 @@ export default function Home() {
             <ul className="plan-features">
               <li>{t("pricing.s1")}</li><li>{t("pricing.s2")}</li><li>{t("pricing.s3")}</li>
             </ul>
-            <button onClick={() => handleUpgrade("starter")} className="btn btn-primary" style={{ width: "100%" }}>{t("pricing.ctaUpgrade")}</button>
+            <Magnet magnetStrength={4} padding={40}>
+              <button onClick={() => handleUpgrade("starter")} className="btn btn-primary" style={{ width: "100%" }}>{t("pricing.ctaUpgrade")}</button>
+            </Magnet>
           </div>
           <div className="plan">
             <h3 className="plan-name">{t("pricing.pro")}</h3>
