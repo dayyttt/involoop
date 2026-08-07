@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
-// Clean word rotator: old word blurs out, new word blurs in, same position.
-// Fixed width reserves space so the line never reflows.
+// Clean phrase rotator: the old phrase blurs out, the new one blurs in.
+//
+// The phrases have different lengths, so a naive swap reflows the headline and
+// shoves everything below it up and down every couple of seconds. To stop that,
+// an invisible copy of the longest phrase holds the space at whatever the
+// current viewport makes it, and the animated phrase sits on top of it.
 export default function RotatingWord({
   words,
   interval = 2400,
@@ -16,6 +20,11 @@ export default function RotatingWord({
 }) {
   const [index, setIndex] = useState(0);
   const [rotated, setRotated] = useState(false);
+
+  const longest = useMemo(
+    () => words.reduce((a, b) => (b.length > a.length ? b : a), words[0] ?? ""),
+    [words]
+  );
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -32,19 +41,19 @@ export default function RotatingWord({
   // as part of the sentence around it.
   return (
     <span className="rot-word">
+      <span className="rot-word-sizer" aria-hidden>
+        {longest}
+      </span>
       {/* initial={false}: the first phrase is part of the headline, so it must
           be painted straight away instead of starting at opacity 0. */}
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
           key={words[index]}
-          className={wordClass}
-          // The first phrase is part of the headline the server sends, so it
-          // must not start hidden. Only later phrases fade in.
+          className={`rot-word-phrase ${wordClass}`}
           initial={rotated ? { opacity: 0, filter: "blur(5px)" } : false}
           animate={{ opacity: 1, filter: "blur(0px)" }}
           exit={{ opacity: 0, filter: "blur(5px)" }}
           transition={{ duration: 0.45, ease: "easeOut" }}
-          style={{ display: "inline-block" }}
         >
           {words[index]}
         </motion.span>

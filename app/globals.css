@@ -88,7 +88,9 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .neon-landscape { position: absolute; inset: 0; z-index: 0; }
 .neon-landscape canvas { display: block; width: 100% !important; height: 100% !important; }
 .hero-shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(12,8,14,.96) 0%, rgba(12,8,14,.8) 46%, rgba(12,8,14,.25) 84%), linear-gradient(0deg, var(--bg) 0%, transparent 34%); }
-.agency-hero-inner { position: relative; z-index: 2; padding: 40px 0 96px; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; }
+/* align-items: start, not center: if the copy column ever changes height, a
+   centred grid would slide the demo card up and down with it. */
+.agency-hero-inner { position: relative; z-index: 2; padding: 40px 0 96px; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start; }
 @media (min-width: 1000px) {
   .agency-hero-inner { grid-template-columns: 1.02fr 0.98fr; gap: 56px; }
 }
@@ -102,8 +104,13 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .hero-reveal { animation: heroIn .6s cubic-bezier(.2,.7,.3,1) both; }
 @keyframes heroIn { from { opacity: .35; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
-/* RotatingWord (custom, smooth crossfade) */
+/* RotatingWord (custom, smooth crossfade).
+   The hidden sizer reserves the longest phrase's box, so swapping phrases can
+   never change the headline's height and push the rest of the hero around. */
 .rot-word { display: inline-block; position: relative; }
+.rot-word-sizer { visibility: hidden; }
+/* left+right pinned so the phrase wraps exactly like the sizer behind it. */
+.rot-word-phrase { position: absolute; inset: 0 0 auto 0; display: inline-block; }
 .hero-word-gradient { color: transparent; background: var(--gradient-bright); -webkit-background-clip: text; background-clip: text; }
 .hero-sub { max-width: 560px; margin: 22px 0 0; color: var(--text-2); font-size: 16px; line-height: 1.75; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
