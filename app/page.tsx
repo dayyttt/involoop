@@ -233,16 +233,16 @@ export default function Home() {
           <p className="body-copy">{t("testimonials.sub")}</p>
         </div>
         <div className="testimonial-grid">
-          {testimonials.map(([name, role, quote]) => (
-            <article className="testimonial" key={name}>
-              <p>“{quote}”</p>
-              <div className="testimonial-author">
-                <span className="t-avatar">{name[0]}</span>
+          {testimonials.map(([persona, context, useCase], index) => (
+            <article className="testimonial" key={persona}>
+              <div className="testimonial-author" style={{ paddingTop: 0, borderTop: 0 }}>
+                <span className="t-avatar">0{index + 1}</span>
                 <div>
-                  <div className="t-name">{name}</div>
-                  <div className="t-role">{role}</div>
+                  <div className="t-name">{persona}</div>
+                  <div className="t-role">{context}</div>
                 </div>
               </div>
+              <p>{useCase}</p>
             </article>
           ))}
         </div>

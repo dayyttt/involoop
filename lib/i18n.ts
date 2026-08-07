@@ -91,21 +91,21 @@ export const landing = {
     cta: ["Start your first loop", "Mulai loop pertamamu"] as Pair,
   },
   testimonials: {
-    eyebrow: ["REAL FREELANCERS", "FREELANCER ASLI"] as Pair,
-    title: ["Invoices that quietly bring clients.", "Tagihan yang diam-diam mendatangkan klien."] as Pair,
-    sub: ["People bill every week anyway. The only difference is where the invoice goes.", "Mereka menagih setiap minggu. Bedanya cuma ke mana tagihan itu mengalir."] as Pair,
+    eyebrow: ["BUILT FOR B2B SERVICES", "UNTUK PEKERJA JASA B2B"] as Pair,
+    title: ["Fits the work you already do.", "Cocok dengan cara kerja yang sudah ada."] as Pair,
+    sub: ["No new marketing workflow. Just send a better invoice through the same channel you use today.", "Tanpa alur pemasaran baru. Cukup kirim invoice yang lebih baik lewat channel yang sudah kamu gunakan."] as Pair,
     items: [
       {
-        en: ["Rani Kusuma", "Branding Designer · Jakarta", "I used to send manual PDFs and forget to follow up. Now one sentence becomes a link my client can pay from — and two clients ended up signing up themselves."],
-        id: ["Rani Kusuma", "Desainer Branding · Jakarta", "Dulu kirim PDF manual dan lupa menindaklanjuti. Sekarang satu kalimat jadi link yang bisa dibayar klien — dan dua klien akhirnya ikut mendaftar sendiri."],
+        en: ["Branding designer", "Project-based billing · client approvals", "Turn a project sentence into a polished invoice and send it through WhatsApp — no PDF export or new client account."],
+        id: ["Desainer branding", "Tagihan per proyek · persetujuan klien", "Ubah kalimat proyek jadi invoice rapi dan kirim lewat WhatsApp — tanpa ekspor PDF atau akun baru untuk klien."],
       },
       {
-        en: ["Dimas Pradana", "Web Developer · micro-agency 2 people", "I doubted an invoice could bring referrals. Three months in, four new clients came from invoices I was sending anyway."],
-        id: ["Dimas Pradana", "Web Developer · micro-agency 2 orang", "Awalnya ragu invoice bisa mendatangkan referral. Tiga bulan, empat klien baru datang dari tagihan yang memang rutin saya kirim."],
+        en: ["Web developer", "Milestone invoices · micro-agency work", "Share one public link, confirm payment, and let the same artifact introduce Involoop to another service business."],
+        id: ["Web developer", "Invoice per milestone · kerja micro-agency", "Bagikan satu link publik, konfirmasi pembayaran, lalu biarkan artefak yang sama mengenalkan Involoop ke bisnis jasa lain."],
       },
       {
-        en: ["Aulia Rahman", "Marketing Consultant · Bandung", "What I like: everything is visible. Views, clicks, who signed up, credits landing. I can show the result — not just promise it."],
-        id: ["Aulia Rahman", "Konsultan Pemasaran · Bandung", "Yang saya suka: semuanya ketahuan. Views, klik, siapa yang daftar, kredit yang masuk. Saya bisa tunjukkan hasilnya, bukan sekadar janji."],
+        en: ["Independent consultant", "Recurring client work · clear records", "Keep every invoice, view, referral click, signup, and credit movement visible from one dashboard."],
+        id: ["Konsultan independen", "Klien berulang · catatan yang jelas", "Simpan invoice, view, klik referral, pendaftaran, dan pergerakan kredit dalam satu dashboard."],
       },
     ] as Item[],
   },
