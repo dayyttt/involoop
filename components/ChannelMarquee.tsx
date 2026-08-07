@@ -18,8 +18,8 @@ export default function ChannelMarquee({ label }: { label?: string }) {
       <LogoLoop
         logos={CHANNELS}
         speed={55}
-        logoHeight={44}
-        gap={72}
+        logoHeight={26}
+        gap={64}
         pauseOnHover
         fadeOut
         scaleOnHover

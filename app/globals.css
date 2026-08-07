@@ -81,7 +81,16 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .btn-ghost { color: var(--text); background: rgba(255,255,255,.03); border-color: var(--line-2); }
 .btn-ghost:hover { border-color: var(--primary); background: rgba(241,74,148,.08); }
 .btn-lg { min-height: 48px; padding: 13px 22px; font-size: 14px; }
-.btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+/* A disabled state has to look switched off, not broken. Fading the gradient to
+   45% turned the primary button into a muddy maroon slab that reads as a
+   rendering fault, so disabled buttons drop the fill entirely. */
+.btn:disabled { cursor: not-allowed; box-shadow: none; }
+.btn:disabled:hover { transform: none; }
+.btn-primary:disabled, .btn-success:disabled, .btn-ghost:disabled {
+  background: rgba(255,255,255,.05);
+  border-color: var(--line);
+  color: var(--muted);
+}
 .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -92,8 +101,11 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .header-actions { display: flex; align-items: center; gap: 14px; }
 .lang-switch { min-width: 42px; min-height: 40px; padding: 7px 10px; border: 1px solid var(--line-2); border-radius: 6px; background: rgba(255,255,255,.03); color: var(--text-2); font: 700 12px var(--font-jakarta), sans-serif; cursor: pointer; transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease); }
 .lang-switch:hover { border-color: var(--primary); color: var(--primary); }
-.brand { display: inline-flex; align-items: center; gap: 9px; color: #fff; font: 800 19px var(--font-jakarta), sans-serif; text-decoration: none; }
-.brand::before { content: ""; width: 18px; height: 18px; border: 3px solid var(--primary-2); border-radius: 50%; background: var(--primary); box-shadow: inset 0 0 0 3px var(--bg); }
+/* gap: 0. "Invo" and "loop" are two flex children of this box, so a gap here
+   was splitting the product name into "Invo loop" in every header and footer.
+   The dot carries its own margin instead. */
+.brand { display: inline-flex; align-items: center; gap: 0; color: #fff; font: 800 19px var(--font-jakarta), sans-serif; text-decoration: none; }
+.brand::before { content: ""; flex: none; width: 18px; height: 18px; margin-right: 9px; border: 3px solid var(--primary-2); border-radius: 50%; background: var(--primary); box-shadow: inset 0 0 0 3px var(--bg); }
 .brand-accent { color: var(--primary); }
 .site-nav { display: flex; align-items: center; gap: 30px; }
 .site-nav a { color: var(--text-2); font-size: 12px; font-weight: 700; text-decoration: none; transition: color var(--dur) var(--ease); }
@@ -128,6 +140,10 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .agency-hero-inner { position: relative; z-index: 2; padding: 76px 0 104px; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start; }
 @media (min-width: 1000px) {
   .agency-hero-inner { grid-template-columns: 1.02fr 0.98fr; gap: 56px; }
+  /* The copy column stays anchored to the top; the shorter demo card centres
+     against it so the right side is not a card with a void underneath. Only the
+     card moves when it grows, which is its own change to make. */
+  .agency-hero-demo { align-self: center; }
 }
 .agency-hero-copy { max-width: 640px; }
 .agency-hero-copy h1, .hero-h1 { margin-top: 0; font-size: clamp(38px, 5.4vw, 64px); line-height: 1.05; font-weight: 800; letter-spacing: -0.025em; }
@@ -197,7 +213,10 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 
 .marquee-label { margin: 0 0 10px; text-align: center; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .channel-chip { display: inline-flex; align-items: center; gap: 10px; }
-.channel-chip img { width: 24px; height: 24px; opacity: .5; transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
+/* Size comes from LogoLoop's logoHeight prop: its own `.logoloop__item img`
+   rule outranks this one, so the 24px set here never actually applied and the
+   logos rendered at 44px — louder than the section label above them. */
+.channel-chip img { opacity: .5; transition: opacity var(--dur) var(--ease), transform var(--dur) var(--ease); }
 .channel-chip-name { color: var(--muted); font: 600 13px var(--font-jakarta), sans-serif; transition: color var(--dur) var(--ease); }
 .channel-chip:hover img { opacity: .9; transform: scale(1.08); }
 .channel-chip:hover .channel-chip-name { color: var(--text-2); }
