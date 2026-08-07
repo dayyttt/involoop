@@ -1390,3 +1390,10 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 /* Operator link: present only for admins, so its presence is itself the answer
    to "am I on the right account". */
 .admin-link { border-color: rgba(241,74,148,.4); color: var(--primary); }
+
+/* Wallet connection. The warning is part of the control, not a footnote: this
+   is the moment someone decides whether to trust the page. */
+.wallet-box { display: flex; flex-direction: column; gap: 12px; }
+.wallet-current { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,255,255,.02); }
+.wallet-address { font-size: 12px; word-break: break-all; color: var(--text); }
+.wallet-warning { margin: 0; padding: 11px 13px; border-left: 2px solid var(--success); border-radius: 0 6px 6px 0; background: var(--success-soft); font-size: 12.5px; line-height: 1.6; color: var(--text-2); }

@@ -7,6 +7,7 @@ import { appText, type Lang } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
 import { formatDate } from "@/lib/money";
+import WalletConnect from "@/components/WalletConnect";
 
 interface Profile {
   email: string;
@@ -15,6 +16,7 @@ interface Profile {
   plan?: string;
   free_invoice_credits: number;
   paypal_email: string | null;
+  solana_wallet: string | null;
   created_at: string;
 }
 
@@ -172,6 +174,28 @@ export default function ProfilePage() {
                 </div>
                 {error && <p className="error" style={{ margin: 0 }}>{error}</p>}
               </form>
+            </div>
+
+            {/* Where a client's USDC lands. Separate card from the PayPal
+                address because they are separate rails and a freelancer may
+                well want one and not the other. */}
+            <div className="card-panel dash-block">
+              <h2 className="section-title" style={{ marginTop: 0 }}>{t("profile.walletTitle")}</h2>
+              <p className="hint" style={{ marginTop: 0 }}>{t("profile.walletHint")}</p>
+              <WalletConnect
+                current={profile.solana_wallet}
+                labels={{
+                  connect: t("profile.walletConnect"),
+                  change: t("profile.walletChange"),
+                  connecting: t("profile.walletConnecting"),
+                  noWallet: t("profile.walletNone"),
+                  connected: t("profile.walletConnected"),
+                  warning: t("profile.walletWarning"),
+                }}
+                onConnected={(wallet) =>
+                  setProfile((p) => (p ? { ...p, solana_wallet: wallet } : p))
+                }
+              />
             </div>
 
             <div className="card-panel dash-block">

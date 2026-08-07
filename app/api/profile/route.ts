@@ -22,7 +22,7 @@ export async function GET() {
 
   const { data, error } = await createAdminClient()
     .from("profiles")
-    .select("email, full_name, referral_code, plan, free_invoice_credits, paypal_email, created_at")
+    .select("email, full_name, referral_code, plan, free_invoice_credits, paypal_email, solana_wallet, created_at")
     .eq("id", user.id)
     .single();
 

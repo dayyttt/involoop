@@ -597,6 +597,23 @@ export const app = {
       "Leave this empty and your invoices only offer bank transfer confirmation. Paste the address your PayPal account uses.",
       "Kalau dikosongkan, invoice-mu hanya menawarkan konfirmasi transfer bank. Tempel alamat yang dipakai akun PayPal-mu.",
     ] as T,
+    walletTitle: ["Solana wallet", "Wallet Solana"] as T,
+    walletHint: [
+      "Connect a wallet and your USD invoices can also be paid in USDC. The money goes straight from your client to this address — Involoop never holds it.",
+      "Hubungkan wallet dan invoice USD-mu juga bisa dibayar pakai USDC. Uangnya langsung dari klien ke alamat ini — Involoop tidak pernah menahannya.",
+    ] as T,
+    walletConnect: ["Connect wallet", "Hubungkan wallet"] as T,
+    walletChange: ["Use a different wallet", "Ganti wallet"] as T,
+    walletConnecting: ["Waiting for your wallet…", "Menunggu wallet…"] as T,
+    walletConnected: ["Connected wallet", "Wallet terhubung"] as T,
+    walletNone: [
+      "No Solana wallet found in this browser. Install Phantom, Solflare or Backpack, then try again.",
+      "Tidak ada wallet Solana di browser ini. Pasang Phantom, Solflare, atau Backpack, lalu coba lagi.",
+    ] as T,
+    walletWarning: [
+      "You will be asked to sign a message. It proves you control the address and authorizes no transfer. Involoop will never ask for your recovery phrase or private key.",
+      "Kamu akan diminta menandatangani sebuah pesan. Itu hanya membuktikan alamat ini milikmu dan tidak mengizinkan transfer apa pun. Involoop tidak akan pernah meminta recovery phrase atau private key.",
+    ] as T,
     emailHint: [
       "Email cannot be changed here yet — write to hello@involoop.vercel.app and we will move it for you.",
       "Email belum bisa diubah di sini — kirim email ke hello@involoop.vercel.app dan kami pindahkan.",
