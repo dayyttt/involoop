@@ -9,7 +9,7 @@ import BlurText from "@/components/reactbits/BlurText";
 import Magnet from "@/components/reactbits/Magnet";
 import SpotlightCard from "@/components/reactbits/SpotlightCard";
 import CountUp from "@/components/reactbits/CountUp";
-import RotatingText from "@/components/reactbits/RotatingText";
+import RotatingWord from "@/components/RotatingWord";
 import LoopFlow from "@/components/LoopFlow";
 import { createClient } from "@/lib/supabase-browser";
 import { landing, getInitialLang, setLangCookie, landingText, landingItems, type Lang } from "@/lib/i18n";
@@ -92,16 +92,9 @@ export default function Home() {
             />
             <div className="hero-h1" style={{ display: "flex", flexWrap: "wrap", gap: "0.18em" }}>
               <span>{t("hero.rotPrefix")} </span>
-              <RotatingText
-                texts={lang === "id" ? landing.hero.rotWordsId : landing.hero.rotWords}
-                mainClassName="hero-h1-rotate"
-                rotationInterval={2400}
-                splitBy="words"
-                animatePresenceMode="sync"
-                staggerDuration={0}
-                transition={{ duration: 0.36, ease: "easeInOut" }}
-                initial={{ y: "35%", opacity: 0 }}
-                exit={{ y: "-35%", opacity: 0 }}
+              <RotatingWord
+                words={lang === "id" ? landing.hero.rotWordsId : landing.hero.rotWords}
+                wordClass="hero-word-gradient"
               />
             </div>
             <p>{t("hero.sub")}</p>
