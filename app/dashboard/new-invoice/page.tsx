@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, SUPPORTED_CURRENCIES, CURRENCY_LABELS } from "@/lib/money";
 import { appText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
@@ -367,11 +367,11 @@ export default function NewInvoice() {
                           value={form.currency}
                           onChange={(e) => setField("currency", e.target.value)}
                         >
-                          <option value="IDR">IDR · Rupiah</option>
-                          <option value="USD">USD · US Dollar</option>
-                          <option value="EUR">EUR · Euro</option>
-                          <option value="GBP">GBP · British Pound</option>
-                          <option value="SGD">SGD · Singapore Dollar</option>
+                          {SUPPORTED_CURRENCIES.map((code) => (
+                            <option value={code} key={code}>
+                              {CURRENCY_LABELS[code] ?? code}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>

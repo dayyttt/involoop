@@ -1,4 +1,34 @@
-export const SUPPORTED_CURRENCIES = ["USD", "EUR", "GBP", "SGD", "IDR"] as const;
+// The single source of truth. This list used to be copied into five files —
+// the AI validator, the create route, the manual form's <select>, the prompt
+// and here — so adding a currency in one place silently failed in another. A
+// Malaysian typing "RM 3000" got an invoice for IDR 3,000 instead of MYR 3,000,
+// because the validator did not recognise MYR and quietly fell back to IDR.
+export const SUPPORTED_CURRENCIES = [
+  "IDR",
+  "MYR",
+  "SGD",
+  "THB",
+  "PHP",
+  "USD",
+  "EUR",
+  "GBP",
+] as const;
+
+// Shown in the manual form, in this order.
+export const CURRENCY_LABELS: Record<string, string> = {
+  IDR: "IDR · Rupiah",
+  MYR: "MYR · Ringgit Malaysia",
+  SGD: "SGD · Singapore Dollar",
+  THB: "THB · Thai Baht",
+  PHP: "PHP · Philippine Peso",
+  USD: "USD · US Dollar",
+  EUR: "EUR · Euro",
+  GBP: "GBP · British Pound",
+};
+
+// Currencies with no minor unit. Getting this wrong is a factor-of-100 error in
+// what Stripe charges, so it is a list rather than a single special case.
+const ZERO_DECIMAL = new Set(["IDR", "VND", "JPY", "KRW"]);
 export type Currency = (typeof SUPPORTED_CURRENCIES)[number];
 
 export function isSupported(c: string): c is Currency {
@@ -6,7 +36,7 @@ export function isSupported(c: string): c is Currency {
 }
 
 export function currencyDecimals(c: string): number {
-  return c === "IDR" ? 0 : 2;
+  return ZERO_DECIMAL.has(c) ? 0 : 2;
 }
 
 export function toMinor(amount: number, c: string): number {

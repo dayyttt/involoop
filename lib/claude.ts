@@ -1,3 +1,5 @@
+import { SUPPORTED_CURRENCIES } from "@/lib/money";
+
 const baseURL = (process.env.AI_BASE_URL ?? "").replace(/\/+$/, "");
 
 export interface ParsedInvoice {
@@ -20,7 +22,14 @@ You also write ONE short, warm, context-aware referral line (max 20 words, writt
 that will be shown to the CLIENT on the payment page, inviting them to try Involoop themselves IF their business
 also needs to bill customers. Tailor the line to the type of work described. Never sound like generic ad copy.
 
-Detect the currency from the amount given. "$" means USD, "€" EUR, "£" GBP, "S$" SGD, "Rp"/"IDR"/"juta" means IDR.
+Detect the currency from the amount given:
+  "Rp", "IDR", "juta", "ribu"  -> IDR
+  "RM", "ringgit"              -> MYR
+  "S$", "SGD"                  -> SGD
+  "฿", "baht", "THB"           -> THB
+  "₱", "peso", "PHP"           -> PHP
+  "$", "USD"                   -> USD
+  "€" EUR, "£" GBP
 Default to IDR when no currency symbol is present.
 
 Respond ONLY with valid JSON, no markdown fences, matching this shape:
@@ -28,7 +37,7 @@ Respond ONLY with valid JSON, no markdown fences, matching this shape:
   "client_name": string,
   "description": string,
   "amount": number,
-  "currency": "USD" | "EUR" | "GBP" | "SGD" | "IDR",
+  "currency": "IDR" | "MYR" | "SGD" | "THB" | "PHP" | "USD" | "EUR" | "GBP",
   "due_date": string | null,
   "cta_message": string
 }`;
@@ -112,8 +121,7 @@ export async function parseInvoiceFromText(input: string, lang = "en"): Promise<
     throw new Error("Claude response missing required invoice fields");
   }
 
-  const CURRENCIES = ["USD", "EUR", "GBP", "SGD", "IDR"];
-  if (!parsed.currency || !CURRENCIES.includes(parsed.currency)) {
+  if (!parsed.currency || !(SUPPORTED_CURRENCIES as readonly string[]).includes(parsed.currency)) {
     parsed.currency = "IDR";
   }
 

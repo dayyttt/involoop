@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase-admin";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { parseInvoiceFromText } from "@/lib/claude";
 import { apiError } from "@/lib/api-lang";
+import { SUPPORTED_CURRENCIES } from "@/lib/money";
 
 // Expects: { raw_text: string } or { manual: true, ...fields }, lang?: "en" | "id"
 export async function POST(req: NextRequest) {
@@ -24,8 +25,8 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-      const cur = typeof currency === "string" ? currency.toUpperCase() : "USD";
-      if (!["USD", "EUR", "GBP", "SGD", "IDR"].includes(cur)) {
+      const cur = typeof currency === "string" ? currency.toUpperCase() : "IDR";
+      if (!(SUPPORTED_CURRENCIES as readonly string[]).includes(cur)) {
         return NextResponse.json(
           { error: apiError(lang, "Currency is not supported.", "Currency tidak didukung.") },
           { status: 400 }
