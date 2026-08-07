@@ -82,7 +82,6 @@ export default function Home() {
         <div className="hero-shade" />
         <div className="site-shell agency-hero-inner">
           <div className="agency-hero-copy">
-            <span className="section-eyebrow">{t("hero.badge")}</span>
             <BlurText
               text={`${t("hero.h1a")} `}
               delay={120}
@@ -120,13 +119,12 @@ export default function Home() {
           </div>
         </div>
         <div className="trust-strip">
-          <ChannelMarquee label={t("marquee.label")} />
+          <ChannelMarquee />
         </div>
       </section>
 
       <section id="how" className="site-shell section-space">
         <div className="process-head">
-          <p className="section-eyebrow">{t("how.eyebrow")}</p>
           <h2>{t("how.title")}</h2>
         </div>
         <div className="plain-steps">
@@ -167,7 +165,6 @@ export default function Home() {
           </div>
         </div>
         <div>
-          <p className="section-eyebrow">{t("why.eyebrow")}</p>
           <h2>{t("why.title")}</h2>
           <div className="value-list">
             <span>{t("why.point1")}</span>
@@ -189,7 +186,6 @@ export default function Home() {
         <div className="site-shell">
           <div className="section-top">
             <div>
-              <p className="section-eyebrow">{t("features.eyebrow")}</p>
               <h2>{t("features.title")}</h2>
             </div>
             <Link href="/signup" className="btn btn-ghost">{t("nav.getStarted")}</Link>
@@ -215,7 +211,6 @@ export default function Home() {
 
       <section id="process" className="site-shell section-space">
         <div className="process-head">
-          <p className="section-eyebrow">{t("process.eyebrow")}</p>
           <h2>{t("process.title")}</h2>
           <p className="body-copy">{t("process.sub")}</p>
         </div>
@@ -235,7 +230,6 @@ export default function Home() {
 
       <section id="reward" className="reward-band section-space">
         <div className="site-shell reward-inner">
-          <p className="section-eyebrow">{t("reward.eyebrow")}</p>
           <h2>{t("reward.title")}</h2>
           <p className="reward-lead">{t("reward.lead")}</p>
           <div className="reward-grid">
@@ -255,7 +249,6 @@ export default function Home() {
 
       <section id="testimonials" className="site-shell section-space">
         <div className="process-head">
-          <p className="section-eyebrow">{t("testimonials.eyebrow")}</p>
           <h2>{t("testimonials.title")}</h2>
           <p className="body-copy">{t("testimonials.sub")}</p>
         </div>
@@ -277,7 +270,6 @@ export default function Home() {
 
       <section id="pricing" className="site-shell section-space">
         <div className="process-head">
-          <p className="section-eyebrow">{t("pricing.eyebrow")}</p>
           <h2>{t("pricing.title")}</h2>
           <p className="body-copy">{t("pricing.sub")}</p>
         </div>
@@ -316,7 +308,6 @@ export default function Home() {
       <section id="trust" className="section-space muted-band">
         <div className="site-shell">
           <div className="process-head" style={{ maxWidth: 640, marginBottom: 0 }}>
-            <p className="section-eyebrow">{t("trust.eyebrow")}</p>
             <h2>{t("trust.title")}</h2>
             <p className="body-copy">{t("trust.sub")}</p>
           </div>
@@ -333,7 +324,6 @@ export default function Home() {
 
       <section className="site-shell section-space final-cta">
         <div>
-          <p className="section-eyebrow">{t("finalCta.eyebrow")}</p>
           <h2>{t("finalCta.title")}</h2>
           <p>{t("finalCta.sub")}</p>
         </div>

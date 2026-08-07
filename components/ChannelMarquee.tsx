@@ -11,10 +11,10 @@ const CHANNELS: (LogoLoopItem & { name: string; color: string })[] = [
   { src: "/brands/discord.svg", name: "Discord", color: "#5865F2", alt: "Discord" },
 ];
 
-export default function ChannelMarquee({ label }: { label: string }) {
+export default function ChannelMarquee({ label }: { label?: string }) {
   return (
     <div>
-      <p className="marquee-label">{label}</p>
+      {label ? <p className="marquee-label">{label}</p> : null}
       <LogoLoop
         logos={CHANNELS}
         speed={70}
@@ -23,7 +23,7 @@ export default function ChannelMarquee({ label }: { label: string }) {
         pauseOnHover
         fadeOut
         scaleOnHover
-        ariaLabel={label}
+        ariaLabel={label ?? "Channels you already use"}
         renderItem={(item) => {
           const channel = item as (typeof CHANNELS)[number];
           return (
