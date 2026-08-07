@@ -174,6 +174,7 @@ export const app = {
     oauthFail: ["Could not start sign in. Try again.", "Gagal memulai login. Coba lagi."] as T,
     noAccount: ["No account?", "Belum punya akun?"] as T,
     createOne: ["Create one", "Daftar"] as T,
+    payAfter: ["payment opens right after sign-in.", "pembayaran langsung dibuka setelah masuk."] as T,
   },
   signup: {
     title: ["Create your account", "Buat akun kamu"] as T,

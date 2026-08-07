@@ -27,13 +27,28 @@ export default function Login() {
       password,
     });
 
-    setLoading(false);
-
     if (signInError) {
+      setLoading(false);
       setError(t("login.wrongCreds"));
       return;
     }
 
+    const plan =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("plan")
+        : null;
+    if (plan === "starter" || plan === "pro") {
+      const res = await fetch("/api/payments/upgrade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+    }
     router.push("/dashboard");
   }
 
@@ -48,11 +63,21 @@ export default function Login() {
     }
   }
 
+  const plan =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("plan")
+      : null;
+
   return (
     <main className="auth-shell">
       <div className="card">
         <h1>{t("login.title")}</h1>
         <p className="sub">{t("login.sub")}</p>
+        {plan === "starter" || plan === "pro" ? (
+          <p className="note-box">
+            {plan === "starter" ? "Starter $3" : "Pro $8/month"} — {t("login.payAfter")}
+          </p>
+        ) : null}
         <div className="oauth-row">
           <button type="button" className="btn btn-ghost" onClick={() => handleOAuth("google")}>
             <GoogleIcon /> {t("login.continueGoogle")}

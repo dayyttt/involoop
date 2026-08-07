@@ -24,7 +24,7 @@ export default function Home() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      router.push("/login");
+      router.push(`/login?plan=${plan}`);
       return;
     }
     const res = await fetch("/api/payments/upgrade", {

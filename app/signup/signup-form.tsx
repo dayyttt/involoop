@@ -8,7 +8,7 @@ import { appText, useLang } from "@/lib/i18n";
 
 const REF_COOKIE = "ref_invoice";
 
-export default function SignupForm({ refInvoice }: { refInvoice: string | null }) {
+export default function SignupForm({ refInvoice, plan }: { refInvoice: string | null; plan: "starter" | "pro" | null }) {
   const router = useRouter();
   const supabase = createClient();
   const lang = useLang();
@@ -80,6 +80,20 @@ export default function SignupForm({ refInvoice }: { refInvoice: string | null }
     }
 
     document.cookie = `${REF_COOKIE}=; path=/; max-age=0`;
+
+    if (plan) {
+      const res = await fetch("/api/payments/upgrade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+    }
+
     router.push("/dashboard");
   }
 
@@ -103,6 +117,11 @@ export default function SignupForm({ refInvoice }: { refInvoice: string | null }
       <div className="card">
         <h1>{t("signup.title")}</h1>
         <p className="sub">{t("signup.sub")}</p>
+        {plan && (
+          <p className="note-box">
+            {plan === "starter" ? "Starter $3" : "Pro $8/month"} — {t("login.payAfter")}
+          </p>
+        )}
         {refInvoice && (
           <p className="note-box">
             {t("signup.invited")}

@@ -6,7 +6,12 @@ import SignupForm from "./signup-form";
 export default function Signup({
   searchParams,
 }: {
-  searchParams: { ref_invoice?: string };
+  searchParams: { ref_invoice?: string; plan?: string };
 }) {
-  return <SignupForm refInvoice={searchParams.ref_invoice ?? null} />;
+  return (
+    <SignupForm
+      refInvoice={searchParams.ref_invoice ?? null}
+      plan={searchParams.plan === "starter" || searchParams.plan === "pro" ? searchParams.plan : null}
+    />
+  );
 }
