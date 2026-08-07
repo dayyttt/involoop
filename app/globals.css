@@ -330,12 +330,20 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .process-grid { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
 /* One segment per gap, anchored to the nodes it joins, rather than one bar
    spanning the container and overshooting the last node. */
-.p-step::after { content: ""; position: absolute; top: 22px; left: 58px; right: -28px; height: 2px; background: linear-gradient(90deg, var(--primary), var(--primary-2)); opacity: .3; }
-.p-step:last-child::after { display: none; }
-.p-step { position: relative; padding: 58px 12px 0; }
-.p-node { position: absolute; top: 0; left: 12px; width: 46px; height: 46px; display: grid; place-items: center; border: 3px solid var(--bg); border-radius: 50%; color: #fff; background: var(--gradient); box-shadow: var(--glow); font: 800 15px var(--font-jakarta), sans-serif; }
-.p-step h3 { font-size: 16px; margin: 4px 0 8px; }
-.p-step p { margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.65; }
+/* The rail runs between the first and last node centres, which is why the
+   nodes are centred in their columns. Drawing a segment per step instead broke
+   the moment each step gained a reveal wrapper: every .p-step became an only
+   child, so :last-child matched all five and hid every segment. */
+.process-grid::before { content: ""; position: absolute; top: 22px; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, var(--primary), var(--primary-2)); opacity: .35; }
+.p-step { position: relative; display: flex; flex-direction: column; height: 100%; padding-top: 62px; }
+.p-node { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 46px; height: 46px; display: grid; place-items: center; border: 3px solid var(--bg); border-radius: 50%; color: #fff; background: var(--gradient); box-shadow: var(--glow); font: 800 15px var(--font-jakarta), sans-serif; transition: transform var(--dur) var(--ease); }
+/* A card, like every other row on this page. Five columns of bare text between
+   two carded sections read as a gap rather than as a step. */
+.p-body { flex: 1; padding: 18px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--container); text-align: center; transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.p-step:hover .p-body { transform: translateY(var(--lift-card)); border-color: var(--line-2); }
+.p-step:hover .p-node { transform: translateX(-50%) scale(1.08); }
+.p-step h3 { font-size: 15px; margin: 0 0 6px; }
+.p-step p { margin: 0; color: var(--text-2); font-size: 12.5px; line-height: 1.6; }
 
 .reward-band { text-align: center; background: radial-gradient(ellipse at 50% 100%, rgba(89,41,142,.5), transparent 56%), var(--bg); }
 .reward-inner > h2 { margin-inline: auto; }
@@ -678,9 +686,11 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
   .feature-grid { grid-template-columns: 1fr; }
   .process-head { margin-bottom: 40px; }
   .process-grid { grid-template-columns: 1fr; gap: 0; }
-  .p-step::after { top: 46px; bottom: -8px; left: 22px; right: auto; width: 2px; height: auto; background: linear-gradient(180deg, var(--primary), var(--primary-2)); }
-  .p-step { padding: 0 0 30px 64px; }
-  .p-node { left: 0; }
+  .process-grid::before { top: 0; bottom: 0; left: 23px; right: auto; width: 2px; height: auto; background: linear-gradient(180deg, var(--primary), var(--primary-2)); opacity: .3; }
+  .p-step { padding: 0 0 14px 64px; }
+  .p-node { top: 0; left: 0; transform: none; }
+  .p-step:hover .p-node { transform: scale(1.08); }
+  .p-body { text-align: left; }
   .reward-grid { grid-template-columns: 1fr; }
   .reward-arrow { transform: rotate(90deg); }
   .final-cta { align-items: flex-start; flex-direction: column; }

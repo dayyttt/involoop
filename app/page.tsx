@@ -254,8 +254,10 @@ export default function Home() {
               <AnimatedContent className="reveal-item" key={num} delay={index * 0.06}>
                 <article className="p-step">
                   <span className="p-node">{num}</span>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
+                  <div className="p-body">
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                  </div>
                 </article>
               </AnimatedContent>
             );
