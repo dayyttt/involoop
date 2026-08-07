@@ -11,6 +11,7 @@ import CountUp from "@/components/reactbits/CountUp";
 import RotatingWord from "@/components/RotatingWord";
 import LoopFlow from "@/components/LoopFlow";
 import TryDemo from "@/components/TryDemo";
+import PaperScan from "@/components/PaperScan";
 import { createClient } from "@/lib/supabase-browser";
 import { landing, landingText, landingItems } from "@/lib/i18n";
 import { useLang, useSetLang } from "@/components/LangProvider";
@@ -186,32 +187,9 @@ export default function Home() {
       </section>
 
       <section id="why" className="site-shell section-space split-section">
-        <AnimatedContent className="section-image invoice-mock">
-          <div className="mock-head">
-            <span className="mono">INV-2026-009</span>
-            <span className="mock-status">{lang === "id" ? "BELUM DIBAYAR" : "UNPAID"}</span>
-          </div>
-          <div className="mock-block">
-            <span className="mock-label">{lang === "id" ? "DARI" : "FROM"}</span>
-            <strong>Budi Santoso</strong>
-          </div>
-          <div className="mock-block">
-            <span className="mock-label">{lang === "id" ? "UNTUK" : "TO"}</span>
-            <strong>Acme Studio</strong>
-          </div>
-          <div className="mock-line">
-            <span>{lang === "id" ? "Desain landing page" : "Landing page design"}</span>
-            <b className="money">Rp 2.500.000</b>
-          </div>
-          <div className="mock-pay">
-            <span className="btn btn-primary mock-btn">{lang === "id" ? "Bayar sekarang" : "Pay securely"}</span>
-            <span className="mock-test">Stripe Test Mode</span>
-          </div>
-          <div className="mock-cta">
-            <span>
-              {lang === "id" ? "Buat invoicemu sendiri, gratis →" : "Create your own invoice, free →"}
-            </span>
-          </div>
+        <AnimatedContent className="section-image paper-shot">
+          <PaperScan />
+          <span className="paper-caption">{t("why.caption")}</span>
         </AnimatedContent>
         <AnimatedContent delay={0.08}>
           <h2>{t("why.title")}</h2>

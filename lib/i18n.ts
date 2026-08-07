@@ -128,6 +128,10 @@ export const landing = {
     m1: ["3", "3"] as Pair, m1l: ["Invoices when you start", "Invoice saat mulai"] as Pair,
     m2: ["+3", "+3"] as Pair, m2l: ["For you, per client who joins", "Untukmu, tiap klien ikut"] as Pair,
     m3: ["+2", "+2"] as Pair, m3l: ["Bonus for that client", "Bonus untuk klien itu"] as Pair,
+    caption: [
+      "The way it works today — and the same invoice, one link away.",
+      "Cara yang dipakai sekarang — dan invoice yang sama, tinggal satu link.",
+    ] as Pair,
     cta: ["Try it now →", "Coba sekarang →"] as Pair,
   },
   features: {
