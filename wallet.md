@@ -964,3 +964,7 @@ Berikan alur demo maksimal lima menit.
 Jangan menyatakan berhasil sebelum test benar-benar dijalankan.
 
 Jika ada bagian yang blocked, jelaskan secara spesifik apa yang kurang dan jangan membuat hasil palsu.
+
+
+https://www.alchemy.com/ => rpc backend
+https://faucet.solana.com/ => testnet

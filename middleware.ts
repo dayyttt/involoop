@@ -24,7 +24,9 @@ export async function middleware(request: NextRequest) {
 
   // Only the app pages need a session; the landing and the shared invoice
   // pages must stay open to anyone.
-  if (!request.nextUrl.pathname.startsWith("/dashboard")) return response;
+  const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
+  const isAdmin = request.nextUrl.pathname.startsWith("/admin");
+  if (!isDashboard && !isAdmin) return response;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -62,9 +64,29 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(login);
   }
 
+  // The operator console needs more than a session. This check runs before the
+  // page exists, so a signed-in user who is not an admin never receives its
+  // markup at all — not a flash of it, not an empty shell that fetches and then
+  // fails. The API routes and the database each refuse independently; this
+  // layer is about never rendering the thing.
+  //
+  // A plain 404 rather than a 403: someone probing for an admin panel learns
+  // nothing about whether one exists.
+  if (isAdmin) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, suspended_at")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile || profile.role !== "admin" || profile.suspended_at) {
+      return NextResponse.rewrite(new URL("/not-found", request.url), { status: 404 });
+    }
+  }
+
   return response;
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/admin/:path*"],
 };
