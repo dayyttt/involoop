@@ -63,6 +63,7 @@ export default function RewardWeave() {
           uTime: { value: 0 },
           uMouse: { value: new THREE.Vector2(0, 0) },
           uStrength: { value: 0 },
+          uLight: { value: new THREE.Vector2(0.5, 0.6) },
           uBase: { value: new THREE.Color(0x120e16) },
           uYou: { value: new THREE.Color(0xf23f9c) },
           uClient: { value: new THREE.Color(0xf7a83a) },
@@ -87,6 +88,7 @@ export default function RewardWeave() {
             uniform float uTime;
             uniform vec2 uMouse;
             uniform float uStrength;
+            uniform vec2 uLight;
             uniform vec3 uBase;
             uniform vec3 uYou;
             uniform vec3 uClient;
@@ -106,7 +108,7 @@ export default function RewardWeave() {
               vec3 src = texture2D(uTex, clamp(uv, 0.001, 0.999)).rgb;
               float lum = luma(src);
 
-              vec2 shifted = uv + uMouse * uStrength * (lum - 0.4) * 0.022;
+              vec2 shifted = uv + uMouse * (lum - 0.4) * 0.05;
               src = texture2D(uTex, clamp(shifted, 0.001, 0.999)).rgb;
               lum = luma(src);
 
@@ -118,8 +120,27 @@ export default function RewardWeave() {
               float side = clamp((src.b - src.r) * 5.0, -1.0, 1.0);
               vec3 party = mix(uClient, uYou, smoothstep(-0.32, 0.32, side));
 
-              // Keep the render's own shading: the folds are the form.
-              vec3 color = party * (0.26 + lum * 1.5);
+              // A normal map straight out of the picture: the slope of its own
+              // brightness is the slope of the surface. Lighting that from the
+              // cursor is what makes the sheets read as solid rather than as a
+              // flat image being nudged around.
+              float e = 0.0038;
+              float lx = luma(texture2D(uTex, clamp(shifted + vec2(e, 0.0), 0.001, 0.999)).rgb)
+                       - luma(texture2D(uTex, clamp(shifted - vec2(e, 0.0), 0.001, 0.999)).rgb);
+              float ly = luma(texture2D(uTex, clamp(shifted + vec2(0.0, e), 0.001, 0.999)).rgb)
+                       - luma(texture2D(uTex, clamp(shifted - vec2(0.0, e), 0.001, 0.999)).rgb);
+              // 16, not 26: the normal comes from the picture's own brightness, so a steep
+              // slope amplifies its compression noise into a crust of false texture.
+              vec3 normal = normalize(vec3(-lx * 16.0, -ly * 16.0, 1.0));
+
+              vec3 toLight = normalize(vec3(uLight - vUv, 0.42));
+              float diffuse = max(dot(normal, toLight), 0.0);
+              vec3 halfway = normalize(toLight + vec3(0.0, 0.0, 1.0));
+              float specular = pow(max(dot(normal, halfway), 0.0), 34.0);
+
+              vec3 color = party * (0.20 + lum * 1.25);
+              color += party * diffuse * 0.38;
+              color += vec3(1.0, 0.92, 0.96) * specular * 0.34;
 
               // The background is near-grey; drop it to the page's black so the
               // sheets float rather than sitting in a box of blue.
@@ -156,7 +177,7 @@ export default function RewardWeave() {
             event.clientY >= rect.top &&
             event.clientY <= rect.bottom;
           targetStrength = inside ? 1 : 0;
-          if (!inside) return;
+          if (!inside) return; // keep the last position; strength eases it out
           targetX = ((event.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1;
           targetY = 1 - ((event.clientY - rect.top) / Math.max(rect.height, 1)) * 2;
         };
@@ -176,11 +197,35 @@ export default function RewardWeave() {
         let running = false;
         const clock = new THREE.Clock();
 
+        let tiltX = 0;
+        let tiltY = 0;
+
         const tick = () => {
-          uniforms.uTime.value = clock.getElapsedTime();
-          uniforms.uMouse.value.x += (targetX - uniforms.uMouse.value.x) * 0.05;
-          uniforms.uMouse.value.y += (targetY - uniforms.uMouse.value.y) * 0.05;
+          const t = clock.getElapsedTime();
+          uniforms.uTime.value = t;
           uniforms.uStrength.value += (targetStrength - uniforms.uStrength.value) * 0.05;
+
+          // Blend the pointer with a slow orbit, so the light keeps moving over
+          // the folds for someone who is only reading.
+          const s = uniforms.uStrength.value;
+          const orbitX = 0.5 + Math.cos(t * 0.28) * 0.42;
+          const orbitY = 0.55 + Math.sin(t * 0.21) * 0.34;
+          const wantLightX = (targetX * 0.5 + 0.5) * s + orbitX * (1 - s);
+          const wantLightY = (targetY * 0.5 + 0.5) * s + orbitY * (1 - s);
+          uniforms.uLight.value.x += (wantLightX - uniforms.uLight.value.x) * 0.05;
+          uniforms.uLight.value.y += (wantLightY - uniforms.uLight.value.y) * 0.05;
+
+          const wantMx = targetX * s + Math.cos(t * 0.19) * 0.5 * (1 - s);
+          const wantMy = targetY * s + Math.sin(t * 0.16) * 0.5 * (1 - s);
+          uniforms.uMouse.value.x += (wantMx - uniforms.uMouse.value.x) * 0.04;
+          uniforms.uMouse.value.y += (wantMy - uniforms.uMouse.value.y) * 0.04;
+
+          // The panel itself turns in perspective. A flat picture that lights
+          // correctly still reads as flat until its own plane moves.
+          tiltX += (uniforms.uMouse.value.y * 6.5 - tiltX) * 0.06;
+          tiltY += (uniforms.uMouse.value.x * 8.0 - tiltY) * 0.06;
+          el.style.transform = `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg)`;
+
           renderer.render(scene, camera);
           raf = requestAnimationFrame(tick);
         };
