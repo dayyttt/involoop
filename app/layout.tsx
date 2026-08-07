@@ -33,9 +33,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const cookieLang = cookies().get(LANG_COOKIE)?.value;
   const lang: Lang = cookieLang === "id" ? "id" : "en";
 
+  // suppressHydrationWarning: the inline script below adds a class to <html>
+  // before React hydrates, which is a deliberate mismatch.
   return (
-    {/* suppressHydrationWarning: the inline script below adds a class to <html>
-        before React hydrates, which is a deliberate mismatch. */}
     <html lang={lang} className={fonts} suppressHydrationWarning>
       <head>
         {/* Marks that scripting is available, before the first paint. Scroll
