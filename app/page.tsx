@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import NeonLandscape from "@/components/NeonLandscape";
 import ChannelMarquee from "@/components/ChannelMarquee";
 import BlurText from "@/components/reactbits/BlurText";
-import Magnet from "@/components/reactbits/Magnet";
 import SpotlightCard from "@/components/reactbits/SpotlightCard";
 import CountUp from "@/components/reactbits/CountUp";
 import RotatingWord from "@/components/RotatingWord";
@@ -99,11 +98,9 @@ export default function Home() {
             </div>
             <p>{t("hero.sub")}</p>
             <div className="hero-actions">
-              <Magnet magnetStrength={4} padding={60}>
-                <Link href="/signup" className="btn btn-primary btn-lg">
-                  {t("hero.cta1")}
-                </Link>
-              </Magnet>
+              <Link href="/signup" className="btn btn-primary btn-lg">
+                {t("hero.cta1")}
+              </Link>
               <Link href="/invoice/484a9577f2" className="btn btn-ghost btn-lg">
                 {t("hero.cta3")}
               </Link>
@@ -301,9 +298,7 @@ export default function Home() {
             <ul className="plan-features">
               <li>{t("pricing.s1")}</li><li>{t("pricing.s2")}</li><li>{t("pricing.s3")}</li>
             </ul>
-            <Magnet magnetStrength={4} padding={40}>
-              <button onClick={() => handleUpgrade("starter")} className="btn btn-primary" style={{ width: "100%" }}>{t("pricing.ctaUpgrade")}</button>
-            </Magnet>
+            <button onClick={() => handleUpgrade("starter")} className="btn btn-primary" style={{ width: "100%" }}>{t("pricing.ctaUpgrade")}</button>
           </div>
           <div className="plan">
             <h3 className="plan-name">{t("pricing.pro")}</h3>
