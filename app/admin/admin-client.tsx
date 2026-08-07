@@ -31,8 +31,10 @@ interface Overview {
 type Tab = "overview" | "users" | "ops" | "audit";
 const PAGE = 25;
 
+const TAB_KEYS: Tab[] = ["overview", "users", "ops", "audit"];
+
 export default function AdminConsole() {
-  const [tab, setTab] = useState<Tab>("overview");
+  const [tab, setTabState] = useState<Tab>("overview");
   const [overview, setOverview] = useState<Overview | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,12 +48,34 @@ export default function AdminConsole() {
   const [ops, setOps] = useState<any>(null);
   const [audit, setAudit] = useState<any[]>([]);
   const [openUser, setOpenUser] = useState<string | null>(null);
+  const [recent, setRecent] = useState<AdminUserRow[]>([]);
+
+  // The open tab lives in the URL, so a view can be bookmarked or pasted to
+  // another operator instead of described.
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (TAB_KEYS.includes(t as Tab)) setTabState(t as Tab);
+  }, []);
+
+  function setTab(next: Tab) {
+    setTabState(next);
+    const url = new URL(window.location.href);
+    if (next === "overview") url.searchParams.delete("tab");
+    else url.searchParams.set("tab", next);
+    window.history.replaceState(null, "", url.toString());
+  }
 
   useEffect(() => {
     fetch("/api/admin/overview")
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))
       .then(setOverview)
       .catch(() => setError("Could not load the console."));
+
+    // The five newest accounts, from the same endpoint the Users tab uses.
+    fetch("/api/admin/users?limit=5")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setRecent(d.rows ?? []))
+      .catch(() => {});
   }, []);
 
   const loadUsers = useCallback(async () => {
@@ -123,6 +147,13 @@ export default function AdminConsole() {
       </nav>
 
       <main className="dash-shell">
+        <header className="admin-head">
+          <h1>Operator console</h1>
+          <p className="hint">
+            Everything on the platform, and the record of what operators have done to it.
+          </p>
+        </header>
+
         {error && <p className="error">{error}</p>}
 
         <div className="dash-tabs">
@@ -150,7 +181,7 @@ export default function AdminConsole() {
             ) : (
               <>
                 <div className="admin-grid">
-                  <Metric label="Users" value={overview.users.total} sub={`${overview.users.new_7d} new this week`} />
+                  <Metric label="Users" value={overview.users.total} sub={`+${overview.users.new_7d} in 7 days`} />
                   <Metric label="On a paid plan" value={overview.users.paid} sub={`${overview.users.admins} admin`} />
                   <Metric label="Invoices" value={overview.invoices.total} sub={`${overview.invoices.paid} paid`} />
                   <Metric
@@ -173,7 +204,7 @@ export default function AdminConsole() {
                       <table className="admin-table">
                         <thead>
                           <tr>
-                            <th>Currency</th>
+                            <th className="grow">Currency</th>
                             <th className="num">Billed</th>
                             <th className="num">Received</th>
                             <th className="num">Outstanding</th>
@@ -192,6 +223,40 @@ export default function AdminConsole() {
                       </table>
                     </div>
                   )}
+                </section>
+
+                <section className="card-panel dash-block">
+                  <div className="admin-section-head">
+                    <h2 className="section-title" style={{ margin: 0 }}>Newest accounts</h2>
+                    <button type="button" className="link-btn" onClick={() => setTab("users")}>
+                      See all
+                    </button>
+                  </div>
+                  <div className="admin-table-wrap">
+                    <table className="admin-table admin-table-tight">
+                      <tbody>
+                        {recent.map((u) => (
+                          <tr key={u.id}>
+                            <td className="grow">
+                              <strong>{u.full_name || "—"}</strong>
+                              <span className="admin-sub">{u.email}</span>
+                            </td>
+                            <td>{u.plan}</td>
+                            <td className="num">{u.invoice_count} inv</td>
+                            <td>{formatDateShort(u.created_at)}</td>
+                            <td className="num">
+                              <button className="btn btn-ghost btn-xs" onClick={() => setOpenUser(u.id)}>
+                                Open
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {recent.length === 0 && (
+                          <tr><td><p className="empty" style={{ padding: 12 }}>Nobody yet.</p></td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </section>
 
                 <div className="admin-two">
@@ -252,7 +317,7 @@ export default function AdminConsole() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>User</th>
+                    <th className="grow">User</th>
                     <th>Plan</th>
                     <th className="num">Credits</th>
                     <th className="num">Invoices</th>
@@ -263,23 +328,22 @@ export default function AdminConsole() {
                 <tbody>
                   {users.map((u) => (
                     <tr key={u.id} className={u.suspended_at ? "is-suspended" : ""}>
-                      <td>
-                        <strong>{u.full_name || "—"}</strong>
-                        <span className="admin-sub">{u.email}</span>
-                        <span className="admin-flags">
-                          {u.role === "admin" && <span className="badge badge-paid">admin</span>}
+                      <td className="grow">
+                        <span className="admin-name">
+                          <strong>{u.full_name || "—"}</strong>
+                          {u.role === "admin" && <span className="badge badge-role">admin</span>}
                           {u.suspended_at && <span className="badge badge-unpaid">suspended</span>}
                         </span>
+                        <span className="admin-sub">{u.email}</span>
                       </td>
                       <td>{u.plan}</td>
                       <td className="num">{u.free_invoice_credits}</td>
                       <td className="num">
-                        {u.invoice_count}
-                        <span className="admin-sub">{u.paid_count} paid</span>
+                        {u.invoice_count > 0 ? `${u.invoice_count} · ${u.paid_count} paid` : "—"}
                       </td>
                       <td>{formatDateShort(u.created_at)}</td>
                       <td className="num">
-                        <button className="btn btn-ghost" onClick={() => setOpenUser(u.id)}>
+                        <button className="btn btn-ghost btn-xs" onClick={() => setOpenUser(u.id)}>
                           Open
                         </button>
                       </td>
@@ -326,7 +390,7 @@ export default function AdminConsole() {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Invoice</th>
+                      <th className="grow">Invoice</th>
                       <th>Provider</th>
                       <th>Status</th>
                       <th className="num">Amount</th>
@@ -357,7 +421,7 @@ export default function AdminConsole() {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>Event</th>
+                      <th className="grow">Event</th>
                       <th>Status</th>
                       <th>Provider</th>
                       <th>When</th>
@@ -390,7 +454,7 @@ export default function AdminConsole() {
                 <thead>
                   <tr>
                     <th>When</th>
-                    <th>Operator</th>
+                    <th className="grow">Operator</th>
                     <th>Action</th>
                     <th>Target</th>
                     <th>Detail</th>

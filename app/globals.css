@@ -1334,19 +1334,34 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 @media (max-width: 760px) { .admin-two { grid-template-columns: 1fr; } }
 
 .admin-controls { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-.admin-controls .input { flex: 1 1 240px; min-width: 0; }
+/* The search box takes what it needs, not the whole row: the filters beside it
+   are used just as often. */
+.admin-controls .input { flex: 0 1 320px; min-width: 0; }
+
+.admin-head { margin-bottom: 18px; }
+.admin-head h1 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
+.admin-head .hint { margin: 5px 0 0; }
+.admin-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 
 /* Wide tables scroll inside their own box; the page never scrolls sideways. */
 .admin-table-wrap { width: 100%; overflow-x: auto; }
 .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.admin-table th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap; }
-.admin-table td { padding: 13px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.admin-table th { padding: 10px 14px; text-align: left; font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); white-space: nowrap; }
+.admin-table td { padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; white-space: nowrap; }
+/* One column takes the slack, but a share of it rather than all of it. Left to
+   itself the browser spreads columns evenly and every row becomes islands of
+   text with canyons between them; at 100% the name column turns into a desert
+   with the numbers pinned to the far edge. */
+.admin-table .grow { width: 42%; white-space: normal; }
+.admin-table-tight td { padding: 9px 14px; }
 .admin-table tbody tr:last-child td { border-bottom: 0; }
 .admin-table tbody tr:hover { background: rgba(255,255,255,.02); }
 .admin-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .admin-table tr.is-suspended td { opacity: .55; }
-.admin-sub { display: block; margin-top: 2px; color: var(--muted); font-size: 12px; }
-.admin-flags { display: inline-flex; gap: 6px; margin-top: 6px; }
+.admin-sub { display: block; margin-top: 1px; color: var(--muted); font-size: 12px; }
+.admin-name { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.badge-role { background: rgba(241,74,148,.15); color: var(--primary); }
+.btn-xs { min-height: 30px; padding: 5px 12px; font-size: 12px; }
 .admin-detail { max-width: 280px; color: var(--text-2); font-size: 12px; word-break: break-word; }
 
 .admin-pager { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
