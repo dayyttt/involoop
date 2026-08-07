@@ -81,7 +81,7 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .hero-points span { display: inline-flex; align-items: center; color: var(--text-2); font-size: 13px; font-weight: 500; }
 .hero-points span:not(:last-child)::after { content: "·"; margin: 0 12px; color: var(--muted); font-size: 15px; }
 .hero-note { margin-top: 18px; color: var(--muted); font-size: 12.5px; }
-.trust-strip { position: absolute; inset: auto 0 28px; z-index: 3; padding: 14px 0 0; }
+.trust-strip { position: absolute; inset: auto 0 20px; z-index: 3; padding: 18px 0 0; }
 .marquee { overflow: hidden; }
 .marquee-track { display: flex; width: max-content; animation: marquee 30s linear infinite; }
 .marquee-track span { margin-right: 64px; color: #a89ca9; font: 700 11px var(--font-jakarta), sans-serif; letter-spacing: .08em; white-space: nowrap; }
@@ -361,6 +361,7 @@ a.list-item:hover { transform: translateY(-2px); border-color: var(--primary); }
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .chip { padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.03); color: var(--text-2); font: 600 11.5px var(--font-jakarta), sans-serif; cursor: pointer; transition: border-color .18s ease, color .18s ease; }
 .chip:hover { border-color: var(--primary); color: var(--primary); }
+.chip-active { border-color: var(--primary); color: var(--primary); background: rgba(241,74,148,.12); }
 
 /* ---- Success ---- */
 .success-hero { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 50%; background: var(--gradient); color: #fff; font-size: 24px; font-weight: 800; box-shadow: var(--glow); }
@@ -405,6 +406,7 @@ a.list-item:hover { transform: translateY(-2px); border-color: var(--primary); }
   .header-inner { gap: 12px; }
   .header-inner .btn { padding-inline: 12px; }
   .agency-hero { min-height: 720px; padding-top: 96px; }
+  .agency-hero-inner { padding-bottom: 150px; }
   .agency-hero-copy h1 { font-size: 44px; }
   .hero-shade { background: linear-gradient(0deg,var(--bg) 0%,rgba(12,8,14,.72) 56%,rgba(12,8,14,.94) 100%); }
   .split-section { gap: 36px; }

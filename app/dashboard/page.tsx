@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase-browser";
 import { formatMoney } from "@/lib/money";
 import { appText, useLang } from "@/lib/i18n";
@@ -75,6 +76,7 @@ export default function Dashboard() {
   const [copiedRef, setCopiedRef] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
   const [upgraded, setUpgraded] = useState(false);
+  const [filter, setFilter] = useState<"all" | "unpaid" | "awaiting" | "paid">("all");
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.search.includes("upgraded=")) {
@@ -218,6 +220,19 @@ export default function Dashboard() {
 
   const { profile, invoices, ledger, referrals, stats } = data;
 
+  const FILTERS: { key: "all" | "unpaid" | "awaiting" | "paid"; label: string }[] = [
+    { key: "all", label: t("dashboard.filterAll") },
+    { key: "unpaid", label: t("dashboard.filterUnpaid") },
+    { key: "awaiting", label: t("dashboard.filterAwaiting") },
+    { key: "paid", label: t("dashboard.filterPaid") },
+  ];
+  const filteredInvoices = invoices.filter((inv) => {
+    if (filter === "all") return true;
+    if (filter === "paid") return inv.status === "paid";
+    if (filter === "awaiting") return inv.status === "awaiting_verification";
+    return inv.status === "unpaid" || inv.status === "payment_pending" || inv.status === "failed";
+  });
+
   return (
     <>
       <nav className="nav">
@@ -309,6 +324,21 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {invoices.length > 0 && (
+          <div className="chip-row" style={{ marginTop: 0, marginBottom: 12 }}>
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setFilter(f.key)}
+                className={`chip ${filter === f.key ? "chip-active" : ""}`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {invoices.length === 0 ? (
           <div className="card-panel" style={{ textAlign: "center", padding: "36px 20px" }}>
             <p className="section-eyebrow">{t("dashboard.emptyTitle")}</p>
@@ -319,8 +349,14 @@ export default function Dashboard() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {invoices.map((inv) => (
-              <div key={inv.public_id} className="list-item" style={{ flexWrap: "wrap", gap: 10 }}>
+            {filteredInvoices.map((inv, index) => (
+              <motion.div
+                key={inv.public_id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: index * 0.05 }}
+              >
+                <div className="list-item" style={{ flexWrap: "wrap", gap: 10 }}>
                 <div className="side" style={{ flexDirection: "column", alignItems: "flex-start", gap: 2, flex: "1 1 220px" }}>
                   <Link
                     href={`/invoice/${inv.public_id}`}
@@ -358,8 +394,14 @@ export default function Dashboard() {
                     {copiedId === inv.public_id ? t("common.copied") : t("common.copyLink")}
                   </button>
                 </div>
-              </div>
+                </div>
+              </motion.div>
             ))}
+            {filteredInvoices.length === 0 && (
+              <p className="empty" style={{ padding: "16px 0" }}>
+                {t("dashboard.emptyBody")}
+              </p>
+            )}
           </div>
         )}
 

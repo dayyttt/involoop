@@ -17,9 +17,9 @@ export default function ChannelMarquee({ label }: { label?: string }) {
       {label ? <p className="marquee-label">{label}</p> : null}
       <LogoLoop
         logos={CHANNELS}
-        speed={70}
+        speed={55}
         logoHeight={44}
-        gap={48}
+        gap={72}
         pauseOnHover
         fadeOut
         scaleOnHover

@@ -333,6 +333,10 @@ export const app = {
     upgrade: ["Upgrade", "Upgrade"] as T,
     upgraded: ["Plan upgraded!", "Paket berhasil di-upgrade!"] as T,
     upgradeFailed: ["Could not start upgrade. Try again.", "Gagal memulai upgrade. Coba lagi."] as T,
+    filterAll: ["All", "Semua"] as T,
+    filterUnpaid: ["Unpaid", "Belum bayar"] as T,
+    filterAwaiting: ["Awaiting", "Menunggu"] as T,
+    filterPaid: ["Paid", "Lunas"] as T,
   },
   newInvoice: {
     title: ["Create invoice", "Buat invoice"] as T,
