@@ -115,6 +115,21 @@ export async function POST(req: NextRequest) {
           { status: 402 }
         );
       }
+      // The paid month ran out and there are no credits to fall back on. This
+      // is a different problem from running out of quota, so it gets its own
+      // sentence rather than "upgrade for more".
+      if (msg.includes("PLAN_EXPIRED")) {
+        return NextResponse.json(
+          {
+            error: apiError(
+              lang,
+              "Your Pro period has ended and you have no credits left. Renew Pro, or invite a client to earn credits.",
+              "Masa Pro-mu sudah berakhir dan kreditmu habis. Perpanjang Pro, atau ajak klien daftar untuk dapat kredit."
+            ),
+          },
+          { status: 402 }
+        );
+      }
       if (msg.includes("PLAN_LIMIT")) {
         return NextResponse.json(
           {

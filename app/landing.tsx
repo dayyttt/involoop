@@ -329,6 +329,10 @@ export default function Landing({ signedIn }: { signedIn: boolean }) {
           <h2>{t("pricing.title")}</h2>
           <p className="body-copy">{t("pricing.sub")}</p>
           <p className="credit-line">{t("pricing.creditLine")}</p>
+          {/* The question a layperson actually has in front of a price is
+              whether it will take money again next month. Answer it before the
+              cards, not in small print under them. */}
+          <p className="pricing-norenew">{t("pricing.noRenew")}</p>
         </AnimatedContent>
         <div className="pricing-grid">
           <AnimatedContent className="reveal-item plan">

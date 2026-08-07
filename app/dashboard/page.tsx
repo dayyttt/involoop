@@ -51,6 +51,10 @@ interface DashboardData {
     paypal_email: string | null;
     plan?: string;
     plan_expires_at?: string | null;
+    plan_started_at?: string | null;
+    plan_used?: number | null;
+    plan_quota?: number | null;
+    plan_active?: boolean;
   };
   invoices: Invoice[];
   ledger: LedgerEntry[];
@@ -72,7 +76,7 @@ export default function Dashboard() {
   const supabase = createClient();
   const router = useRouter();
   const lang = useLang();
-  const t = (k: string) => appText(lang, k);
+  const t = (k: string, v?: Record<string, string>) => appText(lang, k, v);
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -609,21 +613,66 @@ export default function Dashboard() {
 
             {/* The wallet column: credits, plan, and the last movements. */}
             <aside className="bento-side">
-              <div className="side-credits">
-                <span className="bento-label">{t("dashboard.credit")}</span>
-                <div className="bento-figure">{profile.free_invoice_credits}</div>
-                <p className="hint">{t("dashboard.creditIsInvoice")}</p>
-                {profile.plan === "free" && (
+              {/* Whichever thing is actually paying for the next invoice gets
+                  the big number. On a paid plan that is the quota, not the
+                  credit balance — showing "3 credits" to someone on Pro answers
+                  a question they no longer have. */}
+              {profile.plan_active ? (
+                <div className="side-credits">
+                  <div className="plan-head">
+                    <span className="bento-label">{t("dashboard.currentPlan")}</span>
+                    <span className="plan-badge">
+                      <PlanName plan={profile.plan} t={t} />
+                    </span>
+                  </div>
+                  <div className="bento-figure">
+                    {Math.max(0, (profile.plan_quota ?? 0) - (profile.plan_used ?? 0))}
+                  </div>
+                  <p className="hint">
+                    {t("dashboard.planLeft", {
+                      used: String(profile.plan_used ?? 0),
+                      quota: String(profile.plan_quota ?? 0),
+                    })}
+                  </p>
+                  <div className="quota-bar" aria-hidden>
+                    <span
+                      style={{
+                        width: `${Math.min(100, Math.round(((profile.plan_used ?? 0) / (profile.plan_quota || 1)) * 100))}%`,
+                      }}
+                    />
+                  </div>
+                  {profile.plan_expires_at && (
+                    <p className="hint">
+                      {t("dashboard.planUntil")} {formatDateShort(profile.plan_expires_at, locale)}
+                    </p>
+                  )}
+                  <p className="hint">
+                    {t("dashboard.planPlusCredits", { n: String(profile.free_invoice_credits) })}
+                  </p>
+                </div>
+              ) : (
+                <div className="side-credits">
+                  <span className="bento-label">{t("dashboard.credit")}</span>
+                  <div className="bento-figure">{profile.free_invoice_credits}</div>
+                  <p className="hint">{t("dashboard.creditIsInvoice")}</p>
+                  {profile.plan !== "free" && profile.plan_active === false && (
+                    /* They paid once and the month ran out. Say so, rather than
+                       silently showing a free-tier card.
+                       Strict === false on purpose: before migration p5 the field
+                       is absent, and telling a paying Pro user their plan ended
+                       because we could not measure it would be a lie. */
+                    <p className="plan-expired">{t("dashboard.planEnded")}</p>
+                  )}
                   <div className="side-plan">
                     <button className="btn btn-ghost" onClick={() => setUpgradePlan("starter")}>
-                      Starter
+                      {t("dashboard.planGet")} Starter
                     </button>
                     <button className="btn btn-primary" onClick={() => setUpgradePlan("pro")}>
-                      Pro
+                      {t("dashboard.planGet")} Pro
                     </button>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               <div className="side-ledger">
                 <span className="bento-label">{t("dashboard.creditHistory")}</span>

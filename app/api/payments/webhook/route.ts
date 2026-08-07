@@ -168,7 +168,12 @@ export async function POST(req: NextRequest) {
           plan === "pro" ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString() : null;
         await admin
           .from("profiles")
-          .update({ plan, plan_expires_at: expiresAt, plan_session_id: null })
+          .update({
+            plan,
+            plan_expires_at: expiresAt,
+            plan_started_at: new Date().toISOString(),
+            plan_session_id: null,
+          })
           .eq("id", userId);
         break;
       }

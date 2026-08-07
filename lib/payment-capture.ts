@@ -55,7 +55,15 @@ export async function capturePayment(orderId: string): Promise<CaptureResult> {
         plan === "pro" ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString() : null;
       await admin
         .from("profiles")
-        .update({ plan, plan_expires_at: expiresAt, plan_session_id: null })
+        .update({
+          plan,
+          plan_expires_at: expiresAt,
+          // The quota is counted from here, so buying a plan delivers the full
+          // number of invoices it advertises rather than the remainder after
+          // whatever the account already published.
+          plan_started_at: new Date().toISOString(),
+          plan_session_id: null,
+        })
         .eq("id", userId);
       return { ok: true, paid: true, plan: { plan, userId } };
     }

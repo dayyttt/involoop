@@ -1276,3 +1276,34 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 @media (prefers-reduced-motion: reduce) {
   .skel::after { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   Plan state
+   A layperson opening the dashboard asks three things about a paid plan: which
+   one, how much is left, until when. This answers them in that order, with the
+   number that matters biggest.
+--------------------------------------------------------------------------- */
+.plan-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.plan-badge {
+  padding: 3px 10px; border-radius: 999px;
+  background: rgba(241,74,148,.14); color: var(--primary);
+  font-size: 11px; font-weight: 800;
+}
+.quota-bar { height: 5px; margin: 10px 0 8px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+.quota-bar span { display: block; height: 100%; border-radius: 999px; background: var(--gradient); transition: width var(--dur-slow) var(--ease); }
+.plan-expired {
+  margin: 10px 0 0; padding: 9px 11px;
+  border-left: 2px solid var(--warn); border-radius: 0 6px 6px 0;
+  background: var(--warn-soft);
+  font-size: 12px; color: var(--text-2);
+}
+
+/* The no-auto-renewal promise sits with the prices, not in a footnote. */
+.pricing-norenew {
+  max-width: 62ch; margin: 10px 0 0;
+  padding: 11px 14px;
+  border-left: 2px solid var(--success);
+  border-radius: 0 6px 6px 0;
+  background: var(--success-soft);
+  color: var(--text-2); font-size: 13px; line-height: 1.6;
+}
