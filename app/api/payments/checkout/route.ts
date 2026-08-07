@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { getStripe, stripeConfigured } from "@/lib/stripe";
+import {
+  createOrder,
+  approvalUrl,
+  paypalConfigured,
+  paypalSupportsCurrency,
+} from "@/lib/paypal";
 import { apiError } from "@/lib/api-lang";
 
-// Create a Stripe Checkout Session for a public invoice. Funds settle to the
-// OWNER's connected account (destination charge), never to Involoop's balance.
-// The amount is always read from the database, never from the client.
+// Create a PayPal order for a public invoice.
+//
+// The amount is read from the database and never from the request body: a
+// client who edits the payload still pays what the invoice says. The order is
+// addressed to the freelancer's own PayPal account when they have saved one, so
+// Involoop is not in the money path.
 // Expects: { public_id: string }
 export async function POST(req: NextRequest) {
   let lang: unknown = "en";
@@ -15,9 +23,15 @@ export async function POST(req: NextRequest) {
     lang = body.lang;
     if (!public_id) return NextResponse.json({ error: "public_id is required" }, { status: 400 });
 
-    if (!stripeConfigured()) {
+    if (!paypalConfigured()) {
       return NextResponse.json(
-        { error: apiError(lang, "Card payment is not enabled for this project yet.", "Pembayaran Stripe belum aktif untuk proyek ini.") },
+        {
+          error: apiError(
+            lang,
+            "PayPal is not enabled for this project yet.",
+            "PayPal belum aktif untuk proyek ini."
+          ),
+        },
         { status: 503 }
       );
     }
@@ -25,7 +39,7 @@ export async function POST(req: NextRequest) {
     const admin = createAdminClient();
     const { data: invoice, error } = await admin
       .from("invoices")
-      .select("id, public_id, number, client_name, amount_minor, currency, status, owner_id")
+      .select("id, public_id, number, client_name, description, amount_minor, currency, status, owner_id")
       .eq("public_id", public_id)
       .single();
     if (error || !invoice) {
@@ -41,62 +55,60 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // PayPal does not settle in every currency Involoop can bill in — rupiah
+    // above all. Saying so plainly is better than a failed redirect.
+    if (!paypalSupportsCurrency(invoice.currency)) {
+      return NextResponse.json(
+        {
+          error: apiError(
+            lang,
+            `PayPal cannot process ${invoice.currency}. Ask your client to use the bank transfer option below.`,
+            `PayPal tidak memproses ${invoice.currency}. Minta klienmu memakai opsi transfer bank di bawah.`
+          ),
+        },
+        { status: 409 }
+      );
+    }
+
     const { data: owner } = await admin
       .from("profiles")
-      .select("stripe_account_id, stripe_status")
+      .select("paypal_email")
       .eq("id", invoice.owner_id)
       .single();
 
-    const stripe = getStripe()!;
     const base = process.env.NEXT_PUBLIC_BASE_URL || "https://involoop.vercel.app";
-
-    // Sandbox mode: charge the platform account unless the owner is connected
-    // (Stripe Connect). Test-mode checkout works either way.
-    const connected =
-      owner?.stripe_account_id && owner.stripe_status === "connected"
-        ? owner.stripe_account_id
-        : null;
-
-    // Application fee is computed server-side from configured basis points.
-    const FEE_BPS = Number(process.env.STRIPE_APPLICATION_FEE_BASIS_POINTS || 0);
     const amountMinor = Number(invoice.amount_minor);
-    const feeMinor = Math.floor((amountMinor * FEE_BPS) / 10000);
-    const netMinor = amountMinor - feeMinor;
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: invoice.currency.toLowerCase(),
-            product_data: { name: `${invoice.number} · ${invoice.client_name}` },
-            unit_amount: amountMinor,
-          },
-          quantity: 1,
-        },
-      ],
-      payment_intent_data: connected
-        ? {
-            transfer_data: { destination: connected },
-            application_fee_amount: feeMinor > 0 ? feeMinor : undefined,
-          }
-        : {},
-      metadata: {
-        invoice_id: invoice.id,
-        public_id: invoice.public_id,
-      },
-      success_url: `${base}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${base}/invoice/${invoice.public_id}`,
+    const order = await createOrder({
+      amountMinor,
+      currency: invoice.currency,
+      referenceId: invoice.public_id,
+      description: `${invoice.number} · ${invoice.client_name}`,
+      invoiceNumber: invoice.number,
+      returnUrl: `${base}/api/payments/capture?invoice=${invoice.public_id}`,
+      cancelUrl: `${base}/invoice/${invoice.public_id}`,
+      payeeEmail: owner?.paypal_email ?? null,
+      // A second tap on "Pay" reuses the same order instead of opening a new one.
+      idempotencyKey: `inv_${invoice.id}_${amountMinor}`,
     });
+
+    const url = approvalUrl(order);
+    if (!url) {
+      console.error("paypal order without approval link", order?.id);
+      return NextResponse.json(
+        { error: apiError(lang, "Could not start the payment. Try again.", "Gagal memulai pembayaran. Coba lagi.") },
+        { status: 502 }
+      );
+    }
 
     const { error: payErr } = await admin.from("payments").insert({
       invoice_id: invoice.id,
-      provider: "stripe",
-      provider_session_id: session.id,
-      connected_account_id: connected,
+      provider: "paypal",
+      provider_session_id: order.id,
+      connected_account_id: owner?.paypal_email ?? null,
       amount_minor: amountMinor,
-      platform_fee_minor: feeMinor,
-      net_amount_minor: netMinor,
+      platform_fee_minor: 0,
+      net_amount_minor: amountMinor,
       currency: invoice.currency,
       status: "created",
     });
@@ -110,11 +122,17 @@ export async function POST(req: NextRequest) {
       .eq("id", invoice.id)
       .eq("status", "unpaid");
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url });
   } catch (err: any) {
-    console.error("checkout error", err);
+    console.error("paypal checkout error", err?.message ?? err);
     return NextResponse.json(
-      { error: apiError(lang, "Could not create the payment session. Try again.", "Gagal membuat sesi pembayaran. Coba lagi.") },
+      {
+        error: apiError(
+          lang,
+          "Could not create the payment. Try again.",
+          "Gagal membuat pembayaran. Coba lagi."
+        ),
+      },
       { status: 500 }
     );
   }

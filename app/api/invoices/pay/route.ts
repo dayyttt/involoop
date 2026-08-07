@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       .from("invoices")
       .update({ status: "awaiting_verification" })
       .eq("public_id", public_id)
-      .in("status", ["unpaid", "payment_pending"]) // abandoned Stripe session falls back to manual
+      .in("status", ["unpaid", "payment_pending"]) // abandoned PayPal order falls back to manual
       .select("public_id, status")
       .single();
 

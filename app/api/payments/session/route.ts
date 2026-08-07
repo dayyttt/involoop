@@ -3,12 +3,13 @@ import { createAdminClient } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
 
-// Public read for the payment success page: returns the paid invoice after a
-// Stripe redirect, keyed by the Checkout Session id that Stripe puts in the URL.
+// Public read for the payment success page: returns the paid invoice after the
+// PayPal redirect, keyed by the order id PayPal returns as `token`.
 export async function GET(req: NextRequest) {
-  const sessionId = req.nextUrl.searchParams.get("session_id");
+  const sessionId =
+    req.nextUrl.searchParams.get("order") ?? req.nextUrl.searchParams.get("session_id");
   if (!sessionId) {
-    return NextResponse.json({ error: "session_id is required" }, { status: 400 });
+    return NextResponse.json({ error: "order is required" }, { status: 400 });
   }
 
   const admin = createAdminClient();
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (!payment) {
-    return NextResponse.json({ error: "Sesi pembayaran tidak ditemukan." }, { status: 404 });
+    return NextResponse.json({ error: "Payment not found." }, { status: 404 });
   }
 
   const invoice = Array.isArray(payment.invoice) ? payment.invoice[0] : payment.invoice;

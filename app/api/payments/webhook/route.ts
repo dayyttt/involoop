@@ -1,37 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { getStripe } from "@/lib/stripe";
+import { verifyWebhook, fromPaypalAmount } from "@/lib/paypal";
 
 export const dynamic = "force-dynamic";
 
-// Stripe webhook endpoint. Signature-verified, idempotent: every event is
-// recorded in webhook_events with a UNIQUE(provider_event_id), so a replayed
-// webhook can never double-apply a payment or a status change.
+// PayPal webhook endpoint. Signature-verified through PayPal's own
+// verify-webhook-signature call, and idempotent: every event is recorded in
+// webhook_events with a UNIQUE(provider_event_id), so a replay can never
+// double-apply a payment or a status change.
+//
+// This endpoint is public and it marks invoices paid, so an unverified body is
+// rejected outright rather than processed optimistically.
 export async function POST(req: NextRequest) {
-  const stripe = getStripe();
-  if (!stripe) {
-    return NextResponse.json({ error: "Stripe not configured" }, { status: 503 });
-  }
-
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: "Webhook secret missing" }, { status: 503 });
-  }
-
   const raw = await req.text();
-  const signature = req.headers.get("stripe-signature");
 
-  let event;
-  try {
-    event = stripe.webhooks.constructEvent(raw, signature ?? "", secret);
-  } catch (err: any) {
-    console.error("webhook signature error", err.message);
+  const verified = await verifyWebhook(req.headers, raw);
+  if (!verified) {
+    console.error("paypal webhook rejected: signature not verified");
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  let event: any;
+  try {
+    event = JSON.parse(raw);
+  } catch {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
   const admin = createAdminClient();
 
-  // Idempotency: skip if this exact event was already processed.
   const { data: existing } = await admin
     .from("webhook_events")
     .select("id")
@@ -42,49 +39,53 @@ export async function POST(req: NextRequest) {
   }
 
   await admin.from("webhook_events").insert({
-    provider: "stripe",
+    provider: "paypal",
     provider_event_id: event.id,
-    event_type: event.type,
+    event_type: event.event_type,
     status: "received",
   });
 
   try {
-    switch (event.type) {
-      case "checkout.session.completed": {
-        const session = event.data.object as any;
-        const meta = session.metadata ?? {};
+    const resource = event.resource ?? {};
 
-        // Paid plan purchase (platform account). Grants a quota, no invoice.
-        if (meta.purpose === "plan_upgrade" && meta.user_id) {
-          const plan = ["starter", "pro"].includes(meta.plan) ? meta.plan : "starter";
-          const expiresAt =
-            plan === "pro"
-              ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString()
-              : null;
-          await admin
-            .from("profiles")
-            .update({ plan, plan_expires_at: expiresAt, plan_session_id: null })
-            .eq("id", meta.user_id);
-          break;
+    switch (event.event_type) {
+      // The money has actually moved. This is the only event that marks an
+      // invoice paid.
+      case "PAYMENT.CAPTURE.COMPLETED": {
+        const captureId = resource.id;
+        // The order id is the link back to our payments row. PayPal puts it in
+        // supplementary_data; falling back to invoice_id (our invoice number)
+        // covers captures created outside the checkout flow.
+        const orderId = resource.supplementary_data?.related_ids?.order_id;
+
+        const feeMinor = resource.seller_receivable_breakdown?.paypal_fee?.value
+          ? fromPaypalAmount(resource.seller_receivable_breakdown.paypal_fee.value)
+          : 0;
+        const netMinor = resource.seller_receivable_breakdown?.net_amount?.value
+          ? fromPaypalAmount(resource.seller_receivable_breakdown.net_amount.value)
+          : null;
+
+        const match = orderId
+          ? admin.from("payments").select("invoice_id").eq("provider_session_id", orderId)
+          : admin.from("payments").select("invoice_id").eq("provider_payment_id", captureId);
+
+        const { data: payment } = await match.maybeSingle();
+
+        const update = {
+          status: "succeeded",
+          provider_payment_id: captureId,
+          provider_charge_id: captureId,
+          platform_fee_minor: feeMinor,
+          ...(netMinor !== null ? { net_amount_minor: netMinor } : {}),
+          paid_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        if (orderId) {
+          await admin.from("payments").update(update).eq("provider_session_id", orderId);
+        } else {
+          await admin.from("payments").update(update).eq("provider_payment_id", captureId);
         }
-
-        const paymentIntentId =
-          typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id;
-
-        const { data: payment } = await admin
-          .from("payments")
-          .select("invoice_id, provider_session_id")
-          .eq("provider_session_id", session.id)
-          .maybeSingle();
-
-        await admin
-          .from("payments")
-          .update({
-            status: "succeeded",
-            paid_at: new Date().toISOString(),
-            ...(paymentIntentId ? { provider_payment_id: paymentIntentId } : {}),
-          })
-          .eq("provider_session_id", session.id);
 
         if (payment) {
           await admin
@@ -95,73 +96,79 @@ export async function POST(req: NextRequest) {
         }
         break;
       }
-      case "payment_intent.succeeded": {
-        const pi = event.data.object as any;
-        // Capture the real charge + fee server-side so local records match Stripe.
-        let chargeFields: Record<string, unknown> = {
-          status: "succeeded",
-          paid_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        try {
-          const fullPi = await stripe.paymentIntents.retrieve(pi.id, {
-            expand: ["latest_charge"],
-          });
-          const ch = fullPi.latest_charge;
-          if (typeof ch !== "string" && ch?.id) {
-            const fee = Number(ch.application_fee_amount ?? 0);
-            chargeFields = {
-              ...chargeFields,
-              provider_charge_id: ch.id,
-              platform_fee_minor: fee,
-              net_amount_minor: Number(ch.amount) - fee,
-            };
-          }
-        } catch (err: any) {
-          console.error("charge capture failed", err.message);
-        }
+
+      // A plan purchase settles on the platform account and grants quota. The
+      // order carries the buyer in reference_id, which is the only free-text
+      // field PayPal round-trips through an order.
+      case "CHECKOUT.ORDER.APPROVED": {
+        const unit = resource.purchase_units?.[0] ?? {};
+        const ref: string = unit.reference_id ?? "";
+        if (!ref.startsWith("plan_")) break;
+
+        const [, plan, userId] = ref.split("_");
+        if (!userId || !["starter", "pro"].includes(plan)) break;
+
+        const expiresAt =
+          plan === "pro" ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString() : null;
         await admin
-          .from("payments")
-          .update(chargeFields)
-          .eq("provider_payment_id", pi.id);
+          .from("profiles")
+          .update({ plan, plan_expires_at: expiresAt, plan_session_id: null })
+          .eq("id", userId);
         break;
       }
-      case "charge.succeeded": {
-        const charge = event.data.object as any;
-        const piId =
-          typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
-        const fee = Number(charge.application_fee_amount ?? 0);
+
+      case "PAYMENT.CAPTURE.DENIED":
+      case "PAYMENT.CAPTURE.DECLINED": {
+        const orderId = resource.supplementary_data?.related_ids?.order_id;
+        if (orderId) {
+          await admin
+            .from("payments")
+            .update({ status: "failed", updated_at: new Date().toISOString() })
+            .eq("provider_session_id", orderId);
+          const { data: pay } = await admin
+            .from("payments")
+            .select("invoice_id")
+            .eq("provider_session_id", orderId)
+            .maybeSingle();
+          if (pay) {
+            await admin
+              .from("invoices")
+              .update({ status: "unpaid" })
+              .eq("id", pay.invoice_id)
+              .eq("status", "payment_pending");
+          }
+        }
+        break;
+      }
+
+      case "PAYMENT.CAPTURE.REFUNDED":
+      case "PAYMENT.CAPTURE.REVERSED": {
+        // The refund resource points at the capture it reverses.
+        const captureId =
+          resource.links?.find((l: any) => l.rel === "up")?.href?.split("/").pop() ??
+          resource.id;
         await admin
           .from("payments")
           .update({
-            provider_charge_id: charge.id,
-            platform_fee_minor: fee,
-            net_amount_minor: Number(charge.amount) - fee,
-            status: "succeeded",
-            paid_at: new Date().toISOString(),
+            status: "refunded",
+            refunded_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
-          .eq("provider_payment_id", piId);
+          .eq("provider_charge_id", captureId);
         break;
       }
-      case "checkout.session.expired": {
-        const session = event.data.object as any;
-        if ((session.metadata ?? {}).purpose === "plan_upgrade") {
-          const admin2 = createAdminClient();
-          await admin2
-            .from("profiles")
-            .update({ plan_session_id: null })
-            .eq("plan_session_id", session.id);
-          break;
-        }
+
+      // The payer walked away from an approved order and it timed out.
+      case "CHECKOUT.ORDER.VOIDED": {
+        const orderId = resource.id;
         await admin
           .from("payments")
           .update({ status: "cancelled", updated_at: new Date().toISOString() })
-          .eq("provider_session_id", session.id);
+          .eq("provider_session_id", orderId);
         const { data: pay } = await admin
           .from("payments")
           .select("invoice_id")
-          .eq("provider_session_id", session.id)
+          .eq("provider_session_id", orderId)
           .maybeSingle();
         if (pay) {
           await admin
@@ -172,28 +179,7 @@ export async function POST(req: NextRequest) {
         }
         break;
       }
-      case "payment_intent.payment_failed": {
-        const pi = event.data.object as any;
-        await admin
-          .from("payments")
-          .update({ status: "failed", updated_at: new Date().toISOString() })
-          .eq("provider_payment_id", pi.id);
-        break;
-      }
-      case "charge.refunded": {
-        const charge = event.data.object as any;
-        const piId =
-          typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
-        await admin
-          .from("payments")
-          .update({
-            status: "refunded",
-            refunded_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .or(`provider_payment_id.eq.${piId},provider_charge_id.eq.${charge.id}`);
-        break;
-      }
+
       default:
         break;
     }
@@ -203,7 +189,7 @@ export async function POST(req: NextRequest) {
       .update({ status: "processed", processed_at: new Date().toISOString() })
       .eq("provider_event_id", event.id);
   } catch (err: any) {
-    console.error("webhook processing error", err);
+    console.error("paypal webhook processing error", err?.message ?? err);
     await admin
       .from("webhook_events")
       .update({ status: "failed" })

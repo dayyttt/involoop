@@ -14,6 +14,7 @@ interface Profile {
   referral_code: string;
   plan?: string;
   free_invoice_credits: number;
+  paypal_email: string | null;
   created_at: string;
 }
 
@@ -25,6 +26,7 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
+  const [paypal, setPaypal] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +43,7 @@ export default function ProfilePage() {
         if (!data?.profile) return;
         setProfile(data.profile);
         setName(data.profile.full_name ?? "");
+        setPaypal(data.profile.paypal_email ?? "");
       })
       .catch(() => setError(t("profile.loadFailed")));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -54,7 +57,7 @@ export default function ProfilePage() {
     const res = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ full_name: name, lang }),
+      body: JSON.stringify({ full_name: name, paypal_email: paypal, lang }),
     });
     const data = await res.json().catch(() => ({}));
     setSaving(false);
@@ -62,7 +65,9 @@ export default function ProfilePage() {
       setError(data.error ?? t("profile.saveFailed"));
       return;
     }
-    setProfile((p) => (p ? { ...p, full_name: data.profile.full_name } : p));
+    setProfile((p) =>
+      p ? { ...p, full_name: data.profile.full_name, paypal_email: data.profile.paypal_email } : p
+    );
     setSaved(true);
     setTimeout(() => setSaved(false), 2600);
   }
@@ -138,6 +143,25 @@ export default function ProfilePage() {
                   <span className="invoice-label">{t("profile.previewLabel")}</span>
                   <strong>{shown || t("profile.previewEmpty")}</strong>
                   <span className="hint">INVOICE · INV-2026-000</span>
+                </div>
+
+                {/* Where the money actually arrives. Involoop never holds it:
+                    the invoice is addressed to this account, so a client paying
+                    with PayPal pays the freelancer directly. */}
+                <div className="field" id="paypal">
+                  <label htmlFor="paypal-email">{t("profile.paypalLabel")}</label>
+                  <input
+                    id="paypal-email"
+                    className="input"
+                    type="email"
+                    value={paypal}
+                    onChange={(e) => setPaypal(e.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                  />
+                  <p className="hint" style={{ marginTop: 6 }}>
+                    {paypal.trim() ? t("profile.paypalOn") : t("profile.paypalOff")}
+                  </p>
                 </div>
 
                 <div className="side" style={{ gap: 10, flexWrap: "wrap" }}>

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { paypalConfigured, paypalSupportsCurrency } from "@/lib/paypal";
 
 export interface PublicInvoice {
   public_id: string;
@@ -13,7 +14,7 @@ export interface PublicInvoice {
   due_date: string | null;
   created_at: string;
   sender_name: string;
-  stripe_enabled: boolean;
+  paypal_enabled: boolean;
 }
 
 // Server-side read of a public invoice. Wrapped in React's cache so a single
@@ -46,6 +47,9 @@ export const getPublicInvoice = cache(async (publicId: string): Promise<PublicIn
     due_date: data.due_date,
     created_at: data.created_at,
     sender_name: owner?.full_name ?? "Freelancer",
-    stripe_enabled: !!process.env.STRIPE_SECRET_KEY,
+    // PayPal cannot settle every currency Involoop bills in — rupiah above all —
+    // so the button only appears when this specific invoice could actually be
+    // paid with it. Everything else falls to the bank transfer path.
+    paypal_enabled: paypalConfigured() && paypalSupportsCurrency(data.currency),
   };
 });

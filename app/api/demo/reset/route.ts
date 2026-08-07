@@ -48,8 +48,7 @@ export async function POST() {
       .from("profiles")
       .update({
         free_invoice_credits: 3,
-        stripe_account_id: null,
-        stripe_status: "disconnected",
+        paypal_email: null,
       })
       .eq("id", user.id);
 

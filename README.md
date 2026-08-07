@@ -24,8 +24,8 @@ both buy and sell professional services.
 Owner writes one sentence
 → AI publishes a public invoice
 → Client opens it (view recorded)
-→ Client pays securely via Stripe test Checkout or confirms a transfer
-→ Stripe webhook marks the invoice paid
+→ Client pays securely via PayPal or confirms a bank transfer
+→ PayPal webhook marks the invoice paid
 → Client clicks the contextual referral CTA (click recorded)
 → Client signs up (5 credits: 3 initial + 2 bonus)
 → Owner earns 3 credits
@@ -47,13 +47,15 @@ idempotent ledger, not only as a balance.
 - Multicurrency: IDR, MYR, SGD, THB, PHP, USD, EUR, GBP. The currency follows
   the sentence ("RM 3000" bills in ringgit), then the visitor's country, then
   USD. Amounts are never converted — an invoice states one figure in one
-  currency, and that is what Stripe charges. Money is stored as integer minor
+  currency, and that is what PayPal charges. Money is stored as integer minor
   units, with zero-decimal currencies handled as a set rather than a special
   case.
 - Every invoice downloads as a PDF carrying the sender's name as the letterhead
   and the referral invitation in the footer, so the loop survives being
   forwarded to an accountant who never saw the original link.
-- Stripe sandbox Checkout + verified webhook + permanent Vercel endpoint.
+- PayPal Orders v2 + verified webhook + permanent Vercel endpoint. The order
+  names the freelancer's own PayPal address as payee, so the client pays them
+  directly and Involoop is never in the money path.
 - Manual transfer fallback: client confirms → owner verifies.
 - Referral attribution survives refresh via query + cookie.
 - Two-way reward: owner +3, client +2 on top of 3 initial credits.
@@ -63,7 +65,7 @@ idempotent ledger, not only as a balance.
 - English default + EN|ID switcher, resolved on the server from a cookie, so
   there is no language flash and `<html lang>` is always honest.
 - Privacy Policy and Terms pages describing what is actually stored, what
-  credits are, and that payments run in Stripe test mode.
+  credits are, and that payments run in the PayPal sandbox.
 - Profile page: the display name is the invoice letterhead, edited against a
   live miniature of the invoice header.
 - Demo-only workspace reset.
@@ -81,7 +83,7 @@ idempotent ledger, not only as a balance.
 
 - Next.js 14 App Router + TypeScript
 - Supabase Postgres, Auth, RLS, transactional RPCs
-- Stripe sandbox Checkout + webhook
+- PayPal Orders v2 (sandbox) + verified webhook
 - AI gateway (Anthropic-compatible, streaming-safe fetch)
 - three.js hero visualization
 - Vercel
@@ -95,14 +97,15 @@ app/
   dashboard                     Distribution proof + ledger + reset
   dashboard/new-invoice          AI + manual multicurrency invoice
   invoice/[id]                   Public invoice / payment / referral surface
-  payment/success                Verified Stripe payment summary + CTA
+  payment/success                Verified PayPal payment summary + CTA
   privacy|terms                  Server-rendered legal documents (EN|ID)
   api/demo/parse                 Public, rate-limited sentence → invoice preview
   api/signup                     Auth user → finalize_signup RPC
   api/invoices/create            AI/manual → publish_invoice RPC
   api/invoices/view              Atomic public view counter
   api/invoices/pay|verify        Manual payment fallback
-  api/payments/checkout          Stripe Checkout (DB amount only)
+  api/payments/checkout          PayPal order (DB amount only)
+  api/payments/capture           Post-approval capture + plan grant
   api/payments/webhook           Signature verification + idempotent events
   api/payments/session           Payment success read model
   api/referrals/click            CTA click attribution
@@ -111,7 +114,8 @@ app/
 lib/
   claude.ts                      AI parser + currency detection
   money.ts                       Minor units + locale formatting
-  stripe.ts                      Server-only Stripe client
+  paypal.ts                      Server-only PayPal client (orders, capture,
+                                 webhook verification)
   i18n.ts                        EN|ID dictionaries (landing + app)
 supabase/
   schema.sql                     Fresh database schema
@@ -127,12 +131,14 @@ scripts/seed-demo.mjs             Demo owner, USD invoice, client referral
 - Self-referrals rejected.
 - `UNIQUE(referred_user_id)` prevents multiple conversion rewards.
 - `UNIQUE(idempotency_key)` prevents duplicate credit ledger entries.
-- Stripe webhook signature verified using `STRIPE_WEBHOOK_SECRET`.
+- PayPal webhook signatures verified through PayPal's own
+  verify-webhook-signature call; an unverified body is rejected, never
+  processed optimistically.
 - `UNIQUE(provider_event_id)` makes webhook replays harmless.
 - `UNIQUE(provider_payment_id)` prevents duplicate payments.
 - Payment and referral are separate events: payment marks invoice paid; signup
   triggers referral reward.
-- Stripe amount and currency are read from Postgres, never trusted from client.
+- Payment amount and currency are read from Postgres, never trusted from client.
 - No secrets, `.env`, credentials, node_modules, or build output tracked in git.
 
 ## Local setup
@@ -155,12 +161,14 @@ AI_API_KEY=
 AI_BASE_URL=                 # optional
 AI_MODEL=                    # optional
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+PAYPAL_CLIENT_ID=
+PAYPAL_CLIENT_SECRET=
+PAYPAL_WEBHOOK_ID=
+PAYPAL_ENV=sandbox
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY`, `AI_API_KEY`, `STRIPE_SECRET_KEY`, and
-`STRIPE_WEBHOOK_SECRET` are server-only.
+`SUPABASE_SERVICE_ROLE_KEY`, `AI_API_KEY`, `PAYPAL_CLIENT_SECRET`, and
+`PAYPAL_WEBHOOK_ID` are server-only.
 
 ## Database migration and seed
 
@@ -172,25 +180,26 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 node scripts/seed-demo.mjs
 ```
 
-## Stripe sandbox setup
+## PayPal sandbox setup
 
-1. Use a Stripe test/sandbox account.
-2. Add a permanent webhook endpoint:
+1. Create an app at https://developer.paypal.com → Apps & Credentials → Sandbox.
+2. Copy the Client ID and Secret into `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET`.
+3. Add a webhook on that app pointing at:
    `https://involoop.vercel.app/api/payments/webhook`
-3. Scope: **Your account**, payload style: **Snapshot**.
-4. Events:
-   - `checkout.session.completed`
-   - `checkout.session.expired`
-   - `payment_intent.succeeded`
-   - `payment_intent.payment_failed`
-   - `charge.refunded`
-5. Copy the destination signing secret into `STRIPE_WEBHOOK_SECRET`.
-6. Test card: `4242 4242 4242 4242`, any future expiry, any CVC.
+4. Subscribe it to:
+   - `PAYMENT.CAPTURE.COMPLETED`
+   - `PAYMENT.CAPTURE.DENIED`
+   - `PAYMENT.CAPTURE.REFUNDED`
+   - `CHECKOUT.ORDER.APPROVED`
+   - `CHECKOUT.ORDER.VOIDED`
+5. Copy the webhook's ID into `PAYPAL_WEBHOOK_ID`. Without it the endpoint
+   cannot verify signatures and refuses every event, which is the safe default.
+6. Pay with a sandbox personal account from Testing Tools → Sandbox Accounts.
 
-The UI labels this clearly: **Stripe Test Mode — no real money will be charged.**
-The demo currently uses platform sandbox Checkout. Stripe Connect is supported
-by the architecture when a connected account is available; production country
-availability determines the final settlement model.
+The UI labels this clearly: **PayPal Sandbox — no real money will be charged.**
+Each freelancer saves their own PayPal address in their profile; the invoice
+order names it as payee, so funds go to them and never to an Involoop balance.
+
 
 ## Demo accounts
 
@@ -206,21 +215,24 @@ for demo accounts.
 ## Pricing
 
 - Free: $0, 3 public invoices, referral credits.
-- Starter: $3 one-time, 10 public invoices, Stripe payment, basic analytics.
+- Starter: $3 one-time, 10 public invoices, PayPal payment, basic analytics.
 - Pro: $8/month, 50 public invoices, advanced analytics, custom branding.
 
-Plan purchases are functional: the landing and dashboard open a Stripe Checkout
-session (test mode) and a verified webhook upgrades the account. Starter is a
-one-time payment; Pro is a monthly subscription with a 30-day grant. Paid-plan
-invoices draw from the plan quota instead of free credits.
+Plan purchases are functional: the landing and dashboard open a PayPal order
+(sandbox) and both the capture redirect and a verified webhook upgrade the
+account. Both plans are one-time orders; Pro grants 30 days. Paid-plan invoices
+draw from the plan quota instead of free credits.
 
 ## Known limitations
 
-- Stripe uses sandbox/test mode; no real money is charged.
-- Paid plans are buyable (Stripe test checkout); recurring Pro renewals beyond
-  the initial 30-day grant are not yet auto-extended by the webhook.
-- Platform sandbox Checkout is the tested fallback while production Connect
-  availability depends on platform and connected-business country.
+- PayPal runs in sandbox; no real money is charged.
+- PayPal does not settle in IDR. Rupiah invoices therefore offer bank transfer
+  confirmation only — the Pay button is hidden rather than shown and then
+  failing. The other seven currencies go through PayPal.
+- Paid plans are buyable (PayPal sandbox); Pro is a one-time 30-day grant, not
+  a recurring subscription.
+- Direct payee routing is used rather than a marketplace onboarding flow, which
+  keeps setup to one saved address but means Involoop cannot take a platform fee.
 - Manual transfer details are agreed off-platform; Involoop tracks confirmation.
 - AI output is validated but not a full accounting/tax engine.
 - View/click dedupe is browser-cookie based, not identity/IP fraud prevention.

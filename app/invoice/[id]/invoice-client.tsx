@@ -144,17 +144,17 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                   <span>{money}</span>
                 </div>
                 <div className="pay-options">
-                  {invoice.stripe_enabled && (
+                  {invoice.paypal_enabled && (
                     <>
                       <button
                         onClick={handlePay}
                         disabled={submitting}
                         className="btn btn-primary btn-lg btn-mobile-full"
                       >
-                        {submitting ? t("invoice.redirecting") : t("invoice.payStripe")}
+                        {submitting ? t("invoice.redirecting") : t("invoice.payPaypal")}
                       </button>
                       <p className="hint" style={{ textAlign: "center", margin: 0 }}>
-                        {t("invoice.stripeHint")}
+                        {t("invoice.payHint")}
                       </p>
                       <div className="pay-divider">{t("invoice.orManual")}</div>
                     </>

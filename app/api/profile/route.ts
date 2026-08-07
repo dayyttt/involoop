@@ -22,7 +22,7 @@ export async function GET() {
 
   const { data, error } = await createAdminClient()
     .from("profiles")
-    .select("email, full_name, referral_code, plan, free_invoice_credits, created_at")
+    .select("email, full_name, referral_code, plan, free_invoice_credits, paypal_email, created_at")
     .eq("id", user.id)
     .single();
 
@@ -33,7 +33,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
-  const { full_name, lang } = await req.json().catch(() => ({}));
+  const { full_name, paypal_email, lang } = await req.json().catch(() => ({}));
 
   const supabase = createServerSupabaseClient();
   const {
@@ -72,9 +72,31 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
+  // The PayPal address is where a client's money physically arrives, so a typo
+  // here is worse than a typo in the display name: the payment succeeds and
+  // lands in someone else's account. Only the shape can be checked from here,
+  // which is why the UI says to paste it rather than type it.
+  const patch: Record<string, unknown> = { full_name: name };
+  if (paypal_email !== undefined) {
+    const address = typeof paypal_email === "string" ? paypal_email.trim().toLowerCase() : "";
+    if (address && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(address)) {
+      return NextResponse.json(
+        {
+          error: apiError(
+            lang,
+            "That does not look like an email address. Use the address your PayPal account is registered to.",
+            "Itu belum berbentuk alamat email. Pakai alamat yang terdaftar di akun PayPal-mu."
+          ),
+        },
+        { status: 400 }
+      );
+    }
+    patch.paypal_email = address || null;
+  }
+
   const { error } = await createAdminClient()
     .from("profiles")
-    .update({ full_name: name })
+    .update(patch)
     .eq("id", user.id);
 
   if (error) {
@@ -85,5 +107,5 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ profile: { full_name: name } });
+  return NextResponse.json({ profile: { full_name: name, paypal_email: patch.paypal_email ?? null } });
 }

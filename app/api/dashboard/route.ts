@@ -28,7 +28,7 @@ export async function GET() {
     const [profileRes, invoicesRes, ledgerRes, referralsRes] = await Promise.all([
       admin
         .from("profiles")
-        .select("email, full_name, free_invoice_credits, referral_code, stripe_account_id, stripe_status, plan, plan_expires_at")
+        .select("email, full_name, free_invoice_credits, referral_code, paypal_email, plan, plan_expires_at")
         .eq("id", user.id)
         .single(),
       admin

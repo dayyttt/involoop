@@ -440,8 +440,8 @@ export default function Landing({ signedIn }: { signedIn: boolean }) {
           </nav>
           <p className="footer-disclaimer" id="payments">
             {lang === "id"
-              ? "Pembayaran diproses oleh penyedia pihak ketiga (Stripe). Involoop tidak menyimpan data kartu."
-              : "Payments are processed by third-party providers (Stripe). Involoop does not store full payment card details."}
+              ? "Pembayaran diproses oleh penyedia pihak ketiga (PayPal). Involoop tidak menyimpan data kartu."
+              : "Payments are processed by third-party providers (PayPal). Involoop does not store full payment card details."}
           </p>
           <div className="footer-bottom">
             <span>© 2026 Involoop.</span>

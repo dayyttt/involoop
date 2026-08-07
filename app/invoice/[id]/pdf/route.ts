@@ -80,7 +80,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       : "Write one sentence, get a payment link you can send anywhere.",
     open: id ? "Buka dan bayar di:" : "View and pay at:",
     madeWith: id ? "Dibuat dengan Involoop" : "Made with Involoop",
-    testMode: id ? "Stripe Test Mode — tidak ada uang asli yang ditarik" : "Stripe Test Mode — no real money is charged",
+    testMode: id ? "PayPal Sandbox — tidak ada uang asli yang ditarik" : "PayPal Sandbox — no real money is charged",
   };
 
   const doc = el(

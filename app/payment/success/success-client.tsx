@@ -24,7 +24,7 @@ export default function PaymentSuccess({ sessionId }: { sessionId: string | null
         setLoading(false);
         return;
       }
-      const res = await fetch(`/api/payments/session?session_id=${encodeURIComponent(sessionId)}`);
+      const res = await fetch(`/api/payments/session?order=${encodeURIComponent(sessionId)}`);
       if (res.ok) {
         setData(await res.json());
       } else {

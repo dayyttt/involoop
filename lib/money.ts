@@ -27,7 +27,8 @@ export const CURRENCY_LABELS: Record<string, string> = {
 };
 
 // Currencies with no minor unit. Getting this wrong is a factor-of-100 error in
-// what Stripe charges, so it is a list rather than a single special case.
+// what the payment provider charges, so it is a list rather than a single
+// special case.
 const ZERO_DECIMAL = new Set(["IDR", "VND", "JPY", "KRW"]);
 export type Currency = (typeof SUPPORTED_CURRENCIES)[number];
 

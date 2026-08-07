@@ -47,8 +47,7 @@ interface DashboardData {
     full_name: string | null;
     free_invoice_credits: number;
     referral_code: string;
-    stripe_account_id: string | null;
-    stripe_status: string;
+    paypal_email: string | null;
     plan?: string;
     plan_expires_at?: string | null;
   };
@@ -76,7 +75,6 @@ export default function Dashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [connecting, setConnecting] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedRef, setCopiedRef] = useState(false);
@@ -198,22 +196,6 @@ export default function Dashboard() {
     }
   }
 
-  async function handleConnectStripe() {
-    setError(null);
-    setConnecting(true);
-    const res = await fetch("/api/payments/connect", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lang }),
-    });
-    setConnecting(false);
-    if (res.ok) {
-      load();
-    } else {
-      const body = await res.json().catch(() => ({}));
-      setError(body.error ?? t("dashboard.connectFailed"));
-    }
-  }
 
   async function handleResetDemo() {
     if (!window.confirm(t("dashboard.resetConfirm"))) return;
@@ -336,7 +318,8 @@ export default function Dashboard() {
     {}
   );
   const currencies = Object.keys(byCurrency).sort((a, b) => byCurrency[b].billed - byCurrency[a].billed);
-  const stripeConnected = profile.stripe_status === "connected";
+  // One saved address is the whole setup: it is where the money goes.
+  const paypalReady = !!profile.paypal_email;
 
   // Invoices a client says they have paid. This is the one thing on the page
   // that is genuinely waiting on the owner, so it gets said out loud instead of
@@ -541,15 +524,15 @@ export default function Dashboard() {
         {error && <p className="error">{error}</p>}
         {upgraded && <div className="success-panel" style={{ marginBottom: 12 }}>{t("dashboard.upgraded")}</div>}
         {attentionStrip}
-        {!stripeConnected && (
+        {!paypalReady && (
           <div className="setup-banner">
             <div>
               <strong>{t("dashboard.setupTitle")}</strong>
               <p>{t("dashboard.setupBody")}</p>
             </div>
-            <button className="btn btn-primary" onClick={handleConnectStripe} disabled={connecting}>
-              {connecting ? <><Spinner /> {t("dashboard.connecting")}</> : t("dashboard.connectStripe")}
-            </button>
+            <Link className="btn btn-primary" href="/dashboard/profile#paypal">
+              {t("dashboard.savePaypal")}
+            </Link>
           </div>
         )}
 
@@ -766,19 +749,19 @@ export default function Dashboard() {
               <summary style={{ cursor: "pointer", padding: "16px 20px", fontWeight: 600, fontSize: 15 }}>
                 {t("dashboard.paymentSettings")}
                 <span className="hint" style={{ marginLeft: 10 }}>
-                  {stripeConnected ? t("dashboard.connected") : t("dashboard.notConnected")}
+                  {paypalReady ? t("dashboard.connected") : t("dashboard.notConnected")}
                 </span>
               </summary>
               <div style={{ padding: "0 20px 16px" }}>
                 <div className="settings-rows">
                   <div className="settings-row">
                     <span>{t("dashboard.provider")}</span>
-                    <strong>Stripe Connect</strong>
+                    <strong>PayPal</strong>
                   </div>
                   <div className="settings-row">
-                    <span>{t("dashboard.connectionStatus")}</span>
-                    <strong className={stripeConnected ? "text-ok" : ""}>
-                      {stripeConnected ? t("dashboard.connected") : t("dashboard.notConnected")}
+                    <span>{t("dashboard.payoutAddress")}</span>
+                    <strong className={paypalReady ? "text-ok" : ""}>
+                      {profile.paypal_email ?? t("dashboard.notConnected")}
                     </strong>
                   </div>
                   <div className="settings-row">
@@ -790,8 +773,8 @@ export default function Dashboard() {
                     <strong>{currencies[0] ?? "IDR"}</strong>
                   </div>
                 </div>
-                <p className="test-badge" style={{ marginTop: 14 }}>{t("dashboard.stripeTestBadge")}</p>
-                {stripeConnected && <p className="hint">{t("dashboard.setupDone")}</p>}
+                <p className="test-badge" style={{ marginTop: 14 }}>{t("dashboard.sandboxBadge")}</p>
+                {paypalReady && <p className="hint">{t("dashboard.setupDone")}</p>}
               </div>
             </details>
           </>
@@ -836,7 +819,4 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function Spinner() {
-  return <span className="spinner" aria-hidden />;
-}
 

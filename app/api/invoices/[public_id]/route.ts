@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase-admin";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { apiError } from "@/lib/api-lang";
 import { SUPPORTED_CURRENCIES } from "@/lib/money";
+import { paypalConfigured, paypalSupportsCurrency } from "@/lib/paypal";
 
 // A view counter must never be cached.
 export const dynamic = "force-dynamic";
@@ -37,8 +38,7 @@ export async function GET(
     invoice: {
       ...invoice,
       sender_name: owner?.full_name ?? "Freelancer",
-      // Sandbox checkout works with or without a connected account.
-      stripe_enabled: !!process.env.STRIPE_SECRET_KEY,
+      paypal_enabled: paypalConfigured() && paypalSupportsCurrency(invoice.currency),
     },
   });
   res.headers.set("Cache-Control", "no-store, max-age=0");

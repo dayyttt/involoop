@@ -6,8 +6,8 @@ type Doc = { title: string; intro: string; sections: Section[] };
 export const LEGAL_UPDATED = "2026-08-07";
 
 // Plain-language documents describing what the product actually does today:
-// Supabase for accounts, Stripe for payments, an AI provider for the parsing
-// step, and a Stripe test mode that charges nobody. Written to be reviewed
+// Supabase for accounts, PayPal for payments, an AI provider for the parsing
+// step, and a PayPal sandbox that charges nobody. Written to be reviewed
 // before any real-money launch, not to sound like a law firm.
 const privacy: Record<Lang, Doc> = {
   en: {
@@ -27,13 +27,13 @@ const privacy: Record<Lang, Doc> = {
       {
         heading: "What we never store",
         body: [
-          "Card numbers, CVCs, and bank credentials. Payment details are entered on Stripe's own checkout page and never reach our servers.",
+          "Card numbers, CVCs, and bank credentials. Payment details are entered on PayPal's own checkout page and never reach our servers.",
         ],
       },
       {
         heading: "Who else processes your data",
         body: [
-          "Supabase (database, authentication), Stripe (payments), Vercel (hosting and request logs), and an AI provider that receives only the billing sentence you type when you ask it to compose an invoice.",
+          "Supabase (database, authentication), PayPal (payments), Vercel (hosting and request logs), and an AI provider that receives only the billing sentence you type when you ask it to compose an invoice.",
           "The sentence you send to the AI step is used to produce that invoice and is not used to train models by us.",
         ],
       },
@@ -68,13 +68,13 @@ const privacy: Record<Lang, Doc> = {
       {
         heading: "Yang tidak pernah kami simpan",
         body: [
-          "Nomor kartu, CVC, dan kredensial bank. Detail pembayaran diisi di halaman checkout milik Stripe dan tidak pernah sampai ke server kami.",
+          "Nomor kartu, CVC, dan kredensial bank. Detail pembayaran diisi di halaman checkout milik PayPal dan tidak pernah sampai ke server kami.",
         ],
       },
       {
         heading: "Pihak lain yang memproses data",
         body: [
-          "Supabase (database, autentikasi), Stripe (pembayaran), Vercel (hosting dan log permintaan), serta penyedia AI yang hanya menerima kalimat tagihan yang kamu ketik ketika meminta invoice disusun.",
+          "Supabase (database, autentikasi), PayPal (pembayaran), Vercel (hosting dan log permintaan), serta penyedia AI yang hanya menerima kalimat tagihan yang kamu ketik ketika meminta invoice disusun.",
           "Kalimat yang dikirim ke tahap AI dipakai untuk menyusun invoice tersebut dan tidak kami gunakan untuk melatih model.",
         ],
       },
@@ -103,7 +103,7 @@ const terms: Record<Lang, Doc> = {
       {
         heading: "Payments run in test mode",
         body: [
-          "Involoop currently processes payments through Stripe in test mode. No real money moves, and every payment screen says so. Do not treat a test-mode payment as settlement of a real debt.",
+          "Involoop currently processes payments through the PayPal sandbox. No real money moves, and every payment screen says so. Do not treat a sandbox payment as settlement of a real debt.",
         ],
       },
       {
@@ -147,7 +147,7 @@ const terms: Record<Lang, Doc> = {
       {
         heading: "Pembayaran berjalan di test mode",
         body: [
-          "Saat ini Involoop memproses pembayaran lewat Stripe dalam mode test. Tidak ada uang asli yang berpindah, dan setiap halaman pembayaran menyatakannya. Jangan anggap pembayaran test-mode sebagai pelunasan tagihan sungguhan.",
+          "Saat ini Involoop memproses pembayaran lewat PayPal Sandbox. Tidak ada uang asli yang berpindah, dan setiap halaman pembayaran menyatakannya. Jangan anggap pembayaran sandbox sebagai pelunasan tagihan sungguhan.",
         ],
       },
       {
