@@ -269,13 +269,21 @@ export default function Home() {
             </div>
             <div className="reward-parties">
               <article className="party party-you">
-                <span>{t("reward.a")}</span><h3>{t("reward.at")}</h3>
-                <strong>+<CountUp to={3} duration={1.6} /> {t("reward.creditsWord")}</strong><p>{t("reward.ad")}</p>
+                <div className="party-top">
+                  <span>{t("reward.a")}</span>
+                  <h3>{t("reward.at")}</h3>
+                </div>
+                <strong>+3 {t("reward.creditsWord")}</strong>
+                <p>{t("reward.ad")}</p>
               </article>
-              <div className="reward-arrow"><LoopFlow /></div>
+              <div className="reward-arrow"><LoopFlow vertical /></div>
               <article className="party party-client">
-                <span>{t("reward.b")}</span><h3>{t("reward.bt")}</h3>
-                <strong>+<CountUp to={2} duration={1.6} /> {t("reward.creditsWord")}</strong><p>{t("reward.bd")}</p>
+                <div className="party-top">
+                  <span>{t("reward.b")}</span>
+                  <h3>{t("reward.bt")}</h3>
+                </div>
+                <strong>+2 {t("reward.creditsWord")}</strong>
+                <p>{t("reward.bd")}</p>
               </article>
             </div>
           </div>
