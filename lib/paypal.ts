@@ -167,15 +167,30 @@ export async function getOrder(orderId: string) {
   return paypalFetch(`/v2/checkout/orders/${orderId}`, { method: "GET" });
 }
 
+// Ask PayPal what it thinks a capture is, rather than believing what arrived in
+// a webhook body. Returns null when PayPal has never heard of it.
+export async function getCapture(captureId: string): Promise<any | null> {
+  try {
+    return await paypalFetch(`/v2/payments/captures/${captureId}`, { method: "GET" });
+  } catch (err: any) {
+    if (err?.status === 404) return null;
+    throw err;
+  }
+}
+
 export function approvalUrl(order: any): string | null {
   const link = (order?.links ?? []).find((l: any) => l.rel === "approve" || l.rel === "payer-action");
   return link?.href ?? null;
 }
 
 // PayPal verifies its own signatures server-side: we hand back the headers it
-// sent plus the raw body, and it tells us whether it really sent them. This is
-// the equivalent of Stripe's constructEvent, and just as non-negotiable — the
-// endpoint is public and marks invoices paid.
+// sent plus the raw body, and it tells us whether it really sent them.
+//
+// IMPORTANT: in sandbox this endpoint answers SUCCESS for any signature at all.
+// Verified by sending it the literal string "tanda-tangan-palsu", which it
+// happily approved. So this check is necessary but NOT sufficient, and the
+// webhook handler treats a verified event as no more than a hint to go and ask
+// PayPal what actually happened. Never widen the trust placed in this result.
 export async function verifyWebhook(headers: Headers, rawBody: string): Promise<boolean> {
   const webhookId = process.env.PAYPAL_WEBHOOK_ID;
   if (!webhookId) return false;

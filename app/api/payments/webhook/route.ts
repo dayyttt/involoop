@@ -1,16 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { verifyWebhook, fromPaypalAmount } from "@/lib/paypal";
+import { verifyWebhook, fromPaypalAmount, getCapture, getOrder } from "@/lib/paypal";
 
 export const dynamic = "force-dynamic";
 
-// PayPal webhook endpoint. Signature-verified through PayPal's own
-// verify-webhook-signature call, and idempotent: every event is recorded in
-// webhook_events with a UNIQUE(provider_event_id), so a replay can never
-// double-apply a payment or a status change.
+// PayPal webhook endpoint. Public, and it marks invoices paid, so it is written
+// on the assumption that the body is a lie until PayPal itself says otherwise.
 //
-// This endpoint is public and it marks invoices paid, so an unverified body is
-// rejected outright rather than processed optimistically.
+// The signature check runs first and an unverified body is rejected outright.
+// But that check alone is not enough: PayPal's SANDBOX verify-webhook-signature
+// answers SUCCESS for any signature, including the literal string
+// "tanda-tangan-palsu". Confirmed by sending exactly that. A forged POST with
+// the five expected headers therefore passes verification in sandbox.
+//
+// So a verified event is treated as nothing more than a nudge saying "something
+// may have happened to this id". Every state change below is decided by a fresh
+// authenticated read from PayPal — the capture must exist, be COMPLETED, and
+// match the amount and currency we recorded when the order was created. A
+// fabricated event names an id PayPal has never issued, and dies at that read.
+//
+// Idempotency is unchanged: webhook_events has UNIQUE(provider_event_id), so a
+// genuine replay is a no-op.
 export async function POST(req: NextRequest) {
   const raw = await req.text();
 
@@ -53,47 +63,68 @@ export async function POST(req: NextRequest) {
       // invoice paid.
       case "PAYMENT.CAPTURE.COMPLETED": {
         const captureId = resource.id;
-        // The order id is the link back to our payments row. PayPal puts it in
-        // supplementary_data; falling back to invoice_id (our invoice number)
-        // covers captures created outside the checkout flow.
-        const orderId = resource.supplementary_data?.related_ids?.order_id;
+        if (!captureId) break;
 
-        const feeMinor = resource.seller_receivable_breakdown?.paypal_fee?.value
-          ? fromPaypalAmount(resource.seller_receivable_breakdown.paypal_fee.value)
+        // The authoritative read. Everything below trusts this, not the body.
+        const capture = await getCapture(captureId);
+        if (!capture || capture.status !== "COMPLETED") {
+          console.error("webhook claimed a capture PayPal does not confirm", captureId);
+          break;
+        }
+
+        const orderId =
+          capture.supplementary_data?.related_ids?.order_id ??
+          resource.supplementary_data?.related_ids?.order_id;
+
+        const { data: payment } = await admin
+          .from("payments")
+          .select("id, invoice_id, amount_minor, currency")
+          .eq(orderId ? "provider_session_id" : "provider_payment_id", orderId ?? captureId)
+          .maybeSingle();
+
+        if (!payment) {
+          console.error("capture confirmed by PayPal but unknown here", captureId);
+          break;
+        }
+
+        // A capture for the right id but the wrong money is not our payment.
+        const paidMinor = capture.amount?.value ? fromPaypalAmount(capture.amount.value) : null;
+        const paidCurrency = capture.amount?.currency_code;
+        if (paidMinor !== Number(payment.amount_minor) || paidCurrency !== payment.currency) {
+          console.error(
+            "capture amount does not match the invoice",
+            captureId,
+            paidMinor,
+            paidCurrency
+          );
+          break;
+        }
+
+        const feeMinor = capture.seller_receivable_breakdown?.paypal_fee?.value
+          ? fromPaypalAmount(capture.seller_receivable_breakdown.paypal_fee.value)
           : 0;
-        const netMinor = resource.seller_receivable_breakdown?.net_amount?.value
-          ? fromPaypalAmount(resource.seller_receivable_breakdown.net_amount.value)
+        const netMinor = capture.seller_receivable_breakdown?.net_amount?.value
+          ? fromPaypalAmount(capture.seller_receivable_breakdown.net_amount.value)
           : null;
 
-        const match = orderId
-          ? admin.from("payments").select("invoice_id").eq("provider_session_id", orderId)
-          : admin.from("payments").select("invoice_id").eq("provider_payment_id", captureId);
+        await admin
+          .from("payments")
+          .update({
+            status: "succeeded",
+            provider_payment_id: captureId,
+            provider_charge_id: captureId,
+            platform_fee_minor: feeMinor,
+            ...(netMinor !== null ? { net_amount_minor: netMinor } : {}),
+            paid_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", payment.id);
 
-        const { data: payment } = await match.maybeSingle();
-
-        const update = {
-          status: "succeeded",
-          provider_payment_id: captureId,
-          provider_charge_id: captureId,
-          platform_fee_minor: feeMinor,
-          ...(netMinor !== null ? { net_amount_minor: netMinor } : {}),
-          paid_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        if (orderId) {
-          await admin.from("payments").update(update).eq("provider_session_id", orderId);
-        } else {
-          await admin.from("payments").update(update).eq("provider_payment_id", captureId);
-        }
-
-        if (payment) {
-          await admin
-            .from("invoices")
-            .update({ status: "paid", paid_at: new Date().toISOString() })
-            .eq("id", payment.invoice_id)
-            .in("status", ["unpaid", "payment_pending"]);
-        }
+        await admin
+          .from("invoices")
+          .update({ status: "paid", paid_at: new Date().toISOString() })
+          .eq("id", payment.invoice_id)
+          .in("status", ["unpaid", "payment_pending"]);
         break;
       }
 
@@ -101,12 +132,37 @@ export async function POST(req: NextRequest) {
       // order carries the buyer in reference_id, which is the only free-text
       // field PayPal round-trips through an order.
       case "CHECKOUT.ORDER.APPROVED": {
-        const unit = resource.purchase_units?.[0] ?? {};
-        const ref: string = unit.reference_id ?? "";
+        const orderId = resource.id;
+        if (!orderId) break;
+
+        // Same rule: read the order from PayPal rather than believing the body,
+        // otherwise a forged event grants anyone a paid plan for free.
+        let order: any;
+        try {
+          order = await getOrder(orderId);
+        } catch {
+          console.error("webhook claimed an order PayPal does not know", orderId);
+          break;
+        }
+        if (!order || !["APPROVED", "COMPLETED"].includes(order.status)) break;
+
+        const ref: string = order.purchase_units?.[0]?.reference_id ?? "";
         if (!ref.startsWith("plan_")) break;
 
         const [, plan, userId] = ref.split("_");
         if (!userId || !["starter", "pro"].includes(plan)) break;
+
+        // The order must be the one this account actually started.
+        const { data: buyer } = await admin
+          .from("profiles")
+          .select("id")
+          .eq("id", userId)
+          .eq("plan_session_id", orderId)
+          .maybeSingle();
+        if (!buyer) {
+          console.error("plan order does not belong to the claimed account", orderId);
+          break;
+        }
 
         const expiresAt =
           plan === "pro" ? new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString() : null;
@@ -119,7 +175,9 @@ export async function POST(req: NextRequest) {
 
       case "PAYMENT.CAPTURE.DENIED":
       case "PAYMENT.CAPTURE.DECLINED": {
-        const orderId = resource.supplementary_data?.related_ids?.order_id;
+        const deniedCapture = resource.id ? await getCapture(resource.id) : null;
+        if (!deniedCapture || deniedCapture.status !== "DECLINED") break;
+        const orderId = deniedCapture.supplementary_data?.related_ids?.order_id;
         if (orderId) {
           await admin
             .from("payments")
@@ -147,6 +205,12 @@ export async function POST(req: NextRequest) {
         const captureId =
           resource.links?.find((l: any) => l.rel === "up")?.href?.split("/").pop() ??
           resource.id;
+        if (!captureId) break;
+        const capture = await getCapture(captureId);
+        if (!capture || !["REFUNDED", "PARTIALLY_REFUNDED"].includes(capture.status)) {
+          console.error("refund claimed but PayPal does not confirm it", captureId);
+          break;
+        }
         await admin
           .from("payments")
           .update({
@@ -161,6 +225,14 @@ export async function POST(req: NextRequest) {
       // The payer walked away from an approved order and it timed out.
       case "CHECKOUT.ORDER.VOIDED": {
         const orderId = resource.id;
+        if (!orderId) break;
+        let voided: any = null;
+        try {
+          voided = await getOrder(orderId);
+        } catch {
+          break;
+        }
+        if (!voided || voided.status !== "VOIDED") break;
         await admin
           .from("payments")
           .update({ status: "cancelled", updated_at: new Date().toISOString() })
