@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ChannelMarquee from "@/components/ChannelMarquee";
 import SpotlightCard from "@/components/reactbits/SpotlightCard";
+import AnimatedContent from "@/components/reactbits/AnimatedContent";
 import CountUp from "@/components/reactbits/CountUp";
 import RotatingWord from "@/components/RotatingWord";
 import LoopFlow from "@/components/LoopFlow";
@@ -128,15 +129,15 @@ export default function Home() {
         <div className="site-shell agency-hero-inner">
           <div className="agency-hero-copy">
             <h1 className="hero-h1 hero-reveal">{t("hero.h1a")}</h1>
-            <p className="hero-h1 hero-h1-rot">
+            <p className="hero-h1 hero-h1-rot hero-enter hero-enter-1">
               <span>{t("hero.rotPrefix")} </span>
               <RotatingWord
                 words={lang === "id" ? [...landing.hero.rotWordsId] : [...landing.hero.rotWords]}
                 wordClass="hero-word-gradient"
               />
             </p>
-            <p className="hero-sub">{t("hero.sub")}</p>
-            <div className="hero-actions">
+            <p className="hero-sub hero-enter hero-enter-2">{t("hero.sub")}</p>
+            <div className="hero-actions hero-enter hero-enter-3">
               <Link href="/signup" className="btn btn-primary btn-lg">
                 {t("hero.cta1")}
               </Link>
@@ -144,14 +145,10 @@ export default function Home() {
                 {t("hero.cta3")}
               </Link>
             </div>
-            <div className="hero-points">
-              <span>{t("hero.p1")}</span>
-              <span>{t("hero.p2")}</span>
-              <span>{t("hero.p3")}</span>
-            </div>
-            <p className="hero-note">{t("hero.note")}</p>
+            <p className="hero-points hero-enter hero-enter-4">{t("hero.points")}</p>
+            <p className="hero-note hero-enter hero-enter-4">{t("hero.note")}</p>
           </div>
-          <div className="agency-hero-demo">
+          <div className="agency-hero-demo hero-enter hero-enter-5">
             <TryDemo />
           </div>
         </div>
@@ -164,22 +161,24 @@ export default function Home() {
       </section>
 
       <section id="how" className="site-shell section-space">
-        <div className="process-head">
+        <AnimatedContent className="process-head">
           <h2>{t("how.title")}</h2>
-        </div>
+        </AnimatedContent>
         <div className="plain-steps">
-          {howSteps.map(([num, title, text]) => (
-            <div className="plain-step" key={num}>
-              <span className="plain-num">{num}</span>
-              <h3>{title}</h3>
-              <p>{text}</p>
-            </div>
+          {howSteps.map(([num, title, text], index) => (
+            <AnimatedContent className="reveal-item" key={num} delay={index * 0.07}>
+              <div className="plain-step">
+                <span className="plain-num">{num}</span>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+            </AnimatedContent>
           ))}
         </div>
       </section>
 
       <section id="why" className="site-shell section-space split-section">
-        <div className="section-image invoice-mock">
+        <AnimatedContent className="section-image invoice-mock">
           <div className="mock-head">
             <span className="mono">INV-2026-009</span>
             <span className="mock-status">{lang === "id" ? "BELUM DIBAYAR" : "UNPAID"}</span>
@@ -205,8 +204,8 @@ export default function Home() {
               {lang === "id" ? "Buat invoicemu sendiri, gratis →" : "Create your own invoice, free →"}
             </span>
           </div>
-        </div>
-        <div>
+        </AnimatedContent>
+        <AnimatedContent delay={0.08}>
           <h2>{t("why.title")}</h2>
           <div className="value-list">
             <span>{t("why.point1")}</span>
@@ -221,30 +220,31 @@ export default function Home() {
             <div><strong>+<CountUp to={2} duration={1.6} /></strong><span>{t("why.m3l")}</span></div>
           </div>
           <Link href="/signup" className="btn btn-primary">{t("why.cta")}</Link>
-        </div>
+        </AnimatedContent>
       </section>
 
       <section id="features" className="section-space muted-band">
         <div className="site-shell">
-          <div className="section-top">
+          <AnimatedContent className="section-top">
             <div>
               <h2>{t("features.title")}</h2>
             </div>
             <Link href="/signup" className="btn btn-ghost">{t("nav.getStarted")}</Link>
-          </div>
+          </AnimatedContent>
           <div className="feature-grid">
             {features.map((f, index) => {
               const [num, title, text] = f;
               return (
-                <SpotlightCard
-                  className={`feature-card${index === 1 ? " feature-card-active" : ""}`}
-                  key={num}
-                >
-                  <span className="feature-icon">{num}</span>
-                  <h3>{title}</h3>
-                  <p>{text}</p>
-                  <Link href="/signup">{t("features.tryCta")}</Link>
-                </SpotlightCard>
+                <AnimatedContent className="reveal-item" key={num} delay={(index % 3) * 0.06}>
+                  <SpotlightCard
+                    className={`feature-card${index === 1 ? " feature-card-active" : ""}`}
+                  >
+                    <span className="feature-icon">{num}</span>
+                    <h3>{title}</h3>
+                    <p>{text}</p>
+                    <Link href="/signup">{t("features.tryCta")}</Link>
+                  </SpotlightCard>
+                </AnimatedContent>
               );
             })}
           </div>
@@ -252,26 +252,28 @@ export default function Home() {
       </section>
 
       <section id="process" className="site-shell section-space">
-        <div className="process-head">
+        <AnimatedContent className="process-head">
           <h2>{t("process.title")}</h2>
           <p className="body-copy">{t("process.sub")}</p>
-        </div>
+        </AnimatedContent>
         <div className="process-grid">
-          {processSteps.map((step) => {
+          {processSteps.map((step, index) => {
             const [num, title, text] = step;
             return (
-              <article className="p-step" key={num}>
-                <span className="p-node">{num}</span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </article>
+              <AnimatedContent className="reveal-item" key={num} delay={index * 0.06}>
+                <article className="p-step">
+                  <span className="p-node">{num}</span>
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                </article>
+              </AnimatedContent>
             );
           })}
         </div>
       </section>
 
       <section id="reward" className="reward-band section-space">
-        <div className="site-shell reward-inner">
+        <AnimatedContent className="site-shell reward-inner">
           <h2>{t("reward.title")}</h2>
           <p className="reward-lead">{t("reward.lead")}</p>
           <div className="reward-grid">
@@ -286,38 +288,40 @@ export default function Home() {
             </article>
           </div>
           <Link href="/signup" className="btn btn-primary btn-lg">{t("reward.cta")}</Link>
-        </div>
+        </AnimatedContent>
       </section>
 
       <section id="testimonials" className="site-shell section-space">
-        <div className="process-head">
+        <AnimatedContent className="process-head">
           <h2>{t("testimonials.title")}</h2>
           <p className="body-copy">{t("testimonials.sub")}</p>
-        </div>
+        </AnimatedContent>
         <div className="testimonial-grid">
           {testimonials.map(([persona, context, useCase], index) => (
-            <article className="testimonial" key={persona}>
-              <div className="testimonial-author" style={{ paddingTop: 0, borderTop: 0 }}>
-                <span className="t-avatar">0{index + 1}</span>
-                <div>
-                  <div className="t-name">{persona}</div>
-                  <div className="t-role">{context}</div>
+            <AnimatedContent className="reveal-item" key={persona} delay={index * 0.07}>
+              <article className="testimonial">
+                <div className="testimonial-author" style={{ paddingTop: 0, borderTop: 0 }}>
+                  <span className="t-avatar">0{index + 1}</span>
+                  <div>
+                    <div className="t-name">{persona}</div>
+                    <div className="t-role">{context}</div>
+                  </div>
                 </div>
-              </div>
-              <p>{useCase}</p>
-            </article>
+                <p>{useCase}</p>
+              </article>
+            </AnimatedContent>
           ))}
         </div>
       </section>
 
       <section id="pricing" className="site-shell section-space">
-        <div className="process-head">
+        <AnimatedContent className="process-head">
           <h2>{t("pricing.title")}</h2>
           <p className="body-copy">{t("pricing.sub")}</p>
           <p className="credit-line">{t("pricing.creditLine")}</p>
-        </div>
+        </AnimatedContent>
         <div className="pricing-grid">
-          <div className="plan">
+          <AnimatedContent className="reveal-item plan">
             <h3 className="plan-name">{t("pricing.free")}</h3>
             <div className="plan-price">{t("pricing.freePrice")}</div>
             <p className="plan-desc">{t("pricing.freeDesc")}</p>
@@ -325,8 +329,8 @@ export default function Home() {
               <li>{t("pricing.f1")}</li><li>{t("pricing.f2")}</li><li>{t("pricing.f3")}</li>
             </ul>
             <Link href="/signup" className="btn btn-ghost" style={{ width: "100%" }}>{t("pricing.ctaStart")}</Link>
-          </div>
-          <div className="plan plan-featured">
+          </AnimatedContent>
+          <AnimatedContent className="reveal-item plan plan-featured" delay={0.06}>
             <h3 className="plan-name">{t("pricing.starter")}</h3>
             <div className="plan-price">{t("pricing.starterPrice")}<span>{t("pricing.starterWhen")}</span></div>
             {t("pricing.starterApprox") && <p className="plan-approx">{t("pricing.starterApprox")}</p>}
@@ -335,8 +339,8 @@ export default function Home() {
               <li>{t("pricing.s1")}</li><li>{t("pricing.s2")}</li><li>{t("pricing.s3")}</li>
             </ul>
             <button onClick={() => handleUpgrade("starter")} className="btn btn-primary" style={{ width: "100%" }}>{t("pricing.ctaUpgrade")}</button>
-          </div>
-          <div className="plan">
+          </AnimatedContent>
+          <AnimatedContent className="reveal-item plan" delay={0.12}>
             <h3 className="plan-name">{t("pricing.pro")}</h3>
             <div className="plan-price">{t("pricing.proPrice")}<span>{t("pricing.proWhen")}</span></div>
             {t("pricing.proApprox") && <p className="plan-approx">{t("pricing.proApprox")}</p>}
@@ -345,53 +349,57 @@ export default function Home() {
               <li>{t("pricing.p1")}</li><li>{t("pricing.p2")}</li><li>{t("pricing.p3")}</li>
             </ul>
             <button onClick={() => handleUpgrade("pro")} className="btn btn-ghost" style={{ width: "100%" }}>{t("pricing.ctaUpgrade")}</button>
-          </div>
+          </AnimatedContent>
         </div>
         {upgradeError && <p className="error" style={{ textAlign: "center" }}>{upgradeError}</p>}
         <p className="hint" style={{ textAlign: "center", marginTop: 28 }}>{t("pricing.note")}</p>
       </section>
 
       <section id="faq" className="site-shell section-space">
-        <div className="process-head">
+        <AnimatedContent className="process-head">
           <h2>{t("faq.title")}</h2>
-        </div>
+        </AnimatedContent>
         <div className="faq-list">
-          {faqItems.map(([num, question, answer]) => (
-            <details className="faq-item" key={num}>
-              <summary>
-                <span>{question}</span>
-                <span className="faq-mark" aria-hidden />
-              </summary>
-              <p>{answer}</p>
-            </details>
+          {faqItems.map(([num, question, answer], index) => (
+            <AnimatedContent key={num} delay={Math.min(index, 3) * 0.05}>
+              <details className="faq-item">
+                <summary>
+                  <span>{question}</span>
+                  <span className="faq-mark" aria-hidden />
+                </summary>
+                <p>{answer}</p>
+              </details>
+            </AnimatedContent>
           ))}
         </div>
       </section>
 
       <section id="trust" className="section-space muted-band">
         <div className="site-shell">
-          <div className="process-head" style={{ maxWidth: 640, marginBottom: 0 }}>
+          <AnimatedContent className="process-head" style={{ maxWidth: 640, marginBottom: 0 }}>
             <h2>{t("trust.title")}</h2>
             <p className="body-copy">{t("trust.sub")}</p>
-          </div>
+          </AnimatedContent>
           <div className="trust-grid">
-            {trustItems.map(([num, title, text]) => (
-              <div className="trust-item" key={num}>
-                <strong>{title}</strong>
-                <p>{text}</p>
-              </div>
+            {trustItems.map(([num, title, text], index) => (
+              <AnimatedContent className="reveal-item" key={num} delay={index * 0.06}>
+                <div className="trust-item">
+                  <strong>{title}</strong>
+                  <p>{text}</p>
+                </div>
+              </AnimatedContent>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="site-shell section-space final-cta">
+      <AnimatedContent as="section" className="site-shell section-space final-cta">
         <div>
           <h2>{t("finalCta.title")}</h2>
           <p>{t("finalCta.sub")}</p>
         </div>
         <Link href="/signup" className="btn btn-primary btn-lg">{t("finalCta.cta")}</Link>
-      </section>
+      </AnimatedContent>
 
       <footer className="site-footer">
         <div className="site-shell footer-inner">

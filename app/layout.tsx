@@ -34,7 +34,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const lang: Lang = cookieLang === "id" ? "id" : "en";
 
   return (
-    <html lang={lang} className={fonts}>
+    {/* suppressHydrationWarning: the inline script below adds a class to <html>
+        before React hydrates, which is a deliberate mismatch. */}
+    <html lang={lang} className={fonts} suppressHydrationWarning>
+      <head>
+        {/* Marks that scripting is available, before the first paint. Scroll
+            reveals hide their content only under this class, so a browser with
+            JavaScript blocked gets the whole page rather than blank sections. */}
+        <script
+          dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }}
+        />
+      </head>
       <body>
         <LangProvider initialLang={lang}>{children}</LangProvider>
       </body>

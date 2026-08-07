@@ -42,9 +42,10 @@ export const landing = {
     cta1: ["Create your first invoice →", "Buat invoice pertama →"] as Pair,
     cta2: ["Sign in", "Masuk"] as Pair,
     cta3: ["View live sample", "Lihat contoh invoice"] as Pair,
-    p1: ["3 free invoices to start", "3 invoice gratis untuk mulai"] as Pair,
-    p2: ["+3 more every time a client joins", "+3 lagi tiap ada klien yang ikut"] as Pair,
-    p3: ["1 credit = 1 invoice. No subscription needed.", "1 kredit = 1 invoice. Tanpa langganan."] as Pair,
+    points: [
+      "3 free invoices to start · +3 more every time a client joins · 1 credit = 1 invoice",
+      "3 invoice gratis untuk mulai · +3 lagi tiap ada klien yang ikut · 1 kredit = 1 invoice",
+    ] as Pair,
     note: ["Free to start. No credit card. Your first invoice takes about a minute.", "Gratis untuk mulai. Tanpa kartu kredit. Invoice pertama selesai sekitar satu menit."] as Pair,
   },
   demo: {
