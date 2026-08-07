@@ -9,7 +9,15 @@ import { useLang } from "@/components/LangProvider";
 
 const REF_COOKIE = "ref_invoice";
 
-export default function SignupForm({ refInvoice, plan }: { refInvoice: string | null; plan: "starter" | "pro" | null }) {
+export default function SignupForm({
+  refInvoice,
+  plan,
+  next,
+}: {
+  refInvoice: string | null;
+  plan: "starter" | "pro" | null;
+  next?: string | null;
+}) {
   const router = useRouter();
   const supabase = createClient();
   const lang = useLang();
@@ -97,7 +105,7 @@ export default function SignupForm({ refInvoice, plan }: { refInvoice: string | 
 
     // Someone who just created an account came to send an invoice, not to read
     // a dashboard of zeroes. Drop them straight into the creator.
-    router.push("/dashboard/new-invoice");
+    router.push(next ?? "/dashboard/new-invoice");
   }
 
   async function handleOAuth() {

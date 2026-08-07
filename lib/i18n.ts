@@ -359,6 +359,14 @@ export const app = {
     noAccount: ["No account?", "Belum punya akun?"] as T,
     createOne: ["Create one", "Daftar"] as T,
     payAfter: ["payment opens right after sign-in.", "pembayaran langsung dibuka setelah masuk."] as T,
+    toCreate: [
+      "Sign in to write your invoice — we'll take you straight to it.",
+      "Masuk dulu untuk menulis invoicemu — kami langsung antar ke sana.",
+    ] as T,
+    toContinue: [
+      "Sign in to continue where you left off.",
+      "Masuk dulu untuk lanjut dari tempat kamu tadi.",
+    ] as T,
   },
   signup: {
     title: ["Create your account", "Buat akun kamu"] as T,

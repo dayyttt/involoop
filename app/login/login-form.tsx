@@ -7,7 +7,13 @@ import { createClient } from "@/lib/supabase-browser";
 import { appText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 
-export default function LoginForm({ plan }: { plan: "starter" | "pro" | null }) {
+export default function LoginForm({
+  plan,
+  next,
+}: {
+  plan: "starter" | "pro" | null;
+  next: string | null;
+}) {
   const supabase = createClient();
   const router = useRouter();
   const lang = useLang();
@@ -46,7 +52,7 @@ export default function LoginForm({ plan }: { plan: "starter" | "pro" | null }) 
         return;
       }
     }
-    router.push("/dashboard");
+    router.push(next ?? "/dashboard");
   }
 
   async function handleOAuth(provider: "google" | "github") {
@@ -68,6 +74,12 @@ export default function LoginForm({ plan }: { plan: "starter" | "pro" | null }) 
         {plan ? (
           <p className="note-box">
             {plan === "starter" ? "Starter $3" : "Pro $8/month"} · {t("login.payAfter")}
+          </p>
+        ) : null}
+        {/* Says why this screen appeared, and what it leads back to. */}
+        {!plan && next ? (
+          <p className="note-box">
+            {next.includes("new-invoice") ? t("login.toCreate") : t("login.toContinue")}
           </p>
         ) : null}
         <div className="oauth-row">
@@ -111,7 +123,9 @@ export default function LoginForm({ plan }: { plan: "starter" | "pro" | null }) 
         {error && <p className="error">{error}</p>}
         <p className="hint" style={{ marginTop: 16 }}>
           {t("login.noAccount")}{" "}
-          <Link href={plan ? `/signup?plan=${plan}` : "/signup"}>{t("login.createOne")}</Link>.
+          <Link href={plan ? `/signup?plan=${plan}` : next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}>
+            {t("login.createOne")}
+          </Link>.
         </p>
       </div>
     </main>
