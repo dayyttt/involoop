@@ -43,14 +43,23 @@ Respond ONLY with valid JSON, no markdown fences, matching this shape:
 }`;
 }
 
-export async function parseInvoiceFromText(input: string, lang = "en"): Promise<ParsedInvoice> {
+export async function parseInvoiceFromText(
+  input: string,
+  lang = "en",
+  clientToday?: string
+): Promise<ParsedInvoice> {
   const apiKey = process.env.AI_API_KEY;
   const model = process.env.AI_MODEL ?? "broday";
   if (!apiKey || !baseURL) {
     throw new Error("AI not configured");
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  // The caller supplies its own date when it can. A server on UTC is already
+  // a day ahead for anyone east of it and a day behind for anyone west, so
+  // "due in two weeks" would land a day out for most of the world.
+  const today = /^\d{4}-\d{2}-\d{2}$/.test(clientToday ?? "")
+    ? (clientToday as string)
+    : new Date().toISOString().slice(0, 10);
 
   const res = await fetch(`${baseURL}/messages`, {
     method: "POST",

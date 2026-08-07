@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { createClient } from "@/lib/supabase-browser";
-import { formatMoney } from "@/lib/money";
+import { formatMoney, formatDateShort } from "@/lib/money";
 import { appText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
@@ -372,7 +372,7 @@ export default function Dashboard() {
                   </Link>
                   <span className="hint">
                     {formatMoney(inv.amount, inv.currency, locale)} · {inv.views} {t("dashboard.viewsCount")} ·{" "}
-                    {new Date(inv.created_at).toLocaleDateString(locale)}
+                    {formatDateShort(inv.created_at, locale)}
                   </span>
                 </div>
                 <div className="inv-actions">
@@ -586,7 +586,7 @@ export default function Dashboard() {
                           {entry.amount > 0 ? `+${entry.amount}` : entry.amount}
                         </span>
                         <span className="ledger-ref">{entry.reference}</span>
-                        <span className="hint">{new Date(entry.created_at).toLocaleDateString(locale)}</span>
+                        <span className="hint">{formatDateShort(entry.created_at, locale)}</span>
                       </div>
                     ))}
                   </div>
@@ -640,7 +640,7 @@ export default function Dashboard() {
                       <span>{ref.referred?.full_name || ref.referred?.email || t("dashboard.newUser")}</span>
                       <span className="side">
                         <span className="badge badge-paid">+{ref.reward_credits} {t("dashboard.credits")}</span>
-                        <span className="hint">{new Date(ref.created_at).toLocaleDateString(locale)}</span>
+                        <span className="hint">{formatDateShort(ref.created_at, locale)}</span>
                       </span>
                     </div>
                   ))}
@@ -660,7 +660,7 @@ export default function Dashboard() {
                         {entry.amount > 0 ? `+${entry.amount}` : entry.amount}
                       </span>
                       <span className="ledger-ref">{entry.reference}</span>
-                      <span className="hint">{new Date(entry.created_at).toLocaleDateString(locale)}</span>
+                      <span className="hint">{formatDateShort(entry.created_at, locale)}</span>
                     </div>
                   ))}
                 </div>

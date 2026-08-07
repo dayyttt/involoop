@@ -9,7 +9,7 @@ import { SUPPORTED_CURRENCIES } from "@/lib/money";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { raw_text, manual, client_name, description, amount, due_date, cta_message, currency, lang } = body;
+    const { raw_text, manual, client_name, description, amount, due_date, cta_message, currency, lang, today } = body;
 
     let parsed;
 
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       );
     } else {
       try {
-        parsed = await parseInvoiceFromText(raw_text, lang === "id" ? "id" : "en");
+        parsed = await parseInvoiceFromText(raw_text, lang === "id" ? "id" : "en", today);
       } catch (err: any) {
         console.error("AI parse error", err);
         return NextResponse.json(

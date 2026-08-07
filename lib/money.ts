@@ -58,6 +58,21 @@ export function formatMoney(
   }
 }
 
+// Never numeric-only. "6/8/2026" means 6 August to most of the world and
+// June 8 in the United States, and this figure sits on invoices as a deadline.
+// Naming the month removes the ambiguity in every locale.
+export function formatDateShort(date: string | Date, locale = "en-US"): string {
+  try {
+    return new Date(date).toLocaleDateString(locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return String(date);
+  }
+}
+
 export function formatDate(date: string, locale = "en-US"): string {
   try {
     return new Date(date).toLocaleDateString(locale, {

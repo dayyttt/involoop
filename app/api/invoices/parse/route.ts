@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   let lang: unknown = "en";
   try {
     const body = await req.json();
-    const { raw_text } = body;
+    const { raw_text, today } = body;
     lang = body.lang;
     if (!raw_text || typeof raw_text !== "string") {
       return NextResponse.json(
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     let parsed;
     try {
-      parsed = await parseInvoiceFromText(raw_text, lang === "id" ? "id" : "en");
+      parsed = await parseInvoiceFromText(raw_text, lang === "id" ? "id" : "en", today);
     } catch (err: any) {
       console.error("AI parse error", err);
       return NextResponse.json(

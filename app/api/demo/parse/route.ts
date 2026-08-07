@@ -29,7 +29,7 @@ function rateLimited(ip: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const { raw_text, lang } = await req.json().catch(() => ({ raw_text: null, lang: "en" }));
+  const { raw_text, lang, today } = await req.json().catch(() => ({ raw_text: null, lang: "en" }));
 
   if (!raw_text || typeof raw_text !== "string" || !raw_text.trim()) {
     return NextResponse.json(
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const parsed = await parseInvoiceFromText(raw_text.slice(0, MAX_INPUT), lang === "id" ? "id" : "en");
+    const parsed = await parseInvoiceFromText(raw_text.slice(0, MAX_INPUT), lang === "id" ? "id" : "en", today);
     if (!parsed.client_name || !parsed.description || !(parsed.amount > 0)) {
       throw new Error("incomplete parse");
     }

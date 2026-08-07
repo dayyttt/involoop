@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
-import { formatMoney, SUPPORTED_CURRENCIES, CURRENCY_LABELS } from "@/lib/money";
+import { formatMoney, formatDateShort, SUPPORTED_CURRENCIES, CURRENCY_LABELS } from "@/lib/money";
 import { appText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
@@ -73,6 +73,13 @@ export default function NewInvoice() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.profile) setCredits(data.profile.free_invoice_credits);
+        // Start in whatever currency this person last billed in. Defaulting
+        // everyone to IDR is only right for one country, and this product is
+        // not only used in one country.
+        const last = data?.invoices?.[0]?.currency;
+        if (last && (SUPPORTED_CURRENCIES as readonly string[]).includes(last)) {
+          setForm((f) => (f.currency === "IDR" ? { ...f, currency: last } : f));
+        }
       })
       .catch(() => {});
   }, [result]);
@@ -111,7 +118,11 @@ export default function NewInvoice() {
     const res = await fetch("/api/invoices/parse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ raw_text: rawText, lang }),
+      body: JSON.stringify({
+        raw_text: rawText,
+        lang,
+        today: new Date().toLocaleDateString("en-CA"),
+      }),
     });
     const data = await res.json();
     setLoading(false);
@@ -426,7 +437,7 @@ export default function NewInvoice() {
                       <div className="invoice-amount">{formatMoney(amountNum, form.currency, lang === "id" ? "id-ID" : "en-US")}</div>
                       {form.due_date && (
                         <p className="hint" style={{ margin: "6px 0 0" }}>
-                          {t("newInvoice.dueOn")} {new Date(form.due_date).toLocaleDateString(lang === "id" ? "id-ID" : "en-US")}
+                          {t("newInvoice.dueOn")} {formatDateShort(form.due_date, lang === "id" ? "id-ID" : "en-US")}
                         </p>
                       )}
                       {form.cta_message && (

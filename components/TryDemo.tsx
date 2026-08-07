@@ -69,7 +69,12 @@ export default function TryDemo({ signedIn = false }: { signedIn?: boolean }) {
       const res = await fetch("/api/demo/parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ raw_text: text, lang }),
+        body: JSON.stringify({
+          // The reader own local date, so a relative due date counts from their day.
+          raw_text: text,
+          lang,
+          today: new Date().toLocaleDateString("en-CA"),
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

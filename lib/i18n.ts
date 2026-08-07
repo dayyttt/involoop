@@ -236,8 +236,8 @@ export const landing = {
         id: ["03", "Jujur soal scope", "Pembayaran test-mode diberi label, tak pernah dipalsukan sebagai transaksi nyata."],
       },
       {
-        en: ["04", "Built for Indonesia", "English and Indonesian, with IDR pricing that matches reality."],
-        id: ["04", "Dibuat untuk Indonesia", "Inggris dan Indonesia, dengan harga IDR yang sesuai kenyataan."],
+        en: ["04", "Bills in your currency", "Rupiah, ringgit, baht, peso, Singapore and US dollars, euro and pound — never converted behind your back."],
+        id: ["04", "Menagih dalam mata uangmu", "Rupiah, ringgit, baht, peso, dolar Singapura dan AS, euro, pound — tidak pernah dikonversi diam-diam."],
       },
     ] as Item[],
   },
