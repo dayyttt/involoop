@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
         {
           price_data: {
             currency: invoice.currency.toLowerCase(),
-            product_data: { name: `${invoice.number} — ${invoice.client_name}` },
+            product_data: { name: `${invoice.number} · ${invoice.client_name}` },
             unit_amount: amountMinor,
           },
           quantity: 1,

@@ -139,7 +139,7 @@ export default function Home() {
             <span className="mock-test">Stripe Test Mode</span>
           </div>
           <div className="mock-cta">
-            <span>Create an invoice like this — free →</span>
+            <span>Create an invoice like this · free →</span>
           </div>
         </div>
         <div>

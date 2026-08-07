@@ -313,11 +313,11 @@ export default function NewInvoice() {
                           value={form.currency}
                           onChange={(e) => setField("currency", e.target.value)}
                         >
-                          <option value="IDR">IDR — Rupiah</option>
-                          <option value="USD">USD — US Dollar</option>
-                          <option value="EUR">EUR — Euro</option>
-                          <option value="GBP">GBP — British Pound</option>
-                          <option value="SGD">SGD — Singapore Dollar</option>
+                          <option value="IDR">IDR · Rupiah</option>
+                          <option value="USD">USD · US Dollar</option>
+                          <option value="EUR">EUR · Euro</option>
+                          <option value="GBP">GBP · British Pound</option>
+                          <option value="SGD">SGD · Singapore Dollar</option>
                         </select>
                       </div>
                     </div>

@@ -63,7 +63,7 @@ export default function PublicInvoice() {
         setInvoice((prev) => (prev ? { ...prev, views: data.views } : prev));
       }
     } catch {
-      // silent — counting a view is best-effort, never blocks the page
+      // silent · counting a view is best-effort, never blocks the page
     }
   }
 
@@ -226,7 +226,7 @@ export default function PublicInvoice() {
                   </button>
                 </div>
                 <span className="test-badge" style={{ margin: 0, textAlign: "center" }}>
-                  Stripe Test Mode — no real money will be charged
+                  Stripe Test Mode · no real money will be charged
                 </span>
               </>
             )}

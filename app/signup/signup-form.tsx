@@ -119,7 +119,7 @@ export default function SignupForm({ refInvoice, plan }: { refInvoice: string | 
         <p className="sub">{t("signup.sub")}</p>
         {plan && (
           <p className="note-box">
-            {plan === "starter" ? "Starter $3" : "Pro $8/month"} — {t("login.payAfter")}
+            {plan === "starter" ? "Starter $3" : "Pro $8/month"} · {t("login.payAfter")}
           </p>
         )}
         {refInvoice && (

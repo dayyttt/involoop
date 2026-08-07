@@ -255,7 +255,7 @@ export default function Dashboard() {
           <Stat label={t("dashboard.views")} value={stats.total_views.toString()} />
           <Stat label={t("dashboard.clicks")} value={stats.total_clicks.toString()} />
           <Stat label={t("dashboard.referrals")} value={stats.signups.toString()} />
-          <Stat label={t("dashboard.conversion")} value={stats.total_views > 0 ? `${stats.conversion}%` : "—"} />
+          <Stat label={t("dashboard.conversion")} value={stats.total_views > 0 ? `${stats.conversion}%` : "0"} />
           <Stat label={t("dashboard.creditsEarned")} value={stats.credits_earned.toString()} />
         </div>
 

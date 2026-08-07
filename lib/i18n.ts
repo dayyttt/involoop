@@ -45,11 +45,11 @@ export const landing = {
     point2: ["◆ No long forms", "◆ Tanpa form panjang"] as Pair,
     point3: ["◆ Two-way rewards", "◆ Reward dua arah"] as Pair,
     body1: [
-      "Involoop is built for B2B service professionals who both buy and sell professional services — freelancers, consultants, and micro-agencies.",
+      "Involoop is built for B2B service professionals who both buy and sell professional services · freelancers, consultants, and micro-agencies.",
       "Involoop dibuat untuk freelancer, micro-agency, dan profesional jasa B2B yang saling membeli dan menjual jasa.",
     ] as Pair,
     body2: [
-      "You already invoice other businesses every week. That is a relevant audience at a high-value moment — and it has never been used as a growth channel.",
+      "You already invoice other businesses every week. That is a relevant audience at a high-value moment · and it has never been used as a growth channel.",
       "Freelancer sudah rutin mengirim invoice ke bisnis dan profesional lain. Itu audiens relevan di momen bernilai tinggi yang belum dipakai sebagai jalur pertumbuhan.",
     ] as Pair,
     m1: ["3", "3"] as Pair, m1l: ["Free credits", "Kredit awal"] as Pair,
@@ -62,11 +62,11 @@ export const landing = {
     title: ["One flow to bill and to grow.", "Satu alur untuk menagih dan tumbuh."] as Pair,
     items: [
       { en: ["01", "One-sentence invoices", "AI turns a natural sentence into client, amount, description, due date, and a context-aware referral line."], id: ["01", "Invoice dari satu kalimat", "AI memecah kalimat tagihan jadi nama klien, nominal, deskripsi, tenggat, dan CTA referral."] },
-      { en: ["02", "Public shareable link", "Send the invoice through any channel you already use — no new delivery setup."], id: ["02", "Link publik siap kirim", "Bagikan invoice lewat channel yang sudah kamu pakai tanpa setup pengiriman baru."] },
-      { en: ["03", "Secure payment", "Clients see payment instructions and pay securely — Stripe Connect or manual confirmation."], id: ["03", "Konfirmasi pembayaran", "Klien melihat instruksi pembayaran dan mengonfirmasi transfer dari halaman invoice."] },
-      { en: ["04", "Context-aware referral", "AI writes an invite that matches the service billed — never generic ad copy."], id: ["04", "CTA yang relevan", "AI menulis ajakan sesuai jasa yang ditagih, bukan iklan generik."] },
+      { en: ["02", "Public shareable link", "Send the invoice through any channel you already use · no new delivery setup."], id: ["02", "Link publik siap kirim", "Bagikan invoice lewat channel yang sudah kamu pakai tanpa setup pengiriman baru."] },
+      { en: ["03", "Secure payment", "Clients see payment instructions and pay securely · Stripe Connect or manual confirmation."], id: ["03", "Konfirmasi pembayaran", "Klien melihat instruksi pembayaran dan mengonfirmasi transfer dari halaman invoice."] },
+      { en: ["04", "Context-aware referral", "AI writes an invite that matches the service billed · never generic ad copy."], id: ["04", "CTA yang relevan", "AI menulis ajakan sesuai jasa yang ditagih, bukan iklan generik."] },
       { en: ["05", "Two-way rewards", "You earn 3 credits per referral; the client who joins gets 2 bonus credits."], id: ["05", "Reward dua arah", "Kamu dapat 3 kredit per referral; klien yang daftar mendapat 2 bonus."] },
-      { en: ["06", "Auditable proof", "Referrals, credits, and invoices appear in the dashboard — the loop is provable end to end."], id: ["06", "Loop terlihat jelas", "Referral, kredit, dan invoice tampil di dashboard — loop bisa dibuktikan end to end."] },
+      { en: ["06", "Auditable proof", "Referrals, credits, and invoices appear in the dashboard · the loop is provable end to end."], id: ["06", "Loop terlihat jelas", "Referral, kredit, dan invoice tampil di dashboard · loop bisa dibuktikan end to end."] },
     ] as Item[],
     tryCta: ["Try it →", "Coba fitur →"] as Pair,
   },
@@ -79,7 +79,7 @@ export const landing = {
       { en: ["02", "Publish", "Involoop creates a public invoice with a CTA."], id: ["02", "Susun", "AI mengubahnya menjadi invoice terstruktur dan CTA kontekstual."] },
       { en: ["03", "Share", "Send the link to your business client."], id: ["03", "Kirim", "Bagikan link publik lewat channel pilihanmu."] },
       { en: ["04", "Get paid", "Accept secure payment or confirm a transfer."], id: ["04", "Bayar", "Klien menyelesaikan tagihan dari halaman yang bersih."] },
-      { en: ["05", "Grow", "Both accounts earn credits — the loop restarts."], id: ["05", "Tumbuh", "Klien mendaftar, kedua pihak mendapat kredit, loop dimulai lagi."] },
+      { en: ["05", "Grow", "Both accounts earn credits · the loop restarts."], id: ["05", "Tumbuh", "Klien mendaftar, kedua pihak mendapat kredit, loop dimulai lagi."] },
     ] as Item[],
   },
   reward: {
@@ -96,8 +96,8 @@ export const landing = {
     sub: ["No new marketing workflow. Just send a better invoice through the same channel you use today.", "Tanpa alur pemasaran baru. Cukup kirim invoice yang lebih baik lewat channel yang sudah kamu gunakan."] as Pair,
     items: [
       {
-        en: ["Branding designer", "Project-based billing · client approvals", "Turn a project sentence into a polished invoice and send it through WhatsApp — no PDF export or new client account."],
-        id: ["Desainer branding", "Tagihan per proyek · persetujuan klien", "Ubah kalimat proyek jadi invoice rapi dan kirim lewat WhatsApp — tanpa ekspor PDF atau akun baru untuk klien."],
+        en: ["Branding designer", "Project-based billing · client approvals", "Turn a project sentence into a polished invoice and send it through WhatsApp · no PDF export or new client account."],
+        id: ["Desainer branding", "Tagihan per proyek · persetujuan klien", "Ubah kalimat proyek jadi invoice rapi dan kirim lewat WhatsApp · tanpa ekspor PDF atau akun baru untuk klien."],
       },
       {
         en: ["Web developer", "Milestone invoices · micro-agency work", "Share one public link, confirm payment, and let the same artifact introduce Involoop to another service business."],
@@ -143,7 +143,7 @@ export const landing = {
     pro: ["Pro", "Pro"] as Pair, proPrice: ["$8", "Rp 79.000"] as Pair, proWhen: ["/month", "/bulan"] as Pair, proDesc: ["For micro-agencies and high volume.", "Untuk micro-agency dan volume tinggi."] as Pair,
     p1: ["50 public invoices", "50 invoice publik"] as Pair, p2: ["Advanced analytics", "Analitik lanjutan"] as Pair, p3: ["Custom branding", "Branding khusus"] as Pair,
     ctaStart: ["Start", "Mulai"] as Pair, ctaContact: ["Contact us", "Hubungi kami"] as Pair, ctaUpgrade: ["Upgrade", "Upgrade"] as Pair,
-    note: ["Payments run in Stripe test mode — no real money is charged.", "Pembayaran berjalan di Stripe Test Mode — tidak ada uang asli yang ditarik."] as Pair,
+    note: ["Payments run in Stripe test mode · no real money is charged.", "Pembayaran berjalan di Stripe Test Mode · tidak ada uang asli yang ditarik."] as Pair,
   },
   finalCta: {
     eyebrow: ["READY TO BILL?", "SIAP MENAGIH?"] as Pair,
@@ -223,8 +223,8 @@ export const app = {
     title: ["Create your account", "Buat akun kamu"] as T,
     sub: ["3 free credits to publish your first invoices.", "3 kredit gratis untuk menerbitkan invoice pertamamu."] as T,
     invited: [
-      "You were invited through a friend's invoice — they earn credits and you get bonus credits when you sign up.",
-      "Kamu diundang lewat invoice temanmu — mereka dapat kredit dan kamu dapat bonus kredit saat mendaftar.",
+      "You were invited through a friend's invoice · they earn credits and you get bonus credits when you sign up.",
+      "Kamu diundang lewat invoice temanmu · mereka dapat kredit dan kamu dapat bonus kredit saat mendaftar.",
     ] as T,
     continueGoogle: ["Continue with Google", "Lanjut dengan Google"] as T,
     orEmail: ["or sign up with email", "atau daftar dengan email"] as T,
@@ -257,16 +257,16 @@ export const app = {
     unpaidCount: ["Unpaid", "Belum bayar"] as T,
     emptyTitle: ["START HERE", "MULAI DARI SINI"] as T,
     emptyBody: [
-      "No invoices yet. Publish the first one — free with your credits.",
-      "Belum ada invoice. Terbitkan yang pertama — gratis pakai kreditmu.",
+      "No invoices yet. Publish the first one · free with your credits.",
+      "Belum ada invoice. Terbitkan yang pertama · gratis pakai kreditmu.",
     ] as T,
     viewsCount: ["views", "tampilan"] as T,
     verify: ["Verify", "Verifikasi"] as T,
     sendWhatsapp: ["Send via WA", "Kirim WA"] as T,
     referralSection: ["Referral program", "Program referral"] as T,
     referralCodeHint: [
-      "This code is used when a friend signs up through your invoice link — each successful referral earns +5 credits.",
-      "Kode ini dipakai saat temanmu mendaftar lewat link invoicemu — setiap referral sukses memberi +5 kredit.",
+      "This code is used when a friend signs up through your invoice link · each successful referral earns +5 credits.",
+      "Kode ini dipakai saat temanmu mendaftar lewat link invoicemu · setiap referral sukses memberi +5 kredit.",
     ] as T,
     referralEmpty: [
       "No referrals yet. The CTA on each invoice invites your clients to join.",
@@ -284,7 +284,7 @@ export const app = {
     mode: ["Mode", "Mode"] as T,
     testMode: ["Test Mode", "Test Mode"] as T,
     defaultCurrency: ["Default settlement currency", "Mata uang default"] as T,
-    stripeTestBadge: ["Stripe Test Mode — no real money will be charged", "Stripe Test Mode — tidak ada uang asli yang ditarik"] as T,
+    stripeTestBadge: ["Stripe Test Mode · no real money will be charged", "Stripe Test Mode · tidak ada uang asli yang ditarik"] as T,
     connectStripe: ["Connect Stripe", "Hubungkan Stripe"] as T,
     connecting: ["Connecting…", "Menghubungkan…"] as T,
     loadFailed: ["Failed to load dashboard.", "Gagal memuat dashboard."] as T,
@@ -333,8 +333,8 @@ export const app = {
       "AI gagal menyusun invoice. Coba lagi, atau isi form manual di bawah.",
     ] as T,
     aiResultHint: [
-      "✨ AI result — check and edit before publishing.",
-      "✨ Hasil AI — periksa dan edit dulu sebelum diterbitkan.",
+      "✨ AI result · check and edit before publishing.",
+      "✨ Hasil AI · periksa dan edit dulu sebelum diterbitkan.",
     ] as T,
     manualHint: ["Fill in the invoice details, then publish.", "Isi detail invoice, lalu terbitkan."] as T,
     clientName: ["Client name", "Nama klien"] as T,
@@ -387,7 +387,7 @@ export const app = {
     sending: ["Sending confirmation…", "Mengirim konfirmasi…"] as T,
     checkoutFailed: ["Could not create payment session.", "Gagal membuat sesi pembayaran."] as T,
     confirmFailed: ["Something went wrong. Try again.", "Terjadi kesalahan. Coba lagi."] as T,
-    referralHeading: ["Create an invoice like this — free", "Buat invoice seperti ini — gratis"] as T,
+    referralHeading: ["Create an invoice like this · free", "Buat invoice seperti ini · gratis"] as T,
     referralBody: ["{cta}", "{cta}"] as T,
     referralCta: [
       "Get 5 free credits when you join through this invoice →",
@@ -406,7 +406,7 @@ export const app = {
     verifiedBy: ["Payment verified by Stripe", "Pembayaran diverifikasi oleh Stripe"] as T,
     transactionId: ["Transaction ID:", "ID Transaksi:"] as T,
     paidAt: ["Paid at:", "Dibayar pada:"] as T,
-    referralHeading: ["Create your own invoice — get free credits", "Buat invoice-mu sendiri — dapatkan kredit gratis"] as T,
+    referralHeading: ["Create your own invoice · get free credits", "Buat invoice-mu sendiri · dapatkan kredit gratis"] as T,
     referralBody: [
       "Join through this invoice and receive credits to publish your first invoices.",
       "Bergabung lewat invoice ini dan dapatkan kredit untuk menerbitkan invoice pertamamu.",

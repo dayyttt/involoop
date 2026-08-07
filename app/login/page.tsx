@@ -75,7 +75,7 @@ export default function Login() {
         <p className="sub">{t("login.sub")}</p>
         {plan === "starter" || plan === "pro" ? (
           <p className="note-box">
-            {plan === "starter" ? "Starter $3" : "Pro $8/month"} — {t("login.payAfter")}
+            {plan === "starter" ? "Starter $3" : "Pro $8/month"} · {t("login.payAfter")}
           </p>
         ) : null}
         <div className="oauth-row">

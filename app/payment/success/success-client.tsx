@@ -61,7 +61,7 @@ export default function PaymentSuccess({ sessionId }: { sessionId: string | null
               <h1 className="invoice-title money" style={{ marginTop: 18 }}>
                 {formatMoney(data!.payment.amount_minor, data!.payment.currency, lang === "id" ? "id-ID" : "en-US", true)}
               </h1>
-              <p className="muted">{t("success.invoiceLabel")} {data!.invoice.number} — {data!.invoice.client_name}</p>
+              <p className="muted">{t("success.invoiceLabel")} {data!.invoice.number} · {data!.invoice.client_name}</p>
               <p className="hint" style={{ marginTop: 8 }}>
                 {t("success.verifiedBy")}
                 {data!.payment.provider_payment_id && (

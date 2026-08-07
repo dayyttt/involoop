@@ -58,7 +58,7 @@ async function main() {
     p_amount: 50,
     p_currency: "USD",
     p_due_date: "2026-08-12",
-    p_cta_message: "If Acme Studio bills its own clients too, try Involoop — create an invoice from one sentence.",
+    p_cta_message: "If Acme Studio bills its own clients too, try Involoop · create an invoice from one sentence.",
   });
   if (pubErr) throw pubErr;
 
@@ -90,10 +90,10 @@ async function main() {
       console.log("stripe connected:", account.id);
     } catch (e2) {
       // Sandbox without Connect enabled: platform-checkout still works.
-      console.log("Connect not available (" + e2.message + ") — using sandbox platform checkout");
+      console.log("Connect not available (" + e2.message + ") · using sandbox platform checkout");
     }
   } else {
-    console.log("STRIPE_SECRET_KEY not set — skipping Stripe connect (Pay button will be hidden)");
+    console.log("STRIPE_SECRET_KEY not set · skipping Stripe connect (Pay button will be hidden)");
   }
 
   console.log("creating demo-client@involoop.app via referral");
