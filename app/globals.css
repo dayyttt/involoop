@@ -1448,12 +1448,18 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 
 /* The way into crypto: available, findable, and not competing with the button
    most people actually want. */
+/* Solid, not dashed: a dashed box reads as a placeholder or something
+   disabled, and this is a real thing you can press. Quiet, but not broken. */
 .crypto-switch {
-  display: flex; flex-direction: column; gap: 2px; width: 100%;
-  padding: 12px 14px; border: 1px dashed var(--line-2); border-radius: var(--radius);
-  background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease);
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 13px 15px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: rgba(255,255,255,.02); color: var(--text); font: inherit;
+  text-align: left; cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
 }
-.crypto-switch:hover { border-color: var(--primary); }
+.crypto-switch:hover { border-color: var(--line-2); background: rgba(255,255,255,.04); }
+.crypto-switch:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.crypto-switch svg { flex: none; }
+.crypto-switch-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .crypto-switch strong { font-size: 13.5px; }
-.crypto-switch .hint { margin: 0; }
+.crypto-switch .hint { margin: 0; font-size: 12px; }

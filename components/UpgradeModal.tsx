@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import PayPalButtons from "@/components/PayPalButtons";
 import CryptoPayPanel from "@/components/CryptoPayPanel";
+import UsdcMark from "@/components/UsdcMark";
 import { cryptoLabels } from "@/lib/crypto-labels";
 import { appText, type Lang } from "@/lib/i18n";
 
@@ -142,8 +143,11 @@ export default function UpgradeModal({
                       plan will pay by card, and making them scroll past a
                       blockchain to do it would be a worse product. */}
                   <button type="button" className="crypto-switch" onClick={() => setMethod("usdc")}>
-                    <strong>{t("dashboard.payUsdc")}</strong>
-                    <span className="hint">{t("dashboard.payUsdcSub")}</span>
+                    <UsdcMark />
+                    <span className="crypto-switch-text">
+                      <strong>{t("dashboard.payUsdc")}</strong>
+                      <span className="hint">{t("dashboard.payUsdcSub")}</span>
+                    </span>
                   </button>
                 </>
               ) : (
@@ -170,7 +174,7 @@ export default function UpgradeModal({
 
               {error && <p className="error" style={{ margin: 0 }}>{error}</p>}
               <p className="test-badge" style={{ margin: 0, textAlign: "center" }}>
-                {t("dashboard.sandboxBadge")}
+                {t(method === "usdc" ? "invoice.testBadgeBoth" : "dashboard.sandboxBadge")}
               </p>
             </div>
           </motion.div>

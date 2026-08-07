@@ -529,7 +529,7 @@ export const app = {
     pendingPlanCta: ["Finish payment", "Selesaikan pembayaran"] as T,
     pendingPlanDismiss: ["Not now", "Nanti saja"] as T,
     payUsdc: ["Pay with USDC", "Bayar dengan USDC"] as T,
-    payUsdcSub: ["For people who already hold crypto.", "Untuk yang sudah punya crypto."] as T,
+    payUsdcSub: ["A digital dollar. 1 USDC = $1, sent from a crypto wallet.", "Dolar digital. 1 USDC = $1, dikirim dari wallet crypto."] as T,
     payUsdcBack: ["Use PayPal or card instead", "Pakai PayPal atau kartu saja"] as T,
     upgradeTitle: ["Upgrade plan", "Naikkan paket"] as T,
     upgradePrice: ["One-time payment", "Bayar sekali"] as T,
@@ -736,7 +736,7 @@ export const app = {
     amount: ["Amount", "Jumlah"] as T,
     total: ["Total", "Total"] as T,
     payUsdc: ["Pay with USDC", "Bayar dengan USDC"] as T,
-    payUsdcSub: ["On Solana, for clients who already hold crypto.", "Lewat Solana, untuk klien yang sudah punya crypto."] as T,
+    payUsdcSub: ["A digital dollar. 1 USDC = $1, sent from a crypto wallet.", "Dolar digital. 1 USDC = $1, dikirim dari wallet crypto."] as T,
     payUsdcBack: ["Use another payment method", "Pakai cara bayar lain"] as T,
     cryptoLoading: ["Preparing the payment…", "Menyiapkan pembayaran…"] as T,
     cryptoAmount: ["Send exactly", "Kirim persis"] as T,
@@ -804,6 +804,13 @@ export const app = {
     testBadge: [
       "PayPal Sandbox · no real money will be charged",
       "PayPal Sandbox · tidak ada uang asli yang ditarik",
+    ] as T,
+    // With two rails on the page, naming only one leaves the other unlabelled —
+    // and an unlabelled payment method on a test system is the one someone
+    // assumes is real.
+    testBadgeBoth: [
+      "Test mode · PayPal Sandbox and Solana Devnet · no real money will be charged",
+      "Mode uji · PayPal Sandbox dan Solana Devnet · tidak ada uang asli yang ditarik",
     ] as T,
     sending: ["Sending confirmation…", "Mengirim konfirmasi…"] as T,
     checkoutFailed: ["Could not create payment session.", "Gagal membuat sesi pembayaran."] as T,

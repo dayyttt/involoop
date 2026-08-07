@@ -9,6 +9,7 @@ import LangToggle from "@/components/LangToggle";
 import type { PublicInvoice } from "@/lib/invoice-server";
 import PayPalButtons from "@/components/PayPalButtons";
 import CryptoPayPanel from "@/components/CryptoPayPanel";
+import UsdcMark from "@/components/UsdcMark";
 import { cryptoLabels } from "@/lib/crypto-labels";
 
 // Receives the invoice already resolved on the server: no loading shell, no
@@ -239,8 +240,11 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                           will find this. */}
                       {invoice.crypto_enabled && (
                         <button type="button" className="crypto-switch" onClick={() => setPayWith("usdc")}>
-                          <strong>{t("invoice.payUsdc")}</strong>
-                          <span className="hint">{t("invoice.payUsdcSub")}</span>
+                          <UsdcMark />
+                          <span className="crypto-switch-text">
+                            <strong>{t("invoice.payUsdc")}</strong>
+                            <span className="hint">{t("invoice.payUsdcSub")}</span>
+                          </span>
                         </button>
                       )}
 
@@ -266,7 +270,7 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                   </button>
                 </div>
                 <span className="test-badge" style={{ margin: 0, textAlign: "center" }}>
-                  {t("invoice.testBadge")}
+                  {t(invoice.crypto_enabled ? "invoice.testBadgeBoth" : "invoice.testBadge")}
                 </span>
               </>
             )}
