@@ -689,6 +689,10 @@ export const app = {
     downloadPdf: ["Download PDF", "Unduh PDF"] as T,
     payPaypal: ["Pay with PayPal", "Bayar dengan PayPal"] as T,
     redirecting: ["Redirecting to PayPal…", "Mengarahkan ke PayPal…"] as T,
+    docLabel: ["Invoice", "Invoice"] as T,
+    description: ["Description", "Deskripsi"] as T,
+    amount: ["Amount", "Jumlah"] as T,
+    total: ["Total", "Total"] as T,
     payLoading: ["Loading secure payment…", "Memuat pembayaran aman…"] as T,
     payUnavailable: [
       "Payment buttons could not load. Refresh the page, or use the bank transfer option below.",

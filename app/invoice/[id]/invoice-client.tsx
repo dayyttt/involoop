@@ -111,29 +111,62 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
       </nav>
 
       <main className="pay-layout">
-        <div className="card">
-          <div className="invoice-head">
-            <div>
+        {/* The same document the PDF prints: letterhead, who it is for, the work
+            as a line item, then a total under a rule. It used to be a headline
+            and a loose price, which read as a web page about an invoice rather
+            than the invoice itself — and left the column half empty next to the
+            tall payment panel. */}
+        <div className="pay-doc-col">
+        <div className="card invoice-doc">
+          <header className="invoice-head">
+            <div className="invoice-from">
               <p className="invoice-label">{t("invoice.from")}</p>
               <h1 className="invoice-title">{invoice.sender_name}</h1>
             </div>
             <div className="invoice-meta">
-              <p className="invoice-label">NO. {invoice.number}</p>
+              <p className="invoice-label">{t("invoice.docLabel")}</p>
+              <strong className="invoice-number">{invoice.number}</strong>
               <span className="hint">{formatDate(invoice.created_at, locale)}</span>
+            </div>
+          </header>
+
+          <div className="invoice-rule" />
+
+          <p className="invoice-label">{t("invoice.to")}</p>
+          <h2 className="invoice-client">{invoice.client_name}</h2>
+
+          <div className="invoice-items">
+            <div className="invoice-items-head">
+              <span className="invoice-label">{t("invoice.description")}</span>
+              <span className="invoice-label">{t("invoice.amount")}</span>
+            </div>
+            <div className="invoice-item">
+              <p>{invoice.description}</p>
+              <span>{money}</span>
             </div>
           </div>
 
-          <p className="invoice-label" style={{ marginTop: 24 }}>{t("invoice.to")}</p>
-          <h2 className="invoice-client">{invoice.client_name}</h2>
+          <div className="invoice-total">
+            <span className="invoice-label">{t("invoice.total")}</span>
+            <strong className="invoice-amount">{money}</strong>
+          </div>
 
-          <p className="invoice-desc">{invoice.description}</p>
-
-          <div className="invoice-amount" style={{ marginTop: 24 }}>{money}</div>
           {invoice.due_date && (
-            <p className="hint" style={{ margin: "6px 0 0" }}>
+            <p className="hint invoice-due">
               {t("invoice.dueDate")} {formatDate(invoice.due_date, locale)}
             </p>
           )}
+        </div>
+
+          {/* The PDF belongs with the document, not under the payment buttons —
+              it is the same invoice, in a form you can forward. */}
+          <a
+            className="btn btn-ghost btn-mobile-full"
+            href={`/invoice/${publicId}/pdf?lang=${lang}`}
+            download
+          >
+            {t("invoice.downloadPdf")}
+          </a>
         </div>
 
         <div className="pay-side" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -204,26 +237,19 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
             {error && <p className="error" style={{ margin: 0 }}>{error}</p>}
           </div>
 
-          {/* The document, for forwarding. A client sends this to whoever
-              actually pays, and the referral goes with it. */}
-          <a
-            className="btn btn-ghost btn-mobile-full"
-            href={`/invoice/${publicId}/pdf?lang=${lang}`}
-            download
-          >
-            {t("invoice.downloadPdf")}
-          </a>
-
-          {invoice.cta_message && (
-            <div className="card" style={{ padding: 22, textAlign: "center" }}>
-              <h3 className="referral-heading">{t("invoice.referralHeading")}</h3>
-              <p className="hint" style={{ margin: "8px 0 12px" }}>{invoice.cta_message}</p>
-              <button onClick={trackClick} className="referral-link link-btn">
-                {t("invoice.referralCta")}
-              </button>
-            </div>
-          )}
         </div>
+
+        {invoice.cta_message && (
+          <div className="card invoice-referral">
+            <div>
+              <h3 className="referral-heading">{t("invoice.referralHeading")}</h3>
+              <p className="hint">{invoice.cta_message}</p>
+            </div>
+            <button onClick={trackClick} className="referral-link link-btn">
+              {t("invoice.referralCta")}
+            </button>
+          </div>
+        )}
       </main>
 
       <p className="hint" style={{ textAlign: "center", marginBottom: 40 }}>

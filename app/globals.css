@@ -702,12 +702,13 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 .invoice-card { max-width: 480px; margin: 0 auto 48px; padding: 110px 20px 0; }
 .invoice-card .card { padding: 28px; }
 .invoice-label { margin: 0; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.invoice-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-.invoice-meta { text-align: right; }
-.invoice-title { margin: 5px 0 0; font-size: 24px; }
-.invoice-client { margin: 5px 0 16px; font-size: 20px; }
+.invoice-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+.invoice-from { min-width: 0; }
+.invoice-meta { text-align: right; flex: none; min-width: 0; }
+.invoice-title { margin: 5px 0 0; font-size: 24px; overflow-wrap: anywhere; }
+.invoice-client { margin: 5px 0 16px; font-size: 20px; overflow-wrap: anywhere; }
 .invoice-desc { color: var(--text-2); }
-.invoice-amount { color: #fff; font: 800 36px var(--font-jakarta), sans-serif; }
+.invoice-amount { color: #fff; font: 800 34px var(--font-jakarta), sans-serif; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
 .paid-banner { padding: 12px; border-radius: 6px; background: var(--success-soft); color: var(--success); text-align: center; font-weight: 800; }
 .pay-instruction { margin-bottom: 14px; padding: 14px; border: 1px dashed var(--line-2); border-radius: 6px; background: rgba(255,255,255,.02); }
 .pay-instruction p { margin: 0 0 4px; font-weight: 800; font-size: 13px; }
@@ -778,9 +779,57 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 .link-copy-row .code { flex: 1; }
 @media (max-width: 480px) { .link-copy-row { flex-direction: column; } .link-copy-row .btn { width: 100%; } }
 
-/* ---- Public invoice: 2-col desktop ---- */
-.pay-layout { max-width: 880px; margin: 0 auto 48px; padding: 110px 20px 0; display: grid; grid-template-columns: 1fr; gap: 18px; align-items: start; }
-@media (min-width: 900px) { .pay-layout { grid-template-columns: 1.15fr 0.85fr; } .pay-side { position: sticky; top: 96px; } }
+/* ---- Public invoice: 2-col desktop ----
+   The document is the sticky one. It used to be the payment column, which is
+   the tall one — sticky on the element that overflows the viewport does
+   nothing, while the short document scrolled away from the buttons paying for
+   it. */
+.pay-layout { max-width: 940px; margin: 0 auto 48px; padding: 110px 20px 0; display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; }
+/* Grid children default to min-width:auto, so anything inside that refuses to
+   shrink — a nowrap invoice number, a long description — widens the track past
+   the viewport and the whole page scrolls sideways on a phone. */
+.pay-layout > * { min-width: 0; }
+.pay-doc-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+/* The referral is the whole reason this page exists, so on desktop it runs the
+   full width under both columns instead of being the last thing in a sidebar —
+   which also closes the gap the two unequal columns used to leave. */
+.invoice-referral { padding: 24px; text-align: center; }
+.invoice-referral .referral-heading { margin: 0; }
+.invoice-referral .hint { margin: 8px 0 14px; }
+@media (min-width: 760px) {
+  /* At full width a centred block leaves more empty room than it uses. Reading
+     left, acting right is the same shape as every other row on the page. */
+  .invoice-referral {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 28px; text-align: left; padding: 22px 26px;
+  }
+  .invoice-referral .hint { margin: 6px 0 0; max-width: 52ch; }
+  .invoice-referral .referral-link { flex: none; }
+}
+@media (min-width: 900px) {
+  .pay-layout { grid-template-columns: 1.1fr 0.9fr; }
+  .pay-doc-col { position: sticky; top: 96px; }
+  .invoice-referral { grid-column: 1 / -1; }
+}
+
+/* The invoice as a document, matching what the PDF prints. */
+.invoice-doc { display: flex; flex-direction: column; }
+.invoice-rule { height: 1px; margin: 22px 0; background: var(--line); }
+/* An invoice number is one token: breaking "INV-2026-017" across two lines
+   made it read as two different numbers. */
+.invoice-number { display: block; margin: 3px 0 2px; font-size: 15px; white-space: nowrap; }
+.invoice-items { margin-top: 20px; }
+.invoice-items-head { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 9px; border-bottom: 1px solid var(--line); }
+.invoice-item { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; padding: 15px 0; }
+.invoice-item p { margin: 0; min-width: 0; color: var(--text-2); overflow-wrap: anywhere; }
+.invoice-item span { flex: none; font-variant-numeric: tabular-nums; }
+.invoice-total { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-top: 15px; border-top: 2px solid var(--line-2); }
+.invoice-due { margin: 10px 0 0; }
+@media (max-width: 480px) {
+  .invoice-head { gap: 14px; }
+  .invoice-title { font-size: 21px; }
+  .invoice-amount { font-size: 28px; }
+}
 .pay-layout .card { padding: 28px; }
 .pay-panel { display: flex; flex-direction: column; gap: 14px; padding: 24px; }
 .pay-status { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 6px; font-weight: 800; font-size: 13px; }
