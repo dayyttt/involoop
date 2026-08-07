@@ -17,13 +17,18 @@ export function paypalConfigured(): boolean {
   return !!(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
 }
 
-// PayPal settles in a fixed list of currencies, and IDR is not one of them.
-// This is not a limitation we can code around: an IDR invoice simply cannot be
-// charged through PayPal, so the invoice page offers manual transfer instead.
+// PayPal settles in a fixed list of currencies, and two of the eight Involoop
+// bills in are not on it: IDR and MYR. Both are rejected at order creation with
+// CURRENCY_NOT_SUPPORTED, so those invoices offer bank transfer instead.
+//
+// This list is not copied from documentation — every entry was created as a
+// real sandbox order and every rejection observed. MYR in particular reads as
+// supported in older PayPal docs and is not, which is worth knowing because it
+// is the currency a Malaysian freelancer will reach for.
+//
 // (Every currency below takes two decimals at PayPal; the zero-decimal ones in
 // its docs — JPY, HUF, TWD — are not currencies Involoop bills in.)
 export const PAYPAL_CURRENCIES = new Set([
-  "MYR",
   "SGD",
   "THB",
   "PHP",

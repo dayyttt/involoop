@@ -226,9 +226,12 @@ draw from the plan quota instead of free credits.
 ## Known limitations
 
 - PayPal runs in sandbox; no real money is charged.
-- PayPal does not settle in IDR. Rupiah invoices therefore offer bank transfer
-  confirmation only — the Pay button is hidden rather than shown and then
-  failing. The other seven currencies go through PayPal.
+- PayPal does not settle in IDR or MYR — both are rejected at order creation
+  with CURRENCY_NOT_SUPPORTED, verified against the sandbox rather than taken
+  from documentation (older PayPal docs still list MYR). Invoices in those two
+  currencies offer bank transfer confirmation only: the Pay button is hidden
+  rather than shown and then failing. SGD, THB, PHP, USD, EUR and GBP go
+  through PayPal.
 - Paid plans are buyable (PayPal sandbox); Pro is a one-time 30-day grant, not
   a recurring subscription.
 - Direct payee routing is used rather than a marketplace onboarding flow, which
