@@ -84,6 +84,10 @@ export default function Dashboard() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [copiedRef, setCopiedRef] = useState(false);
   const [upgradePlan, setUpgradePlan] = useState<UpgradePlan | null>(null);
+  // Remembered separately from the modal: closing the modal must not erase the
+  // fact that a plan was chosen, or someone who came to buy Pro is left staring
+  // at a free-tier dashboard wondering whether it went through.
+  const [pendingPlan, setPendingPlan] = useState<UpgradePlan | null>(null);
   const [upgraded, setUpgraded] = useState(false);
   const [filter, setFilter] = useState<"all" | "unpaid" | "awaiting" | "paid">("all");
   const [tab, setTab] = useState<"overview" | "invoices" | "loop">("overview");
@@ -141,6 +145,7 @@ export default function Dashboard() {
     const wanted = new URLSearchParams(window.location.search).get("upgrade");
     if (wanted !== "starter" && wanted !== "pro") return;
     setUpgradePlan(wanted);
+    setPendingPlan(wanted);
     // Consume it. Left in the URL, a refresh after paying would reopen the
     // payment modal for a plan the account already has.
     const url = new URL(window.location.href);
@@ -526,6 +531,30 @@ export default function Dashboard() {
       <main className="dash-shell">
         {error && <p className="error">{error}</p>}
         {upgraded && <div className="success-panel" style={{ marginBottom: 12 }}>{t("dashboard.upgraded")}</div>}
+        {/* Says plainly where the purchase stands. A layperson who closed the
+            payment window has no other way to tell whether their upgrade
+            happened. */}
+        {pendingPlan && !profile.plan_active && (
+          <div className="setup-banner pending-plan">
+            <div>
+              <strong>
+                {t("dashboard.pendingPlanTitle", {
+                  plan: pendingPlan === "pro" ? "Pro" : "Starter",
+                })}
+              </strong>
+              <p>{t("dashboard.pendingPlanBody")}</p>
+            </div>
+            <div className="side" style={{ gap: 8 }}>
+              <button className="btn btn-primary" onClick={() => setUpgradePlan(pendingPlan)}>
+                {t("dashboard.pendingPlanCta")}
+              </button>
+              <button className="btn btn-ghost" onClick={() => setPendingPlan(null)}>
+                {t("dashboard.pendingPlanDismiss")}
+              </button>
+            </div>
+          </div>
+        )}
+
         {attentionStrip}
         {!paypalReady && (
           <div className="setup-banner">
@@ -833,8 +862,9 @@ export default function Dashboard() {
         plan={upgradePlan}
         lang={lang}
         onClose={() => setUpgradePlan(null)}
-        onPaid={(plan) => {
+        onPaid={() => {
           setUpgradePlan(null);
+          setPendingPlan(null);
           setUpgraded(true);
           load();
         }}

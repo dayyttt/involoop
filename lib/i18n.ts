@@ -515,6 +515,13 @@ export const app = {
     planPlusCredits: ["Plus {n} referral credits, kept for when your plan ends.", "Plus {n} kredit referral, disimpan untuk saat paketmu habis."] as T,
     planEnded: ["Your paid period has ended. You are back on referral credits.", "Masa berbayarmu sudah berakhir. Kamu kembali memakai kredit referral."] as T,
     planGet: ["Get", "Ambil"] as T,
+    pendingPlanTitle: ["You chose {plan} — not paid yet", "Kamu memilih {plan} — belum dibayar"] as T,
+    pendingPlanBody: [
+      "Your account is still running on free credits. Finish the payment and the invoices are added straight away.",
+      "Akunmu masih memakai kredit gratis. Selesaikan pembayaran dan kuota invoice langsung ditambahkan.",
+    ] as T,
+    pendingPlanCta: ["Finish payment", "Selesaikan pembayaran"] as T,
+    pendingPlanDismiss: ["Not now", "Nanti saja"] as T,
     upgradeTitle: ["Upgrade plan", "Naikkan paket"] as T,
     upgradePrice: ["One-time payment", "Bayar sekali"] as T,
     upgradeIncludes: ["Includes {n} public invoices", "Termasuk {n} invoice publik"] as T,

@@ -114,7 +114,14 @@ export default function SignupForm({
     if (ref) {
       document.cookie = `${REF_COOKIE}=${ref}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
     }
-    if (next) {
+    // A plan chosen before signing in has to survive the trip to Google too.
+    // It used to be dropped here: someone clicked Upgrade Pro, continued with
+    // Google, and landed in the invoice creator — no plan, no payment, no
+    // mention that a choice had been made. It rides in the same cookie as the
+    // destination, because to the callback that is exactly what it is.
+    if (plan) {
+      document.cookie = `oauth_next=${encodeURIComponent(`/dashboard?upgrade=${plan}`)}; path=/; max-age=600; SameSite=Lax`;
+    } else if (next) {
       document.cookie = `oauth_next=${encodeURIComponent(next)}; path=/; max-age=600; SameSite=Lax`;
     }
     const { error: oauthError } = await supabase.auth.signInWithOAuth({

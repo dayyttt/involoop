@@ -62,7 +62,14 @@ export default function LoginForm({
     // on the floor. `next` cannot ride along in redirectTo — Supabase matches
     // that URL against its allow list — so it travels in a cookie, the same
     // way referral attribution already survives the trip to Google.
-    if (next) {
+    // A plan chosen before signing in has to survive the trip to Google too.
+    // It used to be dropped here: someone clicked Upgrade Pro, continued with
+    // Google, and landed in the invoice creator — no plan, no payment, no
+    // mention that a choice had been made. It rides in the same cookie as the
+    // destination, because to the callback that is exactly what it is.
+    if (plan) {
+      document.cookie = `oauth_next=${encodeURIComponent(`/dashboard?upgrade=${plan}`)}; path=/; max-age=600; SameSite=Lax`;
+    } else if (next) {
       document.cookie = `oauth_next=${encodeURIComponent(next)}; path=/; max-age=600; SameSite=Lax`;
     }
     const { error: oauthError } = await supabase.auth.signInWithOAuth({

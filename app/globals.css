@@ -1311,3 +1311,8 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 /* Actions on the payment result page: the receipt first, then the invoice. */
 .success-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
 .success-actions .btn { min-height: 40px; }
+
+/* The upgrade someone started and has not finished. Warm rather than alarming:
+   nothing is wrong, it is simply unfinished. */
+.pending-plan { border-color: rgba(244,189,85,.35); background: var(--warn-soft); }
+.pending-plan strong { color: var(--warn); }
