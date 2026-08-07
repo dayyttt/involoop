@@ -53,7 +53,12 @@ export async function middleware(request: NextRequest) {
     const login = new URL("/login", request.url);
     // Carry the destination so signing in returns them to what they wanted,
     // rather than dropping everyone on the dashboard.
-    login.searchParams.set("next", request.nextUrl.pathname);
+    //
+    // Including the query string, not just the path. /dashboard?upgrade=pro
+    // used to arrive as /dashboard, so someone who picked a plan before they
+    // had an account signed in and landed on a dashboard with no payment
+    // waiting — the plan they chose was thrown away by this line.
+    login.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(login);
   }
 
