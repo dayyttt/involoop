@@ -134,7 +134,9 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 .agency-hero { position: relative; overflow: hidden; min-height: 660px; display: flex; align-items: flex-start; padding-top: 80px; }
 .neon-landscape { position: absolute; inset: 0; z-index: 0; }
 .neon-landscape canvas { display: block; width: 100% !important; height: 100% !important; }
-.hero-shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(12,8,14,.96) 0%, rgba(12,8,14,.8) 46%, rgba(12,8,14,.25) 84%), linear-gradient(0deg, var(--bg) 0%, transparent 34%); }
+/* Keeps the headline readable over the particle field while letting more of it
+   through on the right, where the field is the point. */
+.hero-shade { position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(12,8,14,.92) 0%, rgba(12,8,14,.66) 42%, rgba(12,8,14,.06) 80%), linear-gradient(0deg, var(--bg) 0%, transparent 26%); }
 /* align-items: start, not center: if the copy column ever changes height, a
    centred grid would slide the demo card up and down with it. */
 .agency-hero-inner { position: relative; z-index: 2; padding: 76px 0 104px; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: start; }
