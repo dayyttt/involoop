@@ -706,6 +706,10 @@ export const app = {
       "That card was declined by the bank. Pick another card, or pay with your PayPal balance.",
       "Kartu itu ditolak bank. Pilih kartu lain, atau bayar pakai saldo PayPal.",
     ] as T,
+    payPending: [
+      "PayPal accepted the order but has not confirmed the payment yet. Do not pay twice — refresh this page in a moment to see the result.",
+      "PayPal menerima order tapi belum mengonfirmasi pembayarannya. Jangan bayar dua kali — muat ulang halaman ini sebentar lagi untuk melihat hasilnya.",
+    ] as T,
     payLoading: ["Loading secure payment…", "Memuat pembayaran aman…"] as T,
     payUnavailable: [
       "Payment buttons could not load. Refresh the page, or use the bank transfer option below.",
@@ -758,6 +762,19 @@ export const app = {
     successful: ["Payment successful ✓", "Pembayaran berhasil ✓"] as T,
     invoiceLabel: ["Invoice", "Invoice"] as T,
     verifiedBy: ["Payment verified by PayPal", "Pembayaran diverifikasi oleh PayPal"] as T,
+    pendingTitle: ["Payment not confirmed yet", "Pembayaran belum dikonfirmasi"] as T,
+    pendingBody: [
+      "PayPal has the order but has not confirmed that the money moved. Nothing has been charged twice. Refresh in a moment, or open the invoice again to finish paying.",
+      "PayPal sudah menerima order tapi belum mengonfirmasi uangnya berpindah. Tidak ada yang tertagih dua kali. Muat ulang sebentar lagi, atau buka invoice-nya lagi untuk menyelesaikan pembayaran.",
+    ] as T,
+    failedTitle: ["Payment did not go through", "Pembayaran tidak berhasil"] as T,
+    failedBody: [
+      "The payment was not completed, and nothing was charged. Open the invoice to try another card or your PayPal balance.",
+      "Pembayaran tidak selesai dan tidak ada yang tertagih. Buka invoice-nya untuk mencoba kartu lain atau saldo PayPal.",
+    ] as T,
+    openInvoice: ["Open the invoice", "Buka invoice"] as T,
+    downloadPdf: ["Download PDF receipt", "Unduh bukti PDF"] as T,
+    refresh: ["Refresh", "Muat ulang"] as T,
     transactionId: ["Transaction ID:", "ID Transaksi:"] as T,
     paidAt: ["Paid at:", "Dibayar pada:"] as T,
     referralHeading: ["Create your own invoice, get free credits", "Buat invoice-mu sendiri, dapatkan kredit gratis"] as T,

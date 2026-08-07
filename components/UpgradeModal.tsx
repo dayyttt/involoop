@@ -129,6 +129,7 @@ export default function UpgradeModal({
                 labelLoading={t("invoice.payLoading")}
                 labelUnavailable={t("invoice.payUnavailable")}
                 labelDeclined={t("invoice.payDeclined")}
+                labelPending={t("invoice.payPending")}
               />
 
               {error && <p className="error" style={{ margin: 0 }}>{error}</p>}

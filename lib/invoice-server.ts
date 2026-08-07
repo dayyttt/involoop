@@ -13,6 +13,7 @@ export interface PublicInvoice {
   cta_message: string | null;
   due_date: string | null;
   created_at: string;
+  paid_at: string | null;
   sender_name: string;
   paypal_enabled: boolean;
 }
@@ -27,7 +28,7 @@ export const getPublicInvoice = cache(async (publicId: string): Promise<PublicIn
   const { data, error } = await supabase
     .from("invoices")
     .select(
-      "public_id, number, client_name, description, amount, currency, status, due_date, cta_message, created_at, owner:profiles(full_name)"
+      "public_id, number, client_name, description, amount, currency, status, due_date, cta_message, created_at, paid_at, owner:profiles(full_name)"
     )
     .eq("public_id", publicId)
     .single();
@@ -46,6 +47,7 @@ export const getPublicInvoice = cache(async (publicId: string): Promise<PublicIn
     cta_message: data.cta_message,
     due_date: data.due_date,
     created_at: data.created_at,
+    paid_at: data.paid_at,
     sender_name: owner?.full_name ?? "Freelancer",
     // PayPal cannot settle every currency Involoop bills in — rupiah above all —
     // so the button only appears when this specific invoice could actually be

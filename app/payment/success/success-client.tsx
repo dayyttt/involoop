@@ -38,6 +38,14 @@ export default function PaymentSuccess({ sessionId }: { sessionId: string | null
 
   if (loading) return <main className="centered">{t("common.loading")}</main>;
 
+  // A payments row exists from the moment an order is created, long before any
+  // money moves. This page used to render "Payment successful" for any row it
+  // found, which meant an approved-but-uncaptured order — a declined card, a
+  // capture that never completed — was reported to the payer as done.
+  const status = data?.payment.status;
+  const paid = status === "succeeded";
+  const pending = status === "created" || status === "processing";
+
   return (
     <>
       <nav className="nav">
@@ -55,6 +63,29 @@ export default function PaymentSuccess({ sessionId }: { sessionId: string | null
               <Link href="/" className="btn btn-primary" style={{ marginTop: 16 }}>
                 {t("success.back")}
               </Link>
+            </>
+          ) : !paid ? (
+            <>
+              <div className={pending ? "pay-status pay-status-warn" : "pay-status pay-status-open"}>
+                {pending ? t("success.pendingTitle") : t("success.failedTitle")}
+              </div>
+              <h1 className="invoice-title money" style={{ marginTop: 18 }}>
+                {formatMoney(data!.payment.amount_minor, data!.payment.currency, lang === "id" ? "id-ID" : "en-US", true)}
+              </h1>
+              <p className="muted">{t("success.invoiceLabel")} {data!.invoice.number} · {data!.invoice.client_name}</p>
+              <p className="hint" style={{ margin: "12px auto 0", maxWidth: 380 }}>
+                {pending ? t("success.pendingBody") : t("success.failedBody")}
+              </p>
+              <div className="success-actions">
+                <Link href={`/invoice/${data!.invoice.public_id}`} className="btn btn-primary">
+                  {t("success.openInvoice")}
+                </Link>
+                {pending && (
+                  <button type="button" className="btn btn-ghost" onClick={() => window.location.reload()}>
+                    {t("success.refresh")}
+                  </button>
+                )}
+              </div>
             </>
           ) : (
             <>
@@ -78,6 +109,21 @@ export default function PaymentSuccess({ sessionId }: { sessionId: string | null
                   </>
                 )}
               </p>
+
+              {/* The moment a client is most likely to want the document:
+                  right after paying, for their own records. */}
+              <div className="success-actions">
+                <a
+                  className="btn btn-primary"
+                  href={`/invoice/${data!.invoice.public_id}/pdf?lang=${lang}`}
+                  download
+                >
+                  ↓ {t("success.downloadPdf")}
+                </a>
+                <Link href={`/invoice/${data!.invoice.public_id}`} className="btn btn-ghost">
+                  {t("success.openInvoice")}
+                </Link>
+              </div>
 
               <div className="referral-box">
                 <h3 className="referral-heading">{t("success.referralHeading")}</h3>

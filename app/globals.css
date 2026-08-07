@@ -1307,3 +1307,7 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
   background: var(--success-soft);
   color: var(--text-2); font-size: 13px; line-height: 1.6;
 }
+
+/* Actions on the payment result page: the receipt first, then the invoice. */
+.success-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 20px; }
+.success-actions .btn { min-height: 40px; }

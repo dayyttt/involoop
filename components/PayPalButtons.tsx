@@ -74,6 +74,7 @@ export default function PayPalButtons({
   labelLoading,
   labelUnavailable,
   labelDeclined,
+  labelPending,
   disabled,
 }: {
   currency: string;
@@ -88,6 +89,8 @@ export default function PayPalButtons({
   labelUnavailable: string;
   /** Shown when a card is declined and the buyer is sent back to choose again. */
   labelDeclined: string;
+  /** Shown when PayPal accepted the order but the capture has not completed. */
+  labelPending: string;
   disabled?: boolean;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -103,6 +106,7 @@ export default function PayPalButtons({
     setState("loading");
     const locale = lang === "id" ? "id_ID" : "en_US";
     const declinedLabel = labelDeclined;
+    const pendingLabel = labelPending;
 
     loadSdk(currency, locale)
       .then((paypal) => {
@@ -130,6 +134,14 @@ export default function PayPalButtons({
               }
               if (!res.ok) {
                 handlers.current.onError(body.error ?? "Payment could not be completed.");
+                return;
+              }
+              // A 200 only means the request worked. PayPal can accept an order
+              // without the capture completing, and treating that as paid is how
+              // someone ends up reading "Payment successful" over money that
+              // never moved.
+              if (body.paid !== true) {
+                handlers.current.onError(pendingLabel);
                 return;
               }
               await handlers.current.onApproved(data.orderID);

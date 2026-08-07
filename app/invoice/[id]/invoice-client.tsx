@@ -204,6 +204,7 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                         labelLoading={t("invoice.payLoading")}
                         labelUnavailable={t("invoice.payUnavailable")}
                         labelDeclined={t("invoice.payDeclined")}
+                        labelPending={t("invoice.payPending")}
                         disabled={submitting}
                       />
                       <p className="hint" style={{ textAlign: "center", margin: 0 }}>

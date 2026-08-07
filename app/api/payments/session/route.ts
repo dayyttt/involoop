@@ -29,6 +29,8 @@ export async function GET(req: NextRequest) {
   const invoice = Array.isArray(payment.invoice) ? payment.invoice[0] : payment.invoice;
 
   return NextResponse.json({
+    // `status` here is the whole point: a payment row exists from the moment an
+    // order is created, long before any money moves.
     payment: {
       provider_session_id: payment.provider_session_id,
       provider_payment_id: payment.provider_payment_id,
