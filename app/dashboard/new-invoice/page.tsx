@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase-browser";
 import { formatMoney } from "@/lib/money";
 import { appText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
 import LangToggle from "@/components/LangToggle";
+import { takeDraft } from "@/lib/draft";
 
 const SAMPLE = "Tagih PT Kreatif Digital Rp2.500.000 untuk pengembangan landing page, jatuh tempo 12 Agustus 2026.";
 
@@ -53,6 +54,34 @@ export default function NewInvoice() {
   const [source, setSource] = useState<"ai" | "manual" | null>(null);
   const [copied, setCopied] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [credits, setCredits] = useState<number | null>(null);
+
+  // Pick up the sentence written in the landing-page demo, if there was one.
+  useEffect(() => {
+    const draft = takeDraft();
+    if (draft) {
+      setRawText(draft);
+      setDraftLoaded(true);
+    }
+  }, []);
+
+  // Publishing spends a credit, so the balance belongs on this screen rather
+  // than only on the dashboard the user just skipped past.
+  useEffect(() => {
+    fetch("/api/dashboard")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.profile) setCredits(data.profile.free_invoice_credits);
+      })
+      .catch(() => {});
+  }, [result]);
+
+  function onSentenceKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && rawText.trim() && !loading) {
+      handleAI(e as unknown as React.FormEvent);
+    }
+  }
 
   function setField<K extends keyof FormState>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -200,6 +229,11 @@ export default function NewInvoice() {
                 {t("common.viewDashboard")}
               </Link>
             </div>
+            <ol className="next-steps">
+              <li>{t("newInvoice.next1")}</li>
+              <li>{t("newInvoice.next2")}</li>
+              <li>{t("newInvoice.next3")}</li>
+            </ol>
           </div>
         ) : (
           <>
@@ -212,6 +246,7 @@ export default function NewInvoice() {
 
             {!showForm && (
               <div className="card-panel">
+                {draftLoaded && <p className="note-box">{t("newInvoice.draftLoaded")}</p>}
                 <form onSubmit={handleAI} style={{ display: "flex", flexDirection: "column" }}>
                   <div className="field">
                     <label htmlFor="billing-sentence">{t("newInvoice.sentenceLabel")}</label>
@@ -220,6 +255,7 @@ export default function NewInvoice() {
                       className="input"
                       value={rawText}
                       onChange={(e) => setRawText(e.target.value)}
+                      onKeyDown={onSentenceKeyDown}
                       placeholder={t("newInvoice.sentencePlaceholder")}
                       rows={3}
                     />
@@ -252,6 +288,9 @@ export default function NewInvoice() {
                       t("newInvoice.createWithAI")
                     )}
                   </button>
+                  <p className="hint form-foot">
+                    {loading ? t("newInvoice.composingHint") : t("newInvoice.keyboardHint")}
+                  </p>
                 </form>
                 <button
                   type="button"
@@ -269,6 +308,13 @@ export default function NewInvoice() {
             {showForm && (
               <div className="app-grid">
                 <div className="card-panel">
+                  <button
+                    type="button"
+                    className="link-btn back-step"
+                    onClick={() => { setShowForm(false); setError(null); }}
+                  >
+                    {t("newInvoice.backToSentence")}
+                  </button>
                   {source === "ai" ? (
                     <p className="hint" style={{ marginBottom: 14 }}>
                       {t("newInvoice.aiResultHint")}
@@ -356,6 +402,10 @@ export default function NewInvoice() {
                     >
                       {loading ? t("newInvoice.publishing") : t("newInvoice.publish")}
                     </button>
+                    <p className="hint">
+                      {t("newInvoice.creditCost")}{" "}
+                      {credits !== null && appText(lang, "newInvoice.creditsLeft", { n: String(credits) })}
+                    </p>
                   </form>
                 </div>
 

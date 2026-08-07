@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { formatMoney, formatDate } from "@/lib/money";
 import { landingText } from "@/lib/i18n";
 import { useLang } from "@/components/LangProvider";
+import { saveDraft } from "@/lib/draft";
 
 interface Parsed {
   client_name: string;
@@ -85,6 +86,16 @@ export default function TryDemo() {
     setText("");
   }
 
+  // Handed to /dashboard/new-invoice after signup so the first real invoice
+  // starts from the sentence the visitor already wrote here.
+  function keepDraft() {
+    saveDraft(text);
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") run(e as unknown as React.FormEvent);
+  }
+
   return (
     <div className="try-demo card">
       <h2 className="try-demo-title">{t("demo.title")}</h2>
@@ -120,13 +131,18 @@ export default function TryDemo() {
             )}
           </div>
           <motion.div className="try-demo-actions" {...line(5)}>
-            <Link href="/signup" className="btn btn-primary">
+            {/* The sentence goes with them. Without this the visitor writes it
+                here, signs up, and is handed an empty box to type it again. */}
+            <Link href="/signup" className="btn btn-primary" onClick={keepDraft}>
               {t("demo.publish")}
             </Link>
             <button type="button" className="btn btn-ghost" onClick={reset}>
               {t("demo.again")}
             </button>
           </motion.div>
+          <motion.p className="hint try-demo-keep" {...line(6)}>
+            {t("demo.keepHint")}
+          </motion.p>
         </div>
       ) : (
         <form onSubmit={run}>
@@ -140,6 +156,7 @@ export default function TryDemo() {
             maxLength={220}
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={onKeyDown}
             placeholder={t("demo.placeholder")}
           />
           <div className="try-demo-examples">

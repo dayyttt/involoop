@@ -95,7 +95,9 @@ export default function SignupForm({ refInvoice, plan }: { refInvoice: string | 
       }
     }
 
-    router.push("/dashboard");
+    // Someone who just created an account came to send an invoice, not to read
+    // a dashboard of zeroes. Drop them straight into the creator.
+    router.push("/dashboard/new-invoice");
   }
 
   async function handleOAuth() {

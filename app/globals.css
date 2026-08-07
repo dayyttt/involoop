@@ -513,6 +513,18 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 .step-done .step-dot { border-color: var(--success); color: var(--success); }
 .step-arrow { color: var(--line-2); }
 
+/* ---- Creator flow helpers ---- */
+.form-foot { margin: 10px 0 0; text-align: center; }
+.back-step { margin-bottom: 14px; color: var(--text-2); font-size: 12px; font-weight: 700; text-decoration: none; }
+.back-step:hover { color: var(--primary); }
+/* Publishing ends on a screen that says what the client will do next, so the
+   flow does not stop at "here is a link, good luck". */
+.next-steps { max-width: 460px; margin: 24px auto 0; padding: 18px 20px 18px 38px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,255,255,.02); text-align: left; }
+.next-steps li { margin: 0 0 8px; color: var(--text-2); font-size: 13px; line-height: 1.6; }
+.next-steps li:last-child { margin-bottom: 0; }
+.next-steps li::marker { color: var(--primary); font-weight: 800; }
+.try-demo-keep { margin: 4px 0 0; font-size: 12px; }
+
 /* ---- Sample chips ---- */
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .chip { padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,.03); color: var(--text-2); font: 600 11.5px var(--font-jakarta), sans-serif; cursor: pointer; transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease); }

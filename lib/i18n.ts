@@ -66,6 +66,10 @@ export const landing = {
     due: ["Due", "Jatuh tempo"] as Pair,
     ctaLine: ["Referral line written for this job:", "Ajakan yang ditulis untuk pekerjaan ini:"] as Pair,
     publish: ["Publish this invoice free →", "Terbitkan invoice ini gratis →"] as Pair,
+    keepHint: [
+      "We keep this sentence, so you never type it twice.",
+      "Kalimat ini kami simpan, jadi kamu tidak perlu mengetik dua kali.",
+    ] as Pair,
     again: ["Try another sentence", "Coba kalimat lain"] as Pair,
     failed: [
       "Could not read that sentence. Try mentioning who, what, and how much.",
@@ -447,6 +451,35 @@ export const app = {
       "contoh: tagih Rina 2 juta buat desain logo, jatuh tempo 2 minggu",
     ] as T,
     useSample: ["Try one of these:", "Coba salah satu:"] as T,
+    draftLoaded: [
+      "We brought over the sentence you tried on the home page — edit it or send it as is.",
+      "Kalimat yang tadi kamu coba di beranda sudah kami bawa ke sini — boleh diubah atau langsung dipakai.",
+    ] as T,
+    keyboardHint: ["Press ⌘/Ctrl + Enter", "Tekan ⌘/Ctrl + Enter"] as T,
+    composingHint: [
+      "Reading who, what, and how much…",
+      "Membaca siapa, jasa apa, dan berapa nominalnya…",
+    ] as T,
+    creditCost: ["Publishing uses 1 credit.", "Menerbitkan memakai 1 kredit."] as T,
+    creditsLeft: ["You have {n} left.", "Kreditmu tersisa {n}."] as T,
+    noCredits: [
+      "You are out of credits. Earn more when a client joins through one of your invoices, or add a plan.",
+      "Kreditmu habis. Tambah kredit saat klien bergabung lewat invoicemu, atau ambil paket berbayar.",
+    ] as T,
+    backToSentence: ["← Change the sentence", "← Ubah kalimatnya"] as T,
+    nextTitle: ["What happens next", "Setelah ini"] as T,
+    next1: [
+      "Your client opens the link. No account, no app to install.",
+      "Klienmu tinggal buka link. Tanpa akun, tanpa install aplikasi.",
+    ] as T,
+    next2: [
+      "They pay by card, or confirm they sent a transfer.",
+      "Klien bayar pakai kartu, atau konfirmasi sudah transfer.",
+    ] as T,
+    next3: [
+      "You see the status on your dashboard, and earn 3 credits if they sign up.",
+      "Kamu lihat statusnya di dashboard, dan dapat 3 kredit kalau klien ikut mendaftar.",
+    ] as T,
     composing: ["Composing invoice…", "Menyusun invoice…"] as T,
     createWithAI: ["Create invoice with AI", "Buat invoice dengan AI"] as T,
     fillManual: ["Fill manually instead", "Isi manual saja"] as T,
