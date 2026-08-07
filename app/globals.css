@@ -397,8 +397,17 @@ h1, h2, h3 { margin: 0; color: #fff; font-family: var(--font-jakarta), sans-seri
 @media (max-width: 900px) { .trust-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 480px) { .trust-grid { grid-template-columns: 1fr; } }
 
-.final-cta { display: flex; align-items: center; justify-content: space-between; gap: 42px; border-top: 1px solid var(--line); }
-.final-cta p:last-child { color: var(--text-2); }
+.final-cta { display: flex; align-items: center; gap: 32px; border-top: 1px solid var(--line); }
+.final-cta-copy { flex: 1; }
+.final-cta-copy p { color: var(--text-2); margin-bottom: 0; }
+/* The closing image: the wallet turns in its own perspective, with no frame
+   around it — the shader already dissolves its edges into the page. */
+.final-cta-visual { flex: none; width: 220px; height: 165px; perspective: 800px; }
+.payloop { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; will-change: transform; }
+.payloop-poster { width: 100%; height: 100%; object-fit: contain; transition: opacity var(--dur-slow) var(--ease); }
+.payloop-canvas { position: absolute; inset: 0; display: block; width: 100% !important; height: 100% !important; }
+.payloop-shaded .payloop-poster { opacity: 0; }
+@media (max-width: 640px) { .final-cta-visual { width: 160px; height: 120px; } }
 
 /* ---- Pricing ---- */
 .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 44px; }

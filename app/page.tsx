@@ -13,6 +13,7 @@ import LoopFlow from "@/components/LoopFlow";
 import TryDemo from "@/components/TryDemo";
 import PaperScan from "@/components/PaperScan";
 import RewardWeave from "@/components/RewardWeave";
+import PayLoop from "@/components/PayLoop";
 import { createClient } from "@/lib/supabase-browser";
 import { landing, landingText, landingItems } from "@/lib/i18n";
 import { useLang, useSetLang } from "@/components/LangProvider";
@@ -400,7 +401,10 @@ export default function Home() {
       </section>
 
       <AnimatedContent as="section" className="site-shell section-space final-cta">
-        <div>
+        <div className="final-cta-visual">
+          <PayLoop />
+        </div>
+        <div className="final-cta-copy">
           <h2>{t("finalCta.title")}</h2>
           <p>{t("finalCta.sub")}</p>
         </div>
