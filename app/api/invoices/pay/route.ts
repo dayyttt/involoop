@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { isSampleInvoice } from "@/lib/demo-invoice";
 import { apiError } from "@/lib/api-lang";
+import { clientIp, rateLimited } from "@/lib/rate-limit";
 
 // Honest simulated payment flow:
 //   B clicks "Saya sudah transfer" -> status becomes 'awaiting_verification'
@@ -13,6 +14,16 @@ export async function POST(req: NextRequest) {
     const { public_id, lang } = await req.json();
     if (!public_id) {
       return NextResponse.json({ error: "public_id is required" }, { status: 400 });
+    }
+
+    // Anonymous by design — the client has no account — which also means anyone
+    // can move a stranger's invoice into "awaiting verification" and make their
+    // dashboard lie. Cheap to do, annoying to undo, so it is capped.
+    if (rateLimited("pay", clientIp(req), { windowMs: 60_000, max: 10 })) {
+      return NextResponse.json(
+        { error: apiError(lang, "Too many requests.", "Terlalu banyak permintaan.") },
+        { status: 429 }
+      );
     }
 
     if (await isSampleInvoice(public_id)) {

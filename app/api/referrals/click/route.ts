@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { clientIp, rateLimited } from "@/lib/rate-limit";
 
 // Track a referral CTA click on a public invoice (cookie-guarded per visitor).
 // Feeds the dashboard "Referral clicks" distribution metric.
+//
+// The cookie dedupes honest visitors and nothing else — a caller that keeps no
+// cookies counts every time. No credit is minted here, so the cost of forging
+// it is a wrong number on someone's dashboard rather than money; the throttle
+// is priced accordingly.
 export async function POST(req: NextRequest) {
   try {
     const { public_id } = await req.json();
     if (!public_id || typeof public_id !== "string") {
       return NextResponse.json({ error: "public_id is required" }, { status: 400 });
+    }
+
+    if (rateLimited("refclick", clientIp(req), { windowMs: 60_000, max: 30 })) {
+      return NextResponse.json({ error: "Too many requests." }, { status: 429 });
     }
 
     const cookieName = `refclick_${public_id}`;

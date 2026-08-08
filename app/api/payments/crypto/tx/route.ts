@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { clientIp, rateLimited } from "@/lib/rate-limit";
 import {
   address,
   appendTransactionMessageInstruction,
@@ -42,6 +43,12 @@ export async function POST(req: NextRequest) {
   const { reference, payer } = await req.json().catch(() => ({}));
   if (typeof reference !== "string" || typeof payer !== "string") {
     return NextResponse.json({ error: "reference and payer are required" }, { status: 400 });
+  }
+
+  // Every call here costs several RPC round trips, and on mainnet the provider
+  // bills for them. Public by necessity, so capped by address instead of trust.
+  if (rateLimited("tx", clientIp(req), { windowMs: 60_000, max: 20 })) {
+    return NextResponse.json({ error: "Too many requests." }, { status: 429 });
   }
 
   const rpcUrl = process.env.SOLANA_RPC_URL;
