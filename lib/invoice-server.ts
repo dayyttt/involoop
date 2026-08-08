@@ -2,6 +2,7 @@ import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { paypalConfigured, paypalSupportsCurrency } from "@/lib/paypal";
 import { solanaConfigured, solanaNetwork } from "@/lib/solana";
+import { isDemoOwnerEmail } from "@/lib/demo-invoice";
 
 export interface PublicInvoice {
   public_id: string;
@@ -20,6 +21,8 @@ export interface PublicInvoice {
   crypto_enabled: boolean;
   /** Which network USDC will settle on, when crypto is offered. */
   crypto_network: "solana-devnet" | "solana-mainnet" | null;
+  /** The landing page's exhibit. Every method is shown and none of them work. */
+  is_sample: boolean;
 }
 
 // Server-side read of a public invoice. Wrapped in React's cache so a single
@@ -32,7 +35,7 @@ export const getPublicInvoice = cache(async (publicId: string): Promise<PublicIn
   const { data, error } = await supabase
     .from("invoices")
     .select(
-      "public_id, number, client_name, description, amount, currency, status, due_date, cta_message, created_at, paid_at, owner:profiles(full_name, solana_wallet, solana_wallet_verified_at)"
+      "public_id, number, client_name, description, amount, currency, status, due_date, cta_message, created_at, paid_at, owner:profiles(full_name, email, solana_wallet, solana_wallet_verified_at)"
     )
     .eq("public_id", publicId)
     .single();
@@ -74,5 +77,9 @@ export const getPublicInvoice = cache(async (publicId: string): Promise<PublicIn
     crypto_network: cryptoEnabled
       ? (solanaNetwork() as "solana-devnet" | "solana-mainnet")
       : null,
+    // Deliberately not the same as hiding the buttons. Someone deciding whether
+    // to sign up needs to see that clients can pay by card, PayPal or USDC —
+    // that is most of the pitch. What they must not be able to do is pay.
+    is_sample: isDemoOwnerEmail(owner?.email),
   };
 });

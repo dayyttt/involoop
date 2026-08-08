@@ -60,6 +60,11 @@ function respond(
     platform_wallet_missing: ["USDC payment is not enabled here yet.", "Pembayaran USDC belum aktif di sini.", 503],
     invoice_not_found: ["Invoice not found.", "Invoice tidak ditemukan.", 404],
     already_processed: ["This invoice has already been processed.", "Invoice sudah diproses.", 409],
+    sample_invoice: [
+      "This is a sample invoice — payment is disabled. Create your own to accept real payments.",
+      "Ini invoice contoh — pembayaran dimatikan. Buat invoicemu sendiri untuk menerima pembayaran sungguhan.",
+      403,
+    ],
     currency_not_usd: [
       "USDC payment is only available for invoices in USD.",
       "Pembayaran USDC baru tersedia untuk invoice dalam USD.",

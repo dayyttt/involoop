@@ -1,5 +1,6 @@
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { isSampleInvoice } from "@/lib/demo-invoice";
 import {
   buildSolanaPayUrl,
   findSignaturesForReference,

@@ -193,6 +193,30 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                   <span>{t("invoice.unpaid")}</span>
                   <span>{money}</span>
                 </div>
+                {/* The sample invoice the landing page sends strangers to. Every
+                    method stays on screen — seeing that a client can pay by card,
+                    PayPal or USDC is most of the reason to sign up — but nothing
+                    here is wired to money. Shown as a preview rather than hidden,
+                    and inert rather than merely labelled, because a live button
+                    beside the words "this is a demo" is still a live button. */}
+                {invoice.is_sample ? (
+                  <div className="pay-sample">
+                    <div className="pay-sample-note">
+                      <strong>{t("invoice.sampleTitle")}</strong>
+                      <p>{t("invoice.sampleBody")}</p>
+                    </div>
+                    <div className="pay-sample-preview" aria-hidden="true">
+                      <div className="pay-sample-btn is-paypal">Pay with <em>PayPal</em></div>
+                      <div className="pay-sample-btn is-card">Debit or Credit Card</div>
+                      {invoice.crypto_enabled && (
+                        <div className="pay-sample-btn is-usdc">Pay with USDC</div>
+                      )}
+                    </div>
+                    <a href="/signup" className="btn btn-primary btn-mobile-full">
+                      {t("invoice.sampleCta")}
+                    </a>
+                  </div>
+                ) : (
                 <div className="pay-options">
                   {payWith === "usdc" ? (
                     <>
@@ -269,6 +293,7 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                     {submitting ? t("invoice.sending") : t("invoice.confirmTransfer")}
                   </button>
                 </div>
+                )}
                 <span className="test-badge" style={{ margin: 0, textAlign: "center" }}>
                   {t(
                     invoice.crypto_network === "solana-mainnet"

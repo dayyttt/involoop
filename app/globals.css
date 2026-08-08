@@ -1512,3 +1512,37 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 @media (prefers-reduced-motion: reduce) {
   .crypto-sent-spin { animation-duration: 3s; }
 }
+
+/* The sample invoice's payment block: a picture of the real thing.
+   Not focusable, not clickable, and dimmed enough to read as an illustration
+   without hiding what a client would actually be offered. */
+.pay-sample { display: flex; flex-direction: column; gap: 14px; }
+.pay-sample-note {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px dashed color-mix(in srgb, currentColor 25%, transparent);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.pay-sample-note strong { display: block; margin-bottom: 4px; }
+.pay-sample-note p { margin: 0; font-size: 0.9em; opacity: 0.75; line-height: 1.5; }
+.pay-sample-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  opacity: 0.45;
+  filter: saturate(0.5);
+  pointer-events: none;
+  user-select: none;
+}
+.pay-sample-btn {
+  padding: 13px 16px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95em;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+}
+.pay-sample-btn.is-paypal { background: #ffc439; color: #111; border-color: transparent; }
+.pay-sample-btn.is-paypal em { font-style: italic; font-weight: 700; }
+.pay-sample-btn.is-card { background: color-mix(in srgb, currentColor 10%, transparent); }
+.pay-sample-btn.is-usdc { background: color-mix(in srgb, #2775ca 18%, transparent); }

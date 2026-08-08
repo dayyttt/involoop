@@ -762,6 +762,14 @@ export const app = {
     ] as T,
     // Said plainly, because the honest answer to "did it work?" at this moment
     // is "yes, it left — now the network has to agree", and that takes seconds.
+    // The sample invoice. Said as a fact about this page, not a warning about
+    // the product: the methods below are exactly what a real client would get.
+    sampleTitle: ["This is a sample invoice", "Ini invoice contoh"] as T,
+    sampleBody: [
+      "Payment is switched off here so nobody pays by accident. On a real invoice these buttons are live, and the money goes straight to the freelancer.",
+      "Pembayaran dimatikan di sini supaya tidak ada yang terlanjur membayar. Di invoice sungguhan tombol ini aktif, dan uangnya langsung ke freelancer-nya.",
+    ] as T,
+    sampleCta: ["Create your own invoice, free", "Buat invoicemu sendiri, gratis"] as T,
     cryptoSentTitle: ["Payment sent", "Pembayaran terkirim"] as T,
     cryptoSentBody: [
       "Waiting for the network to confirm. This usually takes a few seconds — no need to pay again.",

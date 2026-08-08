@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { isSampleInvoice } from "@/lib/demo-invoice";
 import {
   createOrder,
   approvalUrl,
@@ -46,6 +47,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: apiError(lang, "Invoice not found.", "Invoice tidak ditemukan.") },
         { status: 404 }
+      );
+    }
+    // The landing page's sample. It shows every payment method precisely so a
+    // visitor can see what their clients would get; charging them for the tour
+    // is not part of the pitch.
+    if (await isSampleInvoice(public_id)) {
+      return NextResponse.json(
+        {
+          error: apiError(
+            lang,
+            "This is a sample invoice — payment is disabled. Create your own to accept real payments.",
+            "Ini invoice contoh — pembayaran dimatikan. Buat invoicemu sendiri untuk menerima pembayaran sungguhan."
+          ),
+        },
+        { status: 403 }
       );
     }
     if (invoice.status !== "unpaid" && invoice.status !== "payment_pending") {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { isSampleInvoice } from "@/lib/demo-invoice";
 import { apiError } from "@/lib/api-lang";
 
 // Honest simulated payment flow:
@@ -12,6 +13,19 @@ export async function POST(req: NextRequest) {
     const { public_id, lang } = await req.json();
     if (!public_id) {
       return NextResponse.json({ error: "public_id is required" }, { status: 400 });
+    }
+
+    if (await isSampleInvoice(public_id)) {
+      return NextResponse.json(
+        {
+          error: apiError(
+            lang,
+            "This is a sample invoice — payment is disabled. Create your own to accept real payments.",
+            "Ini invoice contoh — pembayaran dimatikan. Buat invoicemu sendiri untuk menerima pembayaran sungguhan."
+          ),
+        },
+        { status: 403 }
+      );
     }
 
     const supabase = createAdminClient();
