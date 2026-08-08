@@ -35,6 +35,7 @@ export default function UpgradeModal({
   const reduced = useReducedMotion();
   const [error, setError] = useState<string | null>(null);
   const [method, setMethod] = useState<"paypal" | "usdc">("paypal");
+  const [cryptoNetwork, setCryptoNetwork] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocus = useRef<HTMLElement | null>(null);
 
@@ -42,6 +43,7 @@ export default function UpgradeModal({
     if (!plan) return;
     setError(null);
     setMethod("paypal");
+    setCryptoNetwork(null);
     restoreFocus.current = document.activeElement as HTMLElement;
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -165,6 +167,7 @@ export default function UpgradeModal({
                     }}
                     labels={cryptoLabels(lang)}
                     onConfirmed={() => onPaid(plan)}
+                    onNetwork={setCryptoNetwork}
                   />
                   <button type="button" className="link-btn" onClick={() => setMethod("paypal")}>
                     {t("dashboard.payUsdcBack")}
@@ -174,7 +177,13 @@ export default function UpgradeModal({
 
               {error && <p className="error" style={{ margin: 0 }}>{error}</p>}
               <p className="test-badge" style={{ margin: 0, textAlign: "center" }}>
-                {t(method === "usdc" ? "invoice.testBadgeBoth" : "dashboard.sandboxBadge")}
+                {t(
+                  method === "paypal"
+                    ? "dashboard.sandboxBadge"
+                    : cryptoNetwork === "solana-mainnet"
+                      ? "invoice.cryptoLiveBadge"
+                      : "invoice.testBadgeBoth"
+                )}
               </p>
             </div>
           </motion.div>

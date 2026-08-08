@@ -765,6 +765,28 @@ export const app = {
     ] as T,
     cryptoRetry: ["Try again", "Coba lagi"] as T,
     cryptoViewTx: ["View transaction", "Lihat transaksi"] as T,
+    cryptoExpiresIn: ["Expires in {time}", "Kedaluwarsa dalam {time}"] as T,
+    cryptoCheckNow: ["I've sent it — check now", "Sudah kirim — cek sekarang"] as T,
+    cryptoUnderpaid: [
+      "You sent less than the invoice. Involoop settles a payment only when the full amount arrives in a single transfer. Send {amount} USDC in one transaction, or start a new request.",
+      "Kamu mengirim kurang dari tagihan. Involoop hanya mencatat lunas jika jumlah penuh tiba dalam satu transfer. Kirim {amount} USDC dalam satu transaksi, atau mulai permintaan baru.",
+    ] as T,
+    cryptoMismatch: [
+      "A transaction was found, but it does not match this payment request. Start a new request and send the exact amount to the QR shown.",
+      "Transaksi ditemukan, tapi tidak cocok dengan permintaan ini. Mulai permintaan baru dan kirim nominal persis ke QR yang ditampilkan.",
+    ] as T,
+    cryptoNoWallet: [
+      "No wallet detected on this device. Install Phantom, or scan the QR with a phone wallet.",
+      "Wallet tidak terdeteksi di perangkat ini. Pasang Phantom, atau pindai QR dengan wallet HP.",
+    ] as T,
+    cryptoOverpaid: [
+      "Payment confirmed. You sent {sent} USDC; the invoice was {owed}. The extra arrived with it.",
+      "Pembayaran dikonfirmasi. Kamu mengirim {sent} USDC; tagihan {owed}. Kelebihannya ikut terkirim.",
+    ] as T,
+    cryptoLiveBadge: [
+      "Payments are settled on the Solana blockchain.",
+      "Pembayaran diselesaikan di blockchain Solana.",
+    ] as T,
     payDeclined: [
       "That card was declined by the bank. Pick another card, or pay with your PayPal balance.",
       "Kartu itu ditolak bank. Pilih kartu lain, atau bayar pakai saldo PayPal.",

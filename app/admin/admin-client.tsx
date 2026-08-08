@@ -413,6 +413,81 @@ export default function AdminConsole() {
             </section>
 
             <section className="card-panel dash-block">
+              <h2 className="section-title" style={{ marginTop: 0 }}>Crypto requests · on-chain state</h2>
+              <p className="hint" style={{ marginTop: 0 }}>
+                The RPC truth for each Solana request. Status here is what the chain
+                verified, not what the payer claims. A request in verifying with
+                attempts growing is worth a look.
+              </p>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th className="grow">For</th>
+                      <th>Network</th>
+                      <th>Status</th>
+                      <th className="num">USDC</th>
+                      <th>Signature</th>
+                      <th>When</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(ops?.crypto ?? []).map((c: any) => (
+                      <tr key={c.payment_id}>
+                        <td>
+                          <span className="admin-name">
+                            <strong>
+                              {c.invoice_number ?? (c.plan_key ? `plan · ${c.plan_key}` : "— plan —")}
+                            </strong>
+                            {c.status === "confirmed" && <span className="badge badge-paid">confirmed</span>}
+                            {["verifying", "detected"].includes(c.status) && (
+                              <span className="badge badge-unpaid">in flight</span>
+                            )}
+                            {c.status === "expired" && <span className="badge badge-unpaid">expired</span>}
+                          </span>
+                          <span className="admin-sub">{shortRef(c.payment_reference)}</span>
+                          {c.last_error && c.status !== "confirmed" && (
+                            <span className="admin-sub text-warn">{c.last_error}</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className={`badge net-${c.network === "solana-mainnet" ? "mainnet" : "devnet"}`}>
+                            {c.network === "solana-mainnet" ? "mainnet" : "devnet"}
+                          </span>
+                        </td>
+                        <td className={statusTone(c.status)}>{c.status}</td>
+                        <td className="num">{fmtUsdc(c.expected_amount_minor)}</td>
+                        <td>
+                          {c.transaction_signature ? (
+                            <a
+                              href={explorer(c.network, c.transaction_signature)}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              view
+                            </a>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td>{formatDateShort(c.created_at)}</td>
+                      </tr>
+                    ))}
+                    {(ops?.crypto ?? []).length === 0 && (
+                      <tr>
+                        <td colSpan={6}>
+                          <p className="empty" style={{ padding: 20, textAlign: "center" }}>
+                            No crypto requests yet.
+                          </p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="card-panel dash-block">
               <h2 className="section-title" style={{ marginTop: 0 }}>Webhook events</h2>
               <p className="hint" style={{ marginTop: 0 }}>
                 Where to look first when an invoice says unpaid and the client says otherwise.
@@ -531,4 +606,23 @@ function Row({ k, v, tone }: { k: string; v: number; tone?: "warn" }) {
       <strong className={tone === "warn" ? "text-warn" : ""}>{v}</strong>
     </div>
   );
+}
+
+function shortRef(ref: string): string {
+  return ref ? `${ref.slice(0, 14)}…` : "—";
+}
+
+function fmtUsdc(minor: number): string {
+  return `${(Number(minor) / 1e6).toFixed(2)} USDC`;
+}
+
+function statusTone(status: string): string {
+  if (status === "confirmed") return "text-ok";
+  if (["verifying", "detected"].includes(status)) return "text-warn";
+  return "";
+}
+
+function explorer(network: string, signature: string): string {
+  const cluster = network === "solana-mainnet" ? "" : "?cluster=devnet";
+  return `https://explorer.solana.com/tx/${signature}${cluster}`;
 }

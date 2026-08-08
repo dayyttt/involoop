@@ -18,6 +18,7 @@ export interface CryptoRequest {
   url: string;
   qr: string;
   amount: string;
+  amountMinor?: number;
   recipient: string;
   network: string;
   expiresAt: string;
@@ -44,64 +45,120 @@ export interface CryptoLabels {
   expired: string;
   retry: string;
   viewTx: string;
+  expiresIn: string;
+  checkNow: string;
+  underpaid: string;
+  mismatch: string;
+  noWallet: string;
+  overpaid: string;
+}
+
+// Reasons that will never resolve by waiting: the payment was found and does
+// not match this request. Everything else (not_finalized, rpc_unavailable,
+// settlement_failed) is genuinely still in flight and gets retried.
+const TERMINAL_REASONS = new Set([
+  "transaction_failed",
+  "reference_absent",
+  "no_transfer_to_recipient",
+  "wrong_decimals",
+  "transaction_predates_request",
+]);
+
+/** USDC base units to a short decimal string: 5000000 → "5", 5500000 → "5.5". */
+function fmtUsdc(minor: number): string {
+  const value = minor / 1_000_000;
+  if (Number.isInteger(value)) return String(value);
+  return value.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function fmtCountdown(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 export default function CryptoPayPanel({
   create,
   labels,
   onConfirmed,
+  onNetwork,
 }: {
   /** Asks the server to make the request. The amount and recipient come from
       the database; nothing here decides what is owed. */
   create: () => Promise<CryptoRequest>;
   labels: CryptoLabels;
   onConfirmed: (signature: string | null) => void;
+  /** Called once a request exists, so a parent can label its own page
+      truthfully (live vs test) from the same request the panel received. */
+  onNetwork?: (network: string) => void;
 }) {
   const [request, setRequest] = useState<CryptoRequest | null>(null);
   const [stage, setStage] = useState<Stage>("loading");
   const [error, setError] = useState<string | null>(null);
   const [explorer, setExplorer] = useState<string | null>(null);
+  const [overpaid, setOverpaid] = useState<number | null>(null);
+  const [statusReason, setStatusReason] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [now, setNow] = useState<number>(() => Date.now());
+
   const done = useRef(false);
+  const requestRef = useRef<CryptoRequest | null>(null);
+  const stageRef = useRef<Stage>("loading");
+  const pollRef = useRef<() => void>(() => {});
+  requestRef.current = request;
+  stageRef.current = stage;
 
   const start = useCallback(async () => {
     setStage("loading");
     setError(null);
+    setStatusReason(null);
+    setOverpaid(null);
     try {
       const made = await create();
+      requestRef.current = made;
       setRequest(made);
       setStage("awaiting_payment");
+      onNetwork?.(made.network);
     } catch (err: any) {
       setError(err?.message ?? "Could not start the payment.");
       setStage("error");
     }
-  }, [create]);
+  }, [create, onNetwork]);
 
   useEffect(() => {
     start();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Polling is the same server work the webhook triggers, so a payment settles
-  // whether or not a notification ever arrives. Every three seconds is often
-  // enough to feel immediate and rare enough not to hammer the RPC.
+  // A running clock for the countdown. Cheap, and it exists only to show how
+  // long the QR is still good for.
   useEffect(() => {
-    if (!request || done.current) return;
-    if (stage === "confirmed" || stage === "expired" || stage === "error") return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
+  // The poll itself, stored in a ref so the scheduler, the "check now" button
+  // and returning to the tab all trigger the very same code.
+  useEffect(() => {
+    let cancelled = false;
     async function poll() {
+      const req = requestRef.current;
+      if (!req || done.current) return;
+      const current = stageRef.current;
+      if (current === "confirmed" || current === "expired" || current === "error") return;
+
       try {
         const res = await fetch(
-          `/api/payments/crypto/status?reference=${encodeURIComponent(request!.reference)}`
+          `/api/payments/crypto/status?reference=${encodeURIComponent(req.reference)}`
         );
         const body = await res.json();
-        if (done.current) return;
+        if (cancelled || done.current) return;
 
         if (body.status === "confirmed") {
           done.current = true;
           setStage("confirmed");
           setExplorer(body.explorer ?? null);
+          setOverpaid(typeof body.overpaidMinor === "number" ? body.overpaidMinor : null);
           onConfirmed(body.signature ?? null);
           return;
         }
@@ -111,18 +168,60 @@ export default function CryptoPayPanel({
         }
         if (body.status === "detected" || body.status === "verifying") {
           setStage(body.status);
+          setStatusReason(body.reason ?? null);
+          return;
+        }
+        if (body.status === "awaiting_payment") {
+          setStage("awaiting_payment");
+          setStatusReason(null);
         }
       } catch {
         // A failed poll is not a failed payment. Stay quiet and try again.
       }
-      timer.current = setTimeout(poll, 3000);
     }
-
-    timer.current = setTimeout(poll, 2000);
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
+    pollRef.current = () => {
+      if (!cancelled) poll();
     };
-  }, [request, stage, onConfirmed]);
+    return () => {
+      cancelled = true;
+    };
+  }, [onConfirmed]);
+
+  // Polling is the same server work the webhook triggers, so a payment settles
+  // whether or not a notification ever arrives. An immediate first poll, then
+  // every three seconds: often enough to feel immediate, rare enough not to
+  // hammer the RPC.
+  useEffect(() => {
+    if (!request) return;
+    const tick = () => pollRef.current();
+    const first = setTimeout(tick, 1500);
+    const id = setInterval(tick, 3000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(id);
+    };
+  }, [request]);
+
+  // Returning to the tab should settle immediately, not wait for the next beat
+  // of the interval.
+  useEffect(() => {
+    function onVisibility() {
+      if (document.visibilityState === "visible") pollRef.current();
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
+  // Expire locally once the clock passes the deadline — but only while still
+  // waiting. A detected or verifying payment must keep being checked.
+  const secondsLeft = request
+    ? Math.max(0, Math.floor((new Date(request.expiresAt).getTime() - now) / 1000))
+    : 0;
+  useEffect(() => {
+    if (request && stage === "awaiting_payment" && secondsLeft === 0) {
+      setStage("expired");
+    }
+  }, [request, stage, secondsLeft]);
 
   async function copy(value: string, key: string) {
     try {
@@ -153,6 +252,8 @@ export default function CryptoPayPanel({
   }
 
   if (stage === "confirmed") {
+    const owedMinor = request.amountMinor ?? 0;
+    const sentMinor = owedMinor + (overpaid ?? 0);
     return (
       <motion.div
         className="crypto-panel crypto-done"
@@ -160,6 +261,13 @@ export default function CryptoPayPanel({
         animate={{ opacity: 1, y: 0 }}
       >
         <strong>{labels.confirmed}</strong>
+        {overpaid !== null && (
+          <p className="hint" style={{ margin: 0, textAlign: "center" }}>
+            {labels.overpaid
+              .replace("{sent}", fmtUsdc(sentMinor))
+              .replace("{owed}", fmtUsdc(owedMinor))}
+          </p>
+        )}
         {explorer && (
           <a className="link-btn" href={explorer} target="_blank" rel="noreferrer">
             {labels.viewTx}
@@ -179,6 +287,17 @@ export default function CryptoPayPanel({
   }
 
   const isDevnet = request.network.includes("devnet");
+  const hasWallet =
+    typeof window !== "undefined" &&
+    Boolean(
+      (window as any).phantom?.solana ||
+        (window as any).solflare ||
+        (window as any).backpack
+    );
+  const underpaid = (statusReason ?? "").startsWith("underpaid:");
+  const terminalMismatch = statusReason ? TERMINAL_REASONS.has(statusReason) : false;
+  const receivedMinor = underpaid ? Number(statusReason!.slice("underpaid:".length)) : 0;
+  const remainingMinor = Math.max(0, (request.amountMinor ?? 0) - receivedMinor);
 
   return (
     <div className="crypto-panel">
@@ -216,9 +335,25 @@ export default function CryptoPayPanel({
       <a className="btn btn-primary btn-mobile-full" href={request.url}>
         {labels.openWallet}
       </a>
+      {!hasWallet && <p className="hint crypto-note">{labels.noWallet}</p>}
 
       <p className="hint crypto-note">{labels.exactHint}</p>
       <p className="hint crypto-note">{labels.feesHint}</p>
+
+      {/* A dead-end must be named, not hidden behind a spinner: someone who
+          underpaid or sent the wrong thing is stuck until the panel says so. */}
+      {underpaid ? (
+        <p className="error" style={{ margin: 0 }}>
+          {labels.underpaid.replace("{amount}", fmtUsdc(remainingMinor))}
+        </p>
+      ) : terminalMismatch ? (
+        <p className="error" style={{ margin: 0 }}>{labels.mismatch}</p>
+      ) : (
+        <></>
+      )}
+      {(underpaid || terminalMismatch) && (
+        <button className="btn btn-ghost" onClick={start}>{labels.retry}</button>
+      )}
 
       {/* Honest progress. A spinner with no words is how someone concludes the
           payment is stuck and sends it a second time. */}
@@ -228,6 +363,16 @@ export default function CryptoPayPanel({
           {stage === "verifying" ? labels.verifying : labels.detected}
         </span>
       </div>
+
+      {secondsLeft > 0 && (
+        <p className="hint crypto-note">
+          {labels.expiresIn.replace("{time}", fmtCountdown(secondsLeft))}
+        </p>
+      )}
+
+      <button type="button" className="link-btn" onClick={() => pollRef.current()}>
+        {labels.checkNow}
+      </button>
     </div>
   );
 }

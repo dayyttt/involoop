@@ -368,6 +368,8 @@ Pelajaran mahal dari integrasi PayPal, jangan diulang: **isi webhook adalah petu
 
 Kalau webhook tidak tersedia, reconciliation job (Bab 12) tetap harus menemukan pembayaran. Sistem harus benar walaupun webhook tidak pernah datang sama sekali.
 
+**Format payload penyedia (hasil audit):** handler `webhook/solana` membaca `accountKeys` — bentuk yang sama dengan `getTransaction`. Ini dipenuhi oleh **Helius** (webhook raw/enhanced) dan webhook lain yang berbentuk `getTransaction`. **Alchemy `ADDRESS_ACTIVITY` TIDAK cocok** (hanya `fromAddress`/`toAddress`, tanpa `accountKeys`) — webhook Alchemy akan menjadi no-op diam-diam dan sistem hanya andal lewat reconciliation. Uji webhook dengan penyedia yang dipilih sebelum dipakai produksi. Ketika memakai Alchemy, gunakan webhook dengan shape `getTransaction` atau ganti ke Helius.
+
 ---
 
 # 10. FASE 7 — VERIFIKASI SERVER-SIDE

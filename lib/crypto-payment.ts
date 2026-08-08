@@ -294,7 +294,7 @@ export async function checkAndSettle(reference: string): Promise<SettleResult> {
   const { data: request } = await admin
     .from("crypto_payments")
     .select(
-      "id, status, transaction_signature, recipient_wallet, expected_amount_minor, token_mint, payment_reference, expires_at, created_at, network"
+      "id, payment_id, status, transaction_signature, recipient_wallet, expected_amount_minor, token_mint, payment_reference, expires_at, created_at, network"
     )
     .eq("payment_reference", reference)
     .maybeSingle();
@@ -328,6 +328,10 @@ export async function checkAndSettle(reference: string): Promise<SettleResult> {
         .update({ status: "expired", updated_at: new Date().toISOString() })
         .eq("id", request.id)
         .neq("status", "confirmed");
+      // A request that expired with no payment must not leave its invoice
+      // hanging on "Pending" forever. Revert to unpaid — but only if this was
+      // the request's only live attempt, so a freshly re-issued QR stays put.
+      await revertStaleInvoice(admin, request.payment_id);
       return { status: "expired" };
     }
     return { status: "awaiting_payment" };
@@ -402,6 +406,34 @@ async function bumpAttempts(id: string): Promise<number | null> {
   const admin = createAdminClient();
   const { data } = await admin.from("crypto_payments").select("attempts").eq("id", id).maybeSingle();
   return (data?.attempts ?? 0) + 1;
+}
+
+/**
+ * When a request dies unpaid, the invoice it was for must not stay in
+ * "payment_pending" — that reads as "somebody is paying right now" to the
+ * sender, forever. But only if no other live request for the same invoice
+ * exists: a payer who already re-issued a QR is mid-flow, not stalled.
+ */
+async function revertStaleInvoice(admin: ReturnType<typeof createAdminClient>, paymentId: string) {
+  const { data: pay } = await admin
+    .from("payments")
+    .select("id, purpose, invoice_id")
+    .eq("id", paymentId)
+    .maybeSingle();
+  if (!pay || pay.purpose !== "invoice" || !pay.invoice_id) return;
+
+  const { data: otherLive } = await admin
+    .from("crypto_payments")
+    .select("id, payments!inner(invoice_id)")
+    .in("status", ["awaiting_payment", "detected", "verifying"])
+    .eq("payments.invoice_id", pay.invoice_id);
+  if ((otherLive ?? []).length > 0) return;
+
+  await admin
+    .from("invoices")
+    .update({ status: "unpaid" })
+    .eq("id", pay.invoice_id)
+    .eq("status", "payment_pending");
 }
 
 /**

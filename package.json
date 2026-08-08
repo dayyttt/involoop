@@ -21,6 +21,8 @@
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
+    "@solana-program/token": "^0.13.0",
+    "@solana/kit": "^6.10.0",
     "@types/node": "^22.7.5",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.11",

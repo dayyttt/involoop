@@ -25,5 +25,11 @@ export function cryptoLabels(lang: Lang): CryptoLabels {
     expired: t("invoice.cryptoExpired"),
     retry: t("invoice.cryptoRetry"),
     viewTx: t("invoice.cryptoViewTx"),
+    expiresIn: t("invoice.cryptoExpiresIn"),
+    checkNow: t("invoice.cryptoCheckNow"),
+    underpaid: t("invoice.cryptoUnderpaid"),
+    mismatch: t("invoice.cryptoMismatch"),
+    noWallet: t("invoice.cryptoNoWallet"),
+    overpaid: t("invoice.cryptoOverpaid"),
   };
 }

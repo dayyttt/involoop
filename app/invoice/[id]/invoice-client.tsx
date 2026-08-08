@@ -270,7 +270,13 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                   </button>
                 </div>
                 <span className="test-badge" style={{ margin: 0, textAlign: "center" }}>
-                  {t(invoice.crypto_enabled ? "invoice.testBadgeBoth" : "invoice.testBadge")}
+                  {t(
+                    invoice.crypto_network === "solana-mainnet"
+                      ? "invoice.cryptoLiveBadge"
+                      : invoice.crypto_enabled
+                        ? "invoice.testBadgeBoth"
+                        : "invoice.testBadge"
+                  )}
                 </span>
               </>
             )}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
+import { timingSafeEqual, createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { checkAndSettle } from "@/lib/crypto-payment";
 
@@ -55,13 +55,20 @@ export async function POST(req: NextRequest) {
   }
 
   const admin = createAdminClient();
-  const eventId = `solana_${req.headers.get("x-request-id") ?? raw.length}_${Date.now()}`;
-  await admin.from("webhook_events").insert({
-    provider: "solana",
-    provider_event_id: eventId,
-    event_type: "account.activity",
-    status: "received",
-  });
+  // Idempotent event id: derived from the body, so a provider retrying the
+  // exact same webhook is recorded once instead of leaking duplicate rows.
+  const eventId = `solana_${createHash("sha256").update(raw).digest("hex").slice(0, 32)}`;
+  await admin
+    .from("webhook_events")
+    .upsert(
+      {
+        provider: "solana",
+        provider_event_id: eventId,
+        event_type: "account.activity",
+        status: "received",
+      },
+      { onConflict: "provider_event_id", ignoreDuplicates: true }
+    );
 
   // Only references we actually issued. A webhook naming an unknown address is
   // noise, not an instruction.

@@ -1,8 +1,16 @@
 {
-  "regions": ["sin1"],
+  "regions": [
+    "sin1"
+  ],
   "functions": {
     "app/api/**/route.ts": {
       "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/payments/reconcile",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }

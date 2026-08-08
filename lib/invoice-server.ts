@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { paypalConfigured, paypalSupportsCurrency } from "@/lib/paypal";
-import { solanaConfigured } from "@/lib/solana";
+import { solanaConfigured, solanaNetwork } from "@/lib/solana";
 
 export interface PublicInvoice {
   public_id: string;
@@ -18,6 +18,8 @@ export interface PublicInvoice {
   sender_name: string;
   paypal_enabled: boolean;
   crypto_enabled: boolean;
+  /** Which network USDC will settle on, when crypto is offered. */
+  crypto_network: "solana-devnet" | "solana-mainnet" | null;
 }
 
 // Server-side read of a public invoice. Wrapped in React's cache so a single
@@ -38,6 +40,12 @@ export const getPublicInvoice = cache(async (publicId: string): Promise<PublicIn
   if (error || !data) return null;
 
   const owner = Array.isArray(data.owner) ? data.owner[0] : data.owner;
+  const cryptoEnabled =
+    solanaConfigured() &&
+    data.currency === "USD" &&
+    !!owner?.solana_wallet &&
+    !!owner?.solana_wallet_verified_at;
+
   return {
     public_id: data.public_id,
     number: data.number,
@@ -59,10 +67,12 @@ export const getPublicInvoice = cache(async (publicId: string): Promise<PublicIn
     // the platform is configured, the invoice is in USD, and the freelancer has
     // proved they control a wallet. If any is false the option simply is not
     // there — a client should never be shown a payment method that cannot work.
-    crypto_enabled:
-      solanaConfigured() &&
-      data.currency === "USD" &&
-      !!owner?.solana_wallet &&
-      !!owner?.solana_wallet_verified_at,
+    crypto_enabled: cryptoEnabled,
+    // The network is not the client's to choose; it is whatever the platform
+    // is configured for. Exposing it lets the page say "real money" or "test"
+    // truthfully instead of guessing.
+    crypto_network: cryptoEnabled
+      ? (solanaNetwork() as "solana-devnet" | "solana-mainnet")
+      : null,
   };
 });
