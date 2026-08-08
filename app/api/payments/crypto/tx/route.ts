@@ -130,7 +130,12 @@ export async function POST(req: NextRequest) {
 
     const { value: blockhash } = await rpc.getLatestBlockhash().send();
     const message = pipe(
-      createTransactionMessage({ version: 0 }),
+      // Legacy, not v0. Phantom's signAndSendTransaction takes a serialized
+      // MESSAGE, and its parser expects the legacy layout: a v0 message starts
+      // with 0x80, which it reads as "128 signatures follow" and then runs out
+      // of bytes — surfacing as "Reached end of buffer unexpectedly". Nothing
+      // here needs address lookup tables, so legacy costs us nothing.
+      createTransactionMessage({ version: "legacy" }),
       (m) => setTransactionMessageFeePayer(from, m),
       (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
       (m) => instructions.reduce((acc, ix) => appendTransactionMessageInstruction(ix, acc), m)
