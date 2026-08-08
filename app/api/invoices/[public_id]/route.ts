@@ -15,16 +15,27 @@ export const dynamic = "force-dynamic";
 //
 // View tracking happens via POST /api/invoices/view (client-fired, uncached) —
 // NOT here, because the CDN caches GET responses and stalls any counter.
+// Owner-only, despite the public_id in the path. Its only caller is the
+// dashboard's invoice modal, which by definition is looking at its own row —
+// the client-facing page is rendered server-side from getPublicInvoice and
+// never touches this route. Left open it answered anyone, which cost two things:
+// the view count, which is the freelancer's private number, and the owner's
+// Solana address in full. That last one does not stay a payment detail. An
+// address plus a real name is a permanent link to a public ledger, so anyone
+// walking invoice ids could have harvested both together.
 export async function GET(
   _req: NextRequest,
   { params }: { params: { public_id: string } }
 ) {
+  const { user, response } = await requireOwner(undefined);
+  if (!user) return response!;
+
   const supabase = createAdminClient();
 
   const { data: invoice, error } = await supabase
     .from("invoices")
     .select(
-      "public_id, number, client_name, description, amount, currency, amount_minor, status, due_date, cta_message, views, created_at, owner:profiles(full_name, solana_wallet, solana_wallet_verified_at)"
+      "public_id, number, client_name, description, amount, currency, amount_minor, status, due_date, cta_message, views, created_at, owner_id, owner:profiles(full_name, solana_wallet, solana_wallet_verified_at)"
     )
     .eq("public_id", params.public_id)
     .single();
@@ -32,12 +43,20 @@ export async function GET(
   if (error || !invoice) {
     return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
   }
+  // Same answer for "does not exist" and "not yours": a different one would
+  // turn this into an oracle for which invoice ids are real.
+  if (invoice.owner_id !== user.id) {
+    return NextResponse.json({ error: "Invoice not found." }, { status: 404 });
+  }
 
-  const owner = Array.isArray(invoice.owner) ? invoice.owner[0] : invoice.owner;
+  // Pulled out of the row rather than spread with it. The wallet is read here to
+  // answer one yes/no question and must not travel any further than that.
+  const { owner: ownerRel, owner_id: _ownerId, ...row } = invoice as Record<string, any>;
+  const owner = Array.isArray(ownerRel) ? ownerRel[0] : ownerRel;
 
   const res = NextResponse.json({
     invoice: {
-      ...invoice,
+      ...row,
       sender_name: owner?.full_name ?? "Freelancer",
       paypal_enabled: paypalConfigured() && paypalSupportsCurrency(invoice.currency),
       crypto_enabled:
