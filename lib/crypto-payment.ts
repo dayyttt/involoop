@@ -61,6 +61,9 @@ export async function createInvoiceRequest(publicId: string): Promise<CreateResu
     .maybeSingle();
 
   if (!invoice) return { ok: false, reason: "invoice_not_found" };
+  // The sample invoice offers USDC so a visitor can see the option exists.
+  // Actually taking their money for the tour is a different thing entirely.
+  if (await isSampleInvoice(publicId)) return { ok: false, reason: "sample_invoice" };
   if (invoice.status !== "unpaid" && invoice.status !== "payment_pending") {
     return { ok: false, reason: "already_processed" };
   }
