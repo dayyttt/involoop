@@ -142,9 +142,21 @@ export async function POST(req: NextRequest) {
     );
 
     const compiled = compileTransactionMessage(message as never);
-    const bytes = getCompiledTransactionMessageEncoder().encode(compiled);
+    const messageBytes = new Uint8Array(getCompiledTransactionMessageEncoder().encode(compiled));
 
-    return NextResponse.json({ message: b58.encode(new Uint8Array(bytes)) });
+    // A whole transaction, not a bare message: one signature slot left empty
+    // for the wallet to fill, then the message.
+    //
+    // Sending only the message is what produced "Transaction message version
+    // 111 deserialization is not supported". Phantom parsed it as a
+    // transaction: byte 0 became the signature count, the next 64 bytes became
+    // a signature, and byte 65 — 239, high bit set — became a version marker.
+    // 239 & 0x7F is 111. The error named a version nobody had written.
+    const transaction = new Uint8Array(1 + 64 + messageBytes.length);
+    transaction[0] = 1;
+    transaction.set(messageBytes, 65);
+
+    return NextResponse.json({ message: b58.encode(transaction) });
   } catch (err: any) {
     console.error("build crypto tx", err?.message ?? err);
     return NextResponse.json({ error: "Could not build the transaction." }, { status: 500 });
