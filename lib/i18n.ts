@@ -566,6 +566,15 @@ export const app = {
       "Simpan alamat PayPal-mu supaya tiap invoice punya tombol Bayar yang langsung masuk ke kamu. Sebelum itu, klien hanya bisa konfirmasi transfer manual.",
     ] as T,
     setupDone: ["Clients can pay your invoices online.", "Klien sudah bisa membayar invoicemu secara online."] as T,
+    // Deliberately phrased as an extra, not a chore: the invoice already works
+    // without this, and someone who has no interest in crypto should be able to
+    // read one line and correctly decide to ignore it forever.
+    walletSetupTitle: ["Want to get paid in crypto too?", "Mau dibayar pakai crypto juga?"] as T,
+    walletSetupBody: [
+      "Optional. Connect a Solana wallet and your USD invoices gain a USDC option — the client pays your address directly, and Involoop never holds the money. Invoices in other currencies are unaffected.",
+      "Opsional. Hubungkan wallet Solana dan invoice USD-mu dapat opsi USDC — klien membayar langsung ke alamatmu, dan Involoop tidak pernah menahan uangnya. Invoice mata uang lain tidak berubah.",
+    ] as T,
+    walletSetupCta: ["Connect wallet", "Hubungkan wallet"] as T,
     signIn: ["Sign in", "Masuk"] as T,
     signUp: ["Create a free account", "Buat akun gratis"] as T,
   },

@@ -179,7 +179,7 @@ export default function ProfilePage() {
             {/* Where a client's USDC lands. Separate card from the PayPal
                 address because they are separate rails and a freelancer may
                 well want one and not the other. */}
-            <div className="card-panel dash-block">
+            <div className="card-panel dash-block" id="wallet">
               <h2 className="section-title" style={{ marginTop: 0 }}>{t("profile.walletTitle")}</h2>
               <p className="hint" style={{ marginTop: 0 }}>{t("profile.walletHint")}</p>
               <WalletConnect

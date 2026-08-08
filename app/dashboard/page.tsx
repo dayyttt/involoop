@@ -49,6 +49,8 @@ interface DashboardData {
     free_invoice_credits: number;
     referral_code: string;
     paypal_email: string | null;
+    solana_wallet?: string | null;
+    solana_wallet_verified_at?: string | null;
     plan?: string;
     plan_expires_at?: string | null;
     plan_started_at?: string | null;
@@ -331,6 +333,14 @@ export default function Dashboard() {
   const currencies = Object.keys(byCurrency).sort((a, b) => byCurrency[b].billed - byCurrency[a].billed);
   // One saved address is the whole setup: it is where the money goes.
   const paypalReady = !!profile.paypal_email;
+  // A saved address is not a connected wallet. The invoice page gates on the
+  // signature, so the banner does too — anything looser would promise clients a
+  // payment method that never appears.
+  const walletReady = !!profile.solana_wallet && !!profile.solana_wallet_verified_at;
+  // Before p11 the payload has no wallet field at all, and "absent" must not be
+  // read as "not connected" — that would nag the very people who already did it.
+  // No answer means no prompt.
+  const walletKnown = "solana_wallet" in profile;
 
   // Invoices a client says they have paid. This is the one thing on the page
   // that is genuinely waiting on the owner, so it gets said out loud instead of
@@ -590,6 +600,22 @@ export default function Dashboard() {
             </div>
             <Link className="btn btn-primary" href="/dashboard/profile#paypal">
               {t("dashboard.savePaypal")}
+            </Link>
+          </div>
+        )}
+
+        {/* Crypto is opt-in and, until now, invisible: the only way to switch it
+            on lived on a page nobody had a reason to open. Asked once, and only
+            of people already set up for money — the first thing a new user needs
+            is a payout address, not a second one. */}
+        {paypalReady && walletKnown && !walletReady && (
+          <div className="setup-banner">
+            <div>
+              <strong>{t("dashboard.walletSetupTitle")}</strong>
+              <p>{t("dashboard.walletSetupBody")}</p>
+            </div>
+            <Link className="btn btn-ghost" href="/dashboard/profile#wallet">
+              {t("dashboard.walletSetupCta")}
             </Link>
           </div>
         )}

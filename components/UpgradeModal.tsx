@@ -35,6 +35,10 @@ export default function UpgradeModal({
   const reduced = useReducedMotion();
   const [error, setError] = useState<string | null>(null);
   const [method, setMethod] = useState<"paypal" | "usdc">("paypal");
+  // Whether paying a plan in USDC is possible at all. Server-only knowledge —
+  // the platform wallet never reaches the browser — so it is asked for rather
+  // than assumed, and the option stays hidden until the answer is yes.
+  const [cryptoPlan, setCryptoPlan] = useState(false);
   const [cryptoNetwork, setCryptoNetwork] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocus = useRef<HTMLElement | null>(null);
@@ -51,6 +55,11 @@ export default function UpgradeModal({
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
+    fetch("/api/payments/crypto/availability")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setCryptoPlan(!!d?.plan))
+      .catch(() => setCryptoPlan(false));
+
     document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = previous;
@@ -144,6 +153,7 @@ export default function UpgradeModal({
                   {/* Crypto is offered, never pushed. Most people buying an $8
                       plan will pay by card, and making them scroll past a
                       blockchain to do it would be a worse product. */}
+                  {cryptoPlan && (
                   <button type="button" className="crypto-switch" onClick={() => setMethod("usdc")}>
                     <UsdcMark />
                     <span className="crypto-switch-text">
@@ -151,6 +161,7 @@ export default function UpgradeModal({
                       <span className="hint">{t("dashboard.payUsdcSub")}</span>
                     </span>
                   </button>
+                  )}
                 </>
               ) : (
                 <>
