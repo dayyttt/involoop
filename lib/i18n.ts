@@ -756,6 +756,10 @@ export const app = {
     cryptoCopyAddress: ["tap to copy", "ketuk untuk salin"] as T,
     cryptoCopied: ["copied", "tersalin"] as T,
     cryptoScan: ["Scan with a Solana wallet on your phone", "Pindai dengan wallet Solana di HP-mu"] as T,
+    cryptoManualWarn: [
+      "Details for checking only. Pay using the QR or the button below — a transfer sent by hand to this address cannot be matched to this invoice automatically.",
+      "Detail ini untuk dicocokkan saja. Bayarlah lewat QR atau tombol di bawah — transfer yang dikirim manual ke alamat ini tidak bisa dicocokkan otomatis dengan invoice ini.",
+    ] as T,
     cryptoFees: [
       "You need USDC for the amount, plus a little SOL for the network fee. Both on this network.",
       "Kamu butuh USDC untuk nominalnya, plus sedikit SOL untuk biaya jaringan. Keduanya di jaringan ini.",

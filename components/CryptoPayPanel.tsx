@@ -36,6 +36,7 @@ export interface CryptoLabels {
   copyAddress: string;
   copied: string;
   scanHint: string;
+  manualWarn: string;
   feesHint: string;
   exactHint: string;
   waiting: string;
@@ -353,13 +354,10 @@ export default function CryptoPayPanel({
   }
 
   const isDevnet = request.network.includes("devnet");
-  const hasWallet =
-    typeof window !== "undefined" &&
-    Boolean(
-      (window as any).phantom?.solana ||
-        (window as any).solflare ||
-        (window as any).backpack
-    );
+  // The same check that pays, so the button is offered exactly when it works.
+  // Two separate lists drift: this one omitted the generic `window.solana` that
+  // getInjectedWallet accepts, hiding the button from wallets it can drive.
+  const hasWallet = getInjectedWallet() !== null;
   const underpaid = (statusReason ?? "").startsWith("underpaid:");
   const terminalMismatch = statusReason ? TERMINAL_REASONS.has(statusReason) : false;
   const receivedMinor = underpaid ? Number(statusReason!.slice("underpaid:".length)) : 0;
@@ -396,6 +394,12 @@ export default function CryptoPayPanel({
             <span className="hint">{copied === "addr" ? labels.copied : labels.copyAddress}</span>
           </button>
         </div>
+        {/* The honest caveat. Both supported paths quietly attach a reference
+            key, and that key is how Involoop recognises the payment on-chain.
+            An address copied out and sent by hand carries no such key — real
+            money that never marks the invoice paid. These rows are for checking
+            the details match, not for paying. */}
+        <p className="hint crypto-manual-warn">{labels.manualWarn}</p>
       </div>
 
       {hasWallet ? (

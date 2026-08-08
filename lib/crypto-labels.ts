@@ -16,6 +16,7 @@ export function cryptoLabels(lang: Lang): CryptoLabels {
     copyAddress: t("invoice.cryptoCopyAddress"),
     copied: t("invoice.cryptoCopied"),
     scanHint: t("invoice.cryptoScan"),
+    manualWarn: t("invoice.cryptoManualWarn"),
     feesHint: t("invoice.cryptoFees"),
     exactHint: t("invoice.cryptoExact"),
     waiting: t("invoice.cryptoWaiting"),

@@ -1465,3 +1465,19 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 .crypto-switch-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .crypto-switch strong { font-size: 13.5px; }
 .crypto-switch .hint { margin: 0; font-size: 12px; }
+
+/* The one line on the payment panel that saves someone from sending real money
+   into a transfer nobody can match. Amber rather than red: it is a caution
+   about how to pay, not an error that already happened. */
+.crypto-manual-warn {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, #b45309 30%, transparent);
+  background: color-mix(in srgb, #b45309 8%, transparent);
+  color: #92400e;
+  line-height: 1.45;
+}
+@media (prefers-color-scheme: dark) {
+  .crypto-manual-warn { color: #fcd34d; }
+}
