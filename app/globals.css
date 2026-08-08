@@ -1481,3 +1481,34 @@ a.list-item:hover { transform: translateY(var(--lift-card)); border-color: var(-
 @media (prefers-color-scheme: dark) {
   .crypto-manual-warn { color: #fcd34d; }
 }
+
+/* The moment between signing and settling. Loud enough to answer "did that
+   work?" without claiming the payment is done — the chain has not agreed yet. */
+.crypto-sent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #0ea5e9 35%, transparent);
+  background: color-mix(in srgb, #0ea5e9 10%, transparent);
+}
+.crypto-sent strong { display: block; }
+.crypto-sent .hint { display: block; margin-top: 2px; }
+.crypto-sent-spin {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, #0ea5e9 30%, transparent);
+  border-top-color: #0ea5e9;
+  animation: crypto-sent-turn 0.8s linear infinite;
+}
+@keyframes crypto-sent-turn { to { transform: rotate(360deg); } }
+/* Someone who set "reduce motion" gets a steady ring, not a stopped one that
+   reads as frozen. */
+@media (prefers-reduced-motion: reduce) {
+  .crypto-sent-spin { animation-duration: 3s; }
+}

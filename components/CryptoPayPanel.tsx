@@ -32,11 +32,10 @@ export interface CryptoLabels {
   networkLabel: string;
   recipientLabel: string;
   openWallet: string;
-  copyAmount: string;
-  copyAddress: string;
-  copied: string;
   scanHint: string;
   manualWarn: string;
+  sentTitle: string;
+  sentBody: string;
   feesHint: string;
   exactHint: string;
   waiting: string;
@@ -115,10 +114,14 @@ export default function CryptoPayPanel({
   const [explorer, setExplorer] = useState<string | null>(null);
   const [overpaid, setOverpaid] = useState<number | null>(null);
   const [statusReason, setStatusReason] = useState<string | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState<string | null>(null);
+  // The wallet handing back a signature is the one moment we know for certain
+  // that a transaction is in flight. The chain has not confirmed it yet, so it
+  // is not success — but showing nothing here is why a 17-second wait reads as
+  // a broken button and invites a second payment.
+  const [submitted, setSubmitted] = useState<string | null>(null);
 
   const done = useRef(false);
   const requestRef = useRef<CryptoRequest | null>(null);
@@ -214,12 +217,18 @@ export default function CryptoPayPanel({
     if (!request) return;
     const tick = () => pollRef.current();
     const first = setTimeout(tick, 1500);
-    const id = setInterval(tick, 3000);
+    // Devnet put this payment on chain 17 seconds before the poller noticed.
+    // Right after a broadcast the answer is imminent and the person is watching,
+    // so ask more often; settle back to the gentler cadence once it is clearly
+    // not arriving in the next moment.
+    const id = setInterval(tick, submitted ? 1200 : 3000);
     return () => {
       clearTimeout(first);
       clearInterval(id);
     };
-  }, [request]);
+    // `submitted` belongs here: without it the interval keeps the cadence it was
+    // created with, and the faster polling after a broadcast never takes effect.
+  }, [request, submitted]);
 
   // Returning to the tab should settle immediately, not wait for the next beat
   // of the interval.
@@ -287,16 +296,6 @@ export default function CryptoPayPanel({
       }
     } finally {
       setPaying(false);
-    }
-  }
-
-  async function copy(value: string, key: string) {
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(key);
-      setTimeout(() => setCopied(null), 1800);
-    } catch {
-      /* clipboard refused; the value is on screen to read */
     }
   }
 
@@ -379,26 +378,21 @@ export default function CryptoPayPanel({
         </div>
       )}
 
+      {/* Read-only on purpose. Both working paths attach a reference key that is
+          the only way Involoop recognises the payment on-chain, so an address
+          copied out and sent by hand is real money against an invoice that stays
+          unpaid. Warning someone away from a button still leaves the button
+          there; the door is closed instead. What remains is worth seeing —
+          comparing the address is what catches a swapped page. */}
       <div className="crypto-rows">
         <div className="crypto-row">
           <span>{labels.amountLabel}</span>
-          <button type="button" className="crypto-copy" onClick={() => copy(request.amount, "amount")}>
-            <strong>{request.amount} USDC</strong>
-            <span className="hint">{copied === "amount" ? labels.copied : labels.copyAmount}</span>
-          </button>
+          <strong>{request.amount} USDC</strong>
         </div>
         <div className="crypto-row">
           <span>{labels.recipientLabel}</span>
-          <button type="button" className="crypto-copy" onClick={() => copy(request.recipient, "addr")}>
-            <code className="mono">{request.recipient.slice(0, 6)}…{request.recipient.slice(-6)}</code>
-            <span className="hint">{copied === "addr" ? labels.copied : labels.copyAddress}</span>
-          </button>
+          <code className="mono">{request.recipient.slice(0, 6)}…{request.recipient.slice(-6)}</code>
         </div>
-        {/* The honest caveat. Both supported paths quietly attach a reference
-            key, and that key is how Involoop recognises the payment on-chain.
-            An address copied out and sent by hand carries no such key — real
-            money that never marks the invoice paid. These rows are for checking
-            the details match, not for paying. */}
         <p className="hint crypto-manual-warn">{labels.manualWarn}</p>
       </div>
 
@@ -443,11 +437,39 @@ export default function CryptoPayPanel({
         <button className="btn btn-ghost" onClick={start}>{labels.retry}</button>
       )}
 
+      {/* The gap this closes: between signing in the wallet and the chain being
+          read, the panel used to sit on "waiting for payment" — indistinguishable
+          from having done nothing. Seventeen seconds of that is how someone
+          decides the button is broken and pays twice. */}
+      {submitted && stage === "awaiting_payment" && (
+        <div className="crypto-sent" aria-live="polite">
+          <span className="crypto-sent-spin" aria-hidden="true" />
+          <span>
+            <strong>{labels.sentTitle}</strong>
+            <span className="hint">{labels.sentBody}</span>
+          </span>
+        </div>
+      )}
+
       {/* Honest progress. A spinner with no words is how someone concludes the
           payment is stuck and sends it a second time. */}
       <div className="crypto-progress" aria-live="polite">
-        <span className={stage !== "awaiting_payment" ? "is-done" : "is-active"}>{labels.waiting}</span>
-        <span className={stage === "verifying" ? "is-active" : stage === "detected" ? "is-active" : ""}>
+        <span
+          className={
+            stage !== "awaiting_payment" ? "is-done" : submitted ? "is-done" : "is-active"
+          }
+        >
+          {labels.waiting}
+        </span>
+        <span
+          className={
+            stage === "verifying" || stage === "detected"
+              ? "is-active"
+              : submitted
+                ? "is-active"
+                : ""
+          }
+        >
           {stage === "verifying" ? labels.verifying : labels.detected}
         </span>
       </div>

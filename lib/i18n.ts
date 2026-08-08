@@ -757,8 +757,15 @@ export const app = {
     cryptoCopied: ["copied", "tersalin"] as T,
     cryptoScan: ["Scan with a Solana wallet on your phone", "Pindai dengan wallet Solana di HP-mu"] as T,
     cryptoManualWarn: [
-      "Details for checking only. Pay using the QR or the button below — a transfer sent by hand to this address cannot be matched to this invoice automatically.",
-      "Detail ini untuk dicocokkan saja. Bayarlah lewat QR atau tombol di bawah — transfer yang dikirim manual ke alamat ini tidak bisa dicocokkan otomatis dengan invoice ini.",
+      "Shown so you can check they match. Pay using the QR or the button below — a transfer sent by hand to this address carries no reference and cannot be matched to this invoice.",
+      "Ditampilkan supaya bisa kamu cocokkan. Bayarlah lewat QR atau tombol di bawah — transfer yang dikirim manual ke alamat ini tidak membawa penanda dan tidak bisa dicocokkan dengan invoice ini.",
+    ] as T,
+    // Said plainly, because the honest answer to "did it work?" at this moment
+    // is "yes, it left — now the network has to agree", and that takes seconds.
+    cryptoSentTitle: ["Payment sent", "Pembayaran terkirim"] as T,
+    cryptoSentBody: [
+      "Waiting for the network to confirm. This usually takes a few seconds — no need to pay again.",
+      "Menunggu jaringan mengonfirmasi. Biasanya beberapa detik — tidak perlu bayar lagi.",
     ] as T,
     cryptoFees: [
       "You need USDC for the amount, plus a little SOL for the network fee. Both on this network.",
