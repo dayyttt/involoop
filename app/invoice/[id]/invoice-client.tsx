@@ -11,6 +11,7 @@ import PayPalButtons from "@/components/PayPalButtons";
 import CryptoPayPanel from "@/components/CryptoPayPanel";
 import UsdcMark from "@/components/UsdcMark";
 import { cryptoLabels } from "@/lib/crypto-labels";
+import { testBadgeKey } from "@/lib/test-badge";
 
 // Receives the invoice already resolved on the server: no loading shell, no
 // blank first paint for a client opening the link on mobile data.
@@ -103,6 +104,12 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
   }
 
   const paidStatus = invoice.status === "paid";
+  const badgeKey = testBadgeKey({
+    paypalLive: invoice.paypal_live,
+    paypalShown: invoice.paypal_enabled,
+    cryptoShown: invoice.crypto_enabled,
+    cryptoNetwork: invoice.crypto_network,
+  });
   const money = formatMoney(invoice.amount, invoice.currency, locale);
 
   return (
@@ -294,15 +301,15 @@ export default function InvoiceClient({ invoice: initial }: { invoice: PublicInv
                   </button>
                 </div>
                 )}
-                <span className="test-badge" style={{ margin: 0, textAlign: "center" }}>
-                  {t(
-                    invoice.crypto_network === "solana-mainnet"
-                      ? "invoice.cryptoLiveBadge"
-                      : invoice.crypto_enabled
-                        ? "invoice.testBadgeBoth"
-                        : "invoice.testBadge"
-                  )}
-                </span>
+                {/* Names every rail that is not real, and vanishes when they all
+                    are. The old version branched on the network alone, so live
+                    PayPal beside devnet USDC would have said "settled on Solana"
+                    and left the sandbox unmentioned. */}
+                {badgeKey && (
+                  <span className="test-badge" style={{ margin: 0, textAlign: "center" }}>
+                    {t(badgeKey)}
+                  </span>
+                )}
               </>
             )}
             {error && <p className="error" style={{ margin: 0 }}>{error}</p>}

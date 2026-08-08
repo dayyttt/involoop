@@ -9,6 +9,12 @@
 const SANDBOX = "https://api-m.sandbox.paypal.com";
 const LIVE = "https://api-m.paypal.com";
 
+/** True only when pointed at PayPal's live API. Drives what the UI promises. */
+export function paypalLive(): boolean {
+  return process.env.PAYPAL_ENV === "live";
+}
+
+
 export function paypalBase(): string {
   return process.env.PAYPAL_ENV === "live" ? LIVE : SANDBOX;
 }

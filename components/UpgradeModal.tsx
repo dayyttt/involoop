@@ -6,6 +6,7 @@ import PayPalButtons from "@/components/PayPalButtons";
 import CryptoPayPanel from "@/components/CryptoPayPanel";
 import UsdcMark from "@/components/UsdcMark";
 import { cryptoLabels } from "@/lib/crypto-labels";
+import { testBadgeKey } from "@/lib/test-badge";
 import { appText, type Lang } from "@/lib/i18n";
 
 export type UpgradePlan = "starter" | "pro";
@@ -39,6 +40,9 @@ export default function UpgradeModal({
   // the platform wallet never reaches the browser — so it is asked for rather
   // than assumed, and the option stays hidden until the answer is yes.
   const [cryptoPlan, setCryptoPlan] = useState(false);
+  // Read from the server alongside crypto availability, because the modal must
+  // never tell someone "no real money will be charged" while charging them.
+  const [paypalLive, setPaypalLive] = useState(true);
   const [cryptoNetwork, setCryptoNetwork] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const restoreFocus = useRef<HTMLElement | null>(null);
@@ -57,7 +61,12 @@ export default function UpgradeModal({
     }
     fetch("/api/payments/crypto/availability")
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setCryptoPlan(!!d?.plan))
+      .then((d) => {
+        setCryptoPlan(!!d?.plan);
+        // Defaults to live, so a failed lookup errs towards saying nothing
+        // rather than towards a false promise of safety.
+        setPaypalLive(d?.paypalLive !== false);
+      })
       .catch(() => setCryptoPlan(false));
 
     document.addEventListener("keydown", onKey);
@@ -86,6 +95,15 @@ export default function UpgradeModal({
 
   const dur = reduced ? 0 : 0.22;
   const info = plan ? PRICE[plan] : null;
+  // Only the method actually on screen is described: naming PayPal's sandbox
+  // while someone is looking at the USDC panel is noise, and the reverse hides
+  // the thing that matters.
+  const badgeKey = testBadgeKey({
+    paypalLive,
+    paypalShown: method === "paypal",
+    cryptoShown: method === "usdc",
+    cryptoNetwork,
+  });
 
   return (
     <AnimatePresence>
@@ -187,15 +205,15 @@ export default function UpgradeModal({
               )}
 
               {error && <p className="error" style={{ margin: 0 }}>{error}</p>}
-              <p className="test-badge" style={{ margin: 0, textAlign: "center" }}>
-                {t(
-                  method === "paypal"
-                    ? "dashboard.sandboxBadge"
-                    : cryptoNetwork === "solana-mainnet"
-                      ? "invoice.cryptoLiveBadge"
-                      : "invoice.testBadgeBoth"
-                )}
-              </p>
+              {/* Nothing at all once both rails are live. The old version said
+                  "PayPal Sandbox · no real money will be charged" for every
+                  PayPal payment, hard-coded — which after the switch to live
+                  would have promised safety while taking the money. */}
+              {badgeKey && (
+                <p className="test-badge" style={{ margin: 0, textAlign: "center" }}>
+                  {t(badgeKey)}
+                </p>
+              )}
             </div>
           </motion.div>
         </motion.div>

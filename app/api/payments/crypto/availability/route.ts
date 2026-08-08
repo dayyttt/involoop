@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { solanaConfigured, solanaNetwork, platformWallet } from "@/lib/solana";
+import { paypalLive } from "@/lib/paypal";
 
 export const dynamic = "force-dynamic";
 
@@ -15,5 +16,7 @@ export async function GET() {
     // Direction B: paying Involoop for a plan. Needs only the platform address.
     plan: configured && !!platformWallet(),
     network: configured ? solanaNetwork() : null,
+    // So a payment surface can label itself truthfully instead of guessing.
+    paypalLive: paypalLive(),
   });
 }

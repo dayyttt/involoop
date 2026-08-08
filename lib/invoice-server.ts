@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { paypalConfigured, paypalSupportsCurrency } from "@/lib/paypal";
+import { paypalConfigured, paypalSupportsCurrency, paypalLive } from "@/lib/paypal";
 import { solanaConfigured, solanaNetwork } from "@/lib/solana";
 import { isDemoOwnerEmail } from "@/lib/demo-invoice";
 
@@ -23,6 +23,9 @@ export interface PublicInvoice {
   crypto_network: "solana-devnet" | "solana-mainnet" | null;
   /** The landing page's exhibit. Every method is shown and none of them work. */
   is_sample: boolean;
+  /** Whether PayPal is pointed at live. The page must not promise "no real
+      money" once it is, and must say sandbox for as long as it is not. */
+  paypal_live: boolean;
 }
 
 // Server-side read of a public invoice. Wrapped in React's cache so a single
@@ -81,5 +84,6 @@ export const getPublicInvoice = cache(async (publicId: string): Promise<PublicIn
     // to sign up needs to see that clients can pay by card, PayPal or USDC —
     // that is most of the pitch. What they must not be able to do is pay.
     is_sample: isDemoOwnerEmail(owner?.email),
+    paypal_live: paypalLive(),
   };
 });

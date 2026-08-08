@@ -872,6 +872,10 @@ export const app = {
     // With two rails on the page, naming only one leaves the other unlabelled —
     // and an unlabelled payment method on a test system is the one someone
     // assumes is real.
+    testBadgeCrypto: [
+      "Test mode · Solana Devnet · no real USDC will be sent",
+      "Mode uji · Solana Devnet · tidak ada USDC asli yang dikirim",
+    ] as T,
     testBadgeBoth: [
       "Test mode · PayPal Sandbox and Solana Devnet · no real money will be charged",
       "Mode uji · PayPal Sandbox dan Solana Devnet · tidak ada uang asli yang ditarik",
