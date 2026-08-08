@@ -763,6 +763,20 @@ export const app = {
       "This payment request expired. Start a new one — nothing was charged.",
       "Permintaan pembayaran ini kedaluwarsa. Mulai yang baru — tidak ada yang tertagih.",
     ] as T,
+    cryptoPayHere: ["Pay with your wallet", "Bayar dengan wallet-mu"] as T,
+    cryptoPaying: ["Waiting for your wallet…", "Menunggu wallet…"] as T,
+    cryptoErrNoUsdc: [
+      "That wallet has no USDC on this network. Get some from faucet.circle.com first.",
+      "Wallet itu belum punya USDC di jaringan ini. Ambil dulu di faucet.circle.com.",
+    ] as T,
+    cryptoErrInsufficient: [
+      "Not enough USDC in that wallet — it holds {have}.",
+      "USDC di wallet itu kurang — hanya ada {have}.",
+    ] as T,
+    cryptoErrBuild: [
+      "Could not prepare the payment. Try again.",
+      "Gagal menyiapkan pembayaran. Coba lagi.",
+    ] as T,
     cryptoRetry: ["Try again", "Coba lagi"] as T,
     cryptoViewTx: ["View transaction", "Lihat transaksi"] as T,
     cryptoExpiresIn: ["Expires in {time}", "Kedaluwarsa dalam {time}"] as T,

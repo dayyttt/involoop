@@ -51,11 +51,27 @@ export interface CryptoLabels {
   mismatch: string;
   noWallet: string;
   overpaid: string;
+  payHere: string;
+  paying: string;
+  errNoUsdc: string;
+  errInsufficient: string;
+  errBuild: string;
 }
 
 // Reasons that will never resolve by waiting: the payment was found and does
 // not match this request. Everything else (not_finalized, rpc_unavailable,
 // settlement_failed) is genuinely still in flight and gets retried.
+interface InjectedWallet {
+  connect: () => Promise<{ publicKey: { toString(): string } }>;
+  request: (args: { method: string; params: unknown }) => Promise<unknown>;
+}
+
+function getInjectedWallet(): InjectedWallet | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as Record<string, any>;
+  return w.phantom?.solana ?? w.solflare ?? w.backpack?.solana ?? w.solana ?? null;
+}
+
 const TERMINAL_REASONS = new Set([
   "transaction_failed",
   "reference_absent",
@@ -100,6 +116,8 @@ export default function CryptoPayPanel({
   const [statusReason, setStatusReason] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   const done = useRef(false);
   const requestRef = useRef<CryptoRequest | null>(null);
@@ -223,6 +241,54 @@ export default function CryptoPayPanel({
     }
   }, [request, stage, secondsLeft]);
 
+  // Desktop: the wallet is an extension, and no extension registers the
+  // `solana:` scheme — the browser refuses the link outright. So the
+  // transaction is built on the server and handed over already composed; the
+  // wallet only signs and sends. Nothing about the money is decided here.
+  async function payWithExtension() {
+    const req = requestRef.current;
+    const provider = getInjectedWallet();
+    if (!req || !provider) return;
+
+    setPaying(true);
+    setPayError(null);
+    try {
+      const { publicKey } = await provider.connect();
+      const payer = publicKey.toString();
+
+      const res = await fetch("/api/payments/crypto/tx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference: req.reference, payer }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (body.reason === "no_usdc") throw new Error(labels.errNoUsdc);
+        if (body.reason === "insufficient") {
+          throw new Error(labels.errInsufficient.replace("{have}", body.have ?? "0"));
+        }
+        throw new Error(body.error ?? labels.errBuild);
+      }
+
+      await provider.request({
+        method: "signAndSendTransaction",
+        params: { message: body.message },
+      });
+
+      // Do not claim success here. The chain decides, and the poller is
+      // already asking it — a wallet returning is not a settled payment.
+      pollRef.current();
+    } catch (err: any) {
+      const message = String(err?.message ?? "");
+      // Closing the wallet is a decision, not an error.
+      if (!/User rejected|reject|declin/i.test(message)) {
+        setPayError(message || labels.errBuild);
+      }
+    } finally {
+      setPaying(false);
+    }
+  }
+
   async function copy(value: string, key: string) {
     try {
       await navigator.clipboard.writeText(value);
@@ -332,10 +398,28 @@ export default function CryptoPayPanel({
         </div>
       </div>
 
-      <a className="btn btn-primary btn-mobile-full" href={request.url}>
-        {labels.openWallet}
-      </a>
-      {!hasWallet && <p className="hint crypto-note">{labels.noWallet}</p>}
+      {hasWallet ? (
+        <>
+          <button
+            type="button"
+            className="btn btn-primary btn-mobile-full"
+            onClick={payWithExtension}
+            disabled={paying}
+          >
+            {paying ? labels.paying : labels.payHere}
+          </button>
+          {payError && <p className="error" style={{ margin: 0 }}>{payError}</p>}
+        </>
+      ) : (
+        <>
+          {/* Phones only. On desktop this link goes nowhere, because no
+              extension registers the scheme. */}
+          <a className="btn btn-primary btn-mobile-full" href={request.url}>
+            {labels.openWallet}
+          </a>
+          <p className="hint crypto-note">{labels.noWallet}</p>
+        </>
+      )}
 
       <p className="hint crypto-note">{labels.exactHint}</p>
       <p className="hint crypto-note">{labels.feesHint}</p>

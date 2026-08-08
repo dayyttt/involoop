@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.5.1",
+    "@solana-program/token": "^0.13.0",
+    "@solana/kit": "^6.10.0",
     "@supabase/ssr": "^0.5.1",
     "@supabase/supabase-js": "^2.45.4",
     "bs58": "^6.0.0",
@@ -21,8 +23,6 @@
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
-    "@solana-program/token": "^0.13.0",
-    "@solana/kit": "^6.10.0",
     "@types/node": "^22.7.5",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.11",
